@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>スキルとその他のClaude Code機能の比較</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', '游ゴシック', sans-serif;
+    background: #eaf1f8;
+    color: #1a3a5c;
+    padding: 24px 16px 48px;
+    line-height: 1.7;
+  }
+
+  /* ── ヘッダー ── */
+  .header {
+    background: #1a3a5c;
+    color: white;
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 20px;
+  }
+  .header .label {
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    opacity: 0.7;
+    margin-bottom: 6px;
+  }
+  .header h1 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    line-height: 1.4;
+  }
+  .header-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-size: 13px;
+    opacity: 0.85;
+  }
+  .header-meta span::before { margin-right: 4px; }
+
+  /* ── 進捗バッジ ── */
+  .progress-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .badge {
+    padding: 6px 18px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 2px solid;
+  }
+  .badge-done { background: #1e8449; color: white; border-color: #1e8449; }
+  .badge-pending { background: white; color: #aaa; border-color: #dce3ea; }
+
+  /* ── カード共通 ── */
+  .card {
+    background: white;
+    border: 1px solid #dce3ea;
+    border-radius: 12px;
+    padding: 22px 24px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: #2e86c1;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #eaf1f8;
+  }
+
+  /* ① 要約 */
+  .summary-text {
+    font-size: 15px;
+    color: #1a3a5c;
+    background: #f0f6fc;
+    border-left: 4px solid #2e86c1;
+    padding: 14px 16px;
+    border-radius: 0 8px 8px 0;
+  }
+
+  /* ② キーポイント */
+  .kp-list { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+  .kp-item { display: flex; gap: 14px; align-items: flex-start; }
+  .kp-num {
+    min-width: 30px; height: 30px;
+    background: #1a3a5c; color: white;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .kp-body {}
+  .kp-heading { font-weight: 700; font-size: 15px; color: #1a3a5c; margin-bottom: 3px; }
+  .kp-desc { font-size: 14px; color: #444; }
+
+  /* ③ 比較表 */
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .compare-table th {
+    background: #1a3a5c;
+    color: white;
+    padding: 9px 12px;
+    text-align: left;
+    font-weight: 600;
+  }
+  .compare-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #eaf1f8;
+    vertical-align: top;
+  }
+  .compare-table tr:nth-child(even) td { background: #f7fafc; }
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .tag-blue { background: #d6eaf8; color: #1a5276; }
+  .tag-green { background: #d5f5e3; color: #1e5631; }
+  .tag-orange { background: #fde8d8; color: #784212; }
+  .tag-gray { background: #eaecee; color: #555; }
+
+  /* ④ 用語集 */
+  .glossary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  @media (max-width: 560px) { .glossary-grid { grid-template-columns: 1fr; } }
+  .glossary-item {
+    border-left: 4px solid #2e86c1;
+    padding: 10px 12px;
+    background: #f7fafc;
+    border-radius: 0 8px 8px 0;
+  }
+  .glossary-term { font-weight: 700; font-size: 14px; color: #1a3a5c; margin-bottom: 4px; }
+  .glossary-desc { font-size: 13px; color: #555; }
+
+  /* ⑤ 理解度チェック */
+  .qa-list { display: flex; flex-direction: column; gap: 16px; }
+  .qa-item {}
+  .qa-q {
+    background: #eaf1f8;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #1a3a5c;
+    margin-bottom: 6px;
+  }
+  .qa-q::before { content: "Q. "; color: #2e86c1; }
+  .qa-a {
+    padding: 10px 14px;
+    font-size: 14px;
+    color: #333;
+    border-left: 3px solid #1e8449;
+    background: #f0faf4;
+    border-radius: 0 8px 8px 0;
+  }
+  .qa-a::before { content: "A. "; font-weight: 700; color: #1e8449; }
+
+  /* ⑥ 自分メモ */
+  .memo-area {
+    background: #fffde7;
+    border: 1px dashed #f9a825;
+    border-radius: 8px;
+    padding: 16px;
+    min-height: 80px;
+    font-size: 14px;
+    color: #bbb;
+  }
+
+  /* ⑦ 理解度スコア */
+  .score-row { display: flex; gap: 32px; flex-wrap: wrap; }
+  .score-item {}
+  .score-label { font-size: 13px; color: #555; margin-bottom: 4px; font-weight: 600; }
+  .stars { font-size: 22px; }
+  .star-on { color: #f39c12; }
+  .star-off { color: #dce3ea; }
+</style>
+</head>
+<body>
+
+<!-- ヘッダー -->
+<div class="header">
+  <div class="label">📚 LEARNING OUTPUT</div>
+  <h1>スキルとその他のClaude Code機能の比較<br>— いつ何を使うべきか？</h1>
+  <div class="header-meta">
+    <span>📅 学習日：2026年4月24日</span>
+    <span>🎬 動画：Skills vs Other Claude Code Features</span>
+    <span>⏱ 約2分45秒</span>
+  </div>
+</div>
+
+<!-- 進捗バッジ -->
+<div class="progress-row">
+  <span class="badge badge-done">✅ 1巡目 完了</span>
+  <span class="badge badge-pending">⬜ 2巡目 未着手</span>
+</div>
+
+<!-- ① 要約 -->
+<div class="card">
+  <div class="card-title">① 一言まとめ</div>
+  <div class="summary-text">
+    Claude Codeには5つのカスタマイズ手段（Claude.md・スキル・サブエージェント・フック・MCP）があります。それぞれ「いつ」「何を」担当するかが違うので、目的に合わせて正しく使い分けることが大切です。すべてをスキルに詰め込まず、役割を分けて組み合わせるのがベストです。
+  </div>
+</div>
+
+<!-- ② キーポイント -->
+<div class="card">
+  <div class="card-title">② キーポイント</div>
+  <ul class="kp-list">
+    <li class="kp-item">
+      <div class="kp-num">1</div>
+      <div class="kp-body">
+        <div class="kp-heading">Claude.md ＝ 常時オンのルール集</div>
+        <div class="kp-desc">すべての会話に自動で読み込まれます。「このプロジェクトではTypeScriptのstrictモードを使う」「DBのスキーマは絶対に変更しない」など、いつでも守らせたいルールを書く場所です。</div>
+      </div>
+    </li>
+    <li class="kp-item">
+      <div class="kp-num">2</div>
+      <div class="kp-body">
+        <div class="kp-heading">スキル ＝ 必要なときだけ呼び出す専門知識</div>
+        <div class="kp-desc">「PRのレビューをして」と頼んだときだけ、PRレビュー用のスキルが起動します。コードを書いているときには不要な知識は読み込まれないので、会話がスッキリします。</div>
+      </div>
+    </li>
+    <li class="kp-item">
+      <div class="kp-num">3</div>
+      <div class="kp-body">
+        <div class="kp-heading">サブエージェント ＝ 別室で作業するアシスタント</div>
+        <div class="kp-desc">タスクを渡すと、メインの会話とは独立した別の部屋（コンテキスト）で作業し、結果だけを持ち帰ります。スキルは「今の会話を賢くする」、サブエージェントは「別の場所で動く」という違いがあります。</div>
+      </div>
+    </li>
+    <li class="kp-item">
+      <div class="kp-num">4</div>
+      <div class="kp-body">
+        <div class="kp-heading">フック ＝ 出来事をきっかけに自動実行される仕組み</div>
+        <div class="kp-desc">「ファイルを保存するたびにチェックツールを走らせる」など、特定の出来事（イベント）に反応して自動で動きます。スキルが「頼まれたら動く」のに対し、フックは「勝手に動く」イメージです。</div>
+      </div>
+    </li>
+    <li class="kp-item">
+      <div class="kp-num">5</div>
+      <div class="kp-body">
+        <div class="kp-heading">MCP ＝ 外部ツールとつなぐ接続口</div>
+        <div class="kp-desc">ClaudeをSlackやGitHubなど外のサービスと連携させるための仕組みです。「道具を追加する」役割で、知識を追加するスキルとは別物です。</div>
+      </div>
+    </li>
+  </ul>
+</div>
+
+<!-- ③ 比較表 -->
+<div class="card">
+  <div class="card-title">③ 5つの機能 早わかり比較表</div>
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th>機能</th>
+        <th>いつ動く？</th>
+        <th>何を追加？</th>
+        <th>向いている用途</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Claude.md</strong></td>
+        <td><span class="tag tag-blue">常時オン</span></td>
+        <td>ルール・制約</td>
+        <td>プロジェクト全体の共通ルール</td>
+      </tr>
+      <tr>
+        <td><strong>スキル</strong></td>
+        <td><span class="tag tag-green">頼まれたら</span></td>
+        <td>専門知識</td>
+        <td>タスク固有の手順・チェックリスト</td>
+      </tr>
+      <tr>
+        <td><strong>サブエージェント</strong></td>
+        <td><span class="tag tag-green">頼まれたら</span></td>
+        <td>独立した実行環境</td>
+        <td>メインとは別に動かしたい処理</td>
+      </tr>
+      <tr>
+        <td><strong>フック</strong></td>
+        <td><span class="tag tag-orange">出来事があったら</span></td>
+        <td>自動アクション</td>
+        <td>保存時チェック・バリデーション</td>
+      </tr>
+      <tr>
+        <td><strong>MCP</strong></td>
+        <td><span class="tag tag-gray">設定済みの間</span></td>
+        <td>外部ツール</td>
+        <td>Slack・GitHub等との連携</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ④ 用語集 -->
+<div class="card">
+  <div class="card-title">④ 用語集（小学生向け解説）</div>
+  <div class="glossary-grid">
+    <div class="glossary-item">
+      <div class="glossary-term">Claude.md</div>
+      <div class="glossary-desc">「クロード設定ファイル」。教室のルールが書いてある黒板のように、Claudeが必ず最初に読む約束事の一覧です。</div>
+    </div>
+    <div class="glossary-item">
+      <div class="glossary-term">スキル（Skills）</div>
+      <div class="glossary-desc">必要なときだけ取り出すレシピ本のようなもの。料理するときだけ開く、普段は棚にしまっておける専門知識です。</div>
+    </div>
+    <div class="glossary-item">
+      <div class="glossary-term">サブエージェント（Sub-agent）</div>
+      <div class="glossary-desc">「別室で働くスタッフ」。仕事を任せると別の場所で作業して、結果だけ持ってきてくれます。</div>
+    </div>
+    <div class="glossary-item">
+      <div class="glossary-term">フック（Hooks）</div>
+      <div class="glossary-desc">「自動センサー」。ドアが開いたら電気がつく仕組みと同じで、何かが起きると自動で反応して処理を実行します。</div>
+    </div>
+    <div class="glossary-item">
+      <div class="glossary-term">コンテキスト（Context）</div>
+      <div class="glossary-desc">Claudeの「作業メモリ」。会話の内容や読み込んだ知識が入る一時的な記憶の箱です。</div>
+    </div>
+    <div class="glossary-item">
+      <div class="glossary-term">MCP（MCPサーバー）</div>
+      <div class="glossary-desc">「外部ツールとつなぐプラグ」。ClaudeをSlackやGitHubなど他のサービスに接続するための差し込み口です。</div>
+    </div>
+  </div>
+</div>
+
+<!-- ⑤ 理解度チェック -->
+<div class="card">
+  <div class="card-title">⑤ 1巡目 理解度チェック</div>
+  <div class="qa-list">
+    <div class="qa-item">
+      <div class="qa-q">「このプロジェクトでは必ずTypeScriptを使うこと」というルールはどこに書くべきですか？</div>
+      <div class="qa-a">Claude.md に書きます。常にすべての会話に読み込まれるので、プロジェクト全体に常時適用したいルールに最適です。</div>
+    </div>
+    <div class="qa-item">
+      <div class="qa-q">スキルとサブエージェントの一番の違いは何ですか？</div>
+      <div class="qa-a">スキルは「今の会話に知識を追加する」もので、サブエージェントは「別の場所（独立したコンテキスト）で作業して結果を返す」ものです。スキルは今いる部屋を賢くし、サブエージェントは別室で仕事させるイメージです。</div>
+    </div>
+    <div class="qa-item">
+      <div class="qa-q">ファイルを保存するたびに自動でチェックを実行させたい場合、どの機能を使いますか？</div>
+      <div class="qa-a">フック（Hooks）を使います。フックはファイル保存などの「出来事（イベント）」をきっかけに自動で動く仕組みだからです。スキルは頼まれたときだけ動くので、この用途には向きません。</div>
+    </div>
+  </div>
+</div>
+
+<!-- ⑥ 自分メモ -->
+<div class="card">
+  <div class="card-title">⑥ 自分メモ（気づき・疑問・次に調べること）</div>
+  <div class="memo-area">ここに自由にメモを書いてください...</div>
+</div>
+
+<!-- ⑦ 理解度スコア -->
+<div class="card">
+  <div class="card-title">⑦ 理解度スコア</div>
+  <div class="score-row">
+    <div class="score-item">
+      <div class="score-label">1巡目（幹をつかむ）</div>
+      <div class="stars">
+        <span class="star-on">★</span>
+        <span class="star-on">★</span>
+        <span class="star-on">★</span>
+        <span class="star-off">★</span>
+        <span class="star-off">★</span>
+      </div>
+    </div>
+    <div class="score-item">
+      <div class="score-label">2巡目（枝葉を理解）</div>
+      <div class="stars">
+        <span class="star-off">★</span>
+        <span class="star-off">★</span>
+        <span class="star-off">★</span>
+        <span class="star-off">★</span>
+        <span class="star-off">★</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
