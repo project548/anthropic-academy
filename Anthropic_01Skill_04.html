@@ -109,9 +109,11 @@
   .memo-hint { font-size: 12px; color: #aaa; margin-top: 6px; }
   .score-row { display: flex; gap: 40px; flex-wrap: wrap; }
   .score-label { font-size: 13px; color: var(--text-sub); margin-bottom: 6px; font-weight: 600; }
-  .stars { font-size: 24px; letter-spacing: 2px; }
-  .star-on { color: var(--orange); }
-  .star-off { color: #ddd; }
+  .stars { font-size: 28px; letter-spacing: 4px; }
+  .stars span { cursor: pointer; transition: color 0.15s; }
+  .stars span.on { color: var(--orange); }
+  .stars span.off { color: #ddd; }
+  .stars span:hover, .stars span.hover { color: var(--orange); opacity: 0.6; }
 </style>
 </head>
 <body>
@@ -244,11 +246,11 @@
     <div class="score-row">
       <div>
         <div class="score-label">1巡目（幹をつかむ）</div>
-        <div class="stars"><span class="star-on">★</span><span class="star-on">★</span><span class="star-on">★</span><span class="star-off">★</span><span class="star-off">★</span></div>
+        <div class="stars" id="stars-1" data-key="score_1"></div>
       </div>
       <div>
         <div class="score-label">2巡目（枝葉を理解）</div>
-        <div class="stars"><span class="star-off">★</span><span class="star-off">★</span><span class="star-off">★</span><span class="star-off">★</span><span class="star-off">★</span></div>
+        <div class="stars" id="stars-2" data-key="score_2"></div>
       </div>
     </div>
   </div>
@@ -257,11 +259,52 @@
 
 <script>
   (function() {
-    var KEY = "memo_" + location.pathname.split("/").pop();
+    var base = location.pathname.split("/").pop();
+
+    // メモ保存
+    var memoKey = "memo_" + base;
     var ta = document.querySelector(".memo-area");
-    var saved = localStorage.getItem(KEY);
-    if (saved) ta.value = saved;
-    ta.addEventListener("input", function() { localStorage.setItem(KEY, ta.value); });
+    var savedMemo = localStorage.getItem(memoKey);
+    if (savedMemo) ta.value = savedMemo;
+    ta.addEventListener("input", function() { localStorage.setItem(memoKey, ta.value); });
+
+    // 星評価
+    function initStars(containerId, storageKey) {
+      var container = document.getElementById(containerId);
+      var fullKey = storageKey + "_" + base;
+      var current = parseInt(localStorage.getItem(fullKey) || "0");
+
+      function render(val) {
+        container.innerHTML = "";
+        for (var i = 1; i <= 5; i++) {
+          var s = document.createElement("span");
+          s.textContent = "★";
+          s.className = i <= val ? "on" : "off";
+          s.dataset.val = i;
+          container.appendChild(s);
+        }
+      }
+
+      render(current);
+
+      container.addEventListener("mouseover", function(e) {
+        if (!e.target.dataset.val) return;
+        render(parseInt(e.target.dataset.val));
+      });
+      container.addEventListener("mouseout", function() {
+        render(current);
+      });
+      container.addEventListener("click", function(e) {
+        if (!e.target.dataset.val) return;
+        var val = parseInt(e.target.dataset.val);
+        if (val === current) { current = 0; } else { current = val; }
+        localStorage.setItem(fullKey, current);
+        render(current);
+      });
+    }
+
+    initStars("stars-1", "score_1");
+    initStars("stars-2", "score_2");
   })();
 </script>
 </body>
