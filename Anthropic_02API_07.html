@@ -12,6 +12,10 @@ header { background: var(--blue-dark); color: white; padding: 24px 32px; border-
 header .course-label { font-size: 12px; opacity: 0.8; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
 header h1 { font-size: 24px; font-weight: 700; }
 header .meta { font-size: 13px; opacity: 0.7; margin-top: 6px; }
+.source-bar { background: #1a3a4a; padding: 10px 32px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.source-bar a { color: #7dd3fc; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+.source-bar a:hover { color: #fff; text-decoration: underline; }
+.source-bar a::before { content: "\1F517"; font-size: 12px; }
 .progress-bar { background: white; padding: 12px 32px; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid #e5e7eb; }
 .badge { padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; }
 .badge-done { background: #dcfce7; color: #16a34a; }
@@ -56,6 +60,9 @@ tr:nth-child(even) td { background: #f9fafb; }
   <h1>リクエストのライフサイクル</h1>
   <div class="meta">Lecture 07 &nbsp;|&nbsp; Anthropic_02API_07.html</div>
 </header>
+<div class="source-bar">
+  <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287726" target="_blank" rel="noopener">https://anthropic.skilljar.com/claude-with-the-anthropic-api/287726</a>
+</div>
 <div class="progress-bar">
   <span class="badge badge-done">1巡目 完了</span>
   <span class="badge badge-todo">2巡目 未完了</span>
