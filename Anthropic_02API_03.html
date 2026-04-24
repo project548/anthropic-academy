@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>02API-03 リクエストのライフサイクル | Anthropic Academy</title>
+<style>
+
+:root { --blue: #0096d6; --blue-dark: #005f8a; --orange: #f07800; --bg: #f5f7fa; --card: #ffffff; --text: #1a1a2e; --muted: #6b7280; --radius: 12px; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans", "Yu Gothic", sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+header { background: var(--blue-dark); color: white; padding: 24px 32px; border-bottom: 4px solid var(--orange); }
+header .course-label { font-size: 12px; opacity: 0.8; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+header h1 { font-size: 24px; font-weight: 700; }
+header .meta { font-size: 13px; opacity: 0.7; margin-top: 6px; }
+.progress-bar { background: white; padding: 12px 32px; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid #e5e7eb; }
+.badge { padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.badge-done { background: #dcfce7; color: #16a34a; }
+.badge-todo { background: #f3f4f6; color: #6b7280; }
+.container { max-width: 860px; margin: 0 auto; padding: 32px 24px; display: flex; flex-direction: column; gap: 24px; }
+.card { background: var(--card); border-radius: var(--radius); padding: 28px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+.card h2 { font-size: 16px; color: var(--blue-dark); font-weight: 700; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid var(--orange); }
+.summary-box { background: linear-gradient(135deg, #e0f2fe, #f0fdf4); border-radius: 10px; padding: 20px 24px; font-size: 15px; font-weight: 500; line-height: 1.8; }
+ul.points { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+ul.points li { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; }
+ul.points li::before { content: "\25B6"; color: var(--orange); font-size: 11px; margin-top: 4px; flex-shrink: 0; }
+.flow-steps { display: flex; flex-direction: column; gap: 8px; }
+.flow-step { display: flex; gap: 14px; align-items: flex-start; padding: 12px 16px; background: #f8fafc; border-radius: 8px; border-left: 3px solid var(--blue); }
+.step-num { background: var(--blue-dark); color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+.step-content strong { display: block; font-size: 14px; margin-bottom: 3px; }
+.step-content span { font-size: 13px; color: var(--muted); }
+.process-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.process-card { background: #f8fafc; border-radius: 8px; padding: 14px; border-top: 3px solid var(--blue); }
+.process-card h4 { font-size: 13px; color: var(--blue-dark); font-weight: 700; margin-bottom: 6px; }
+.process-card p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { background: var(--blue-dark); color: white; padding: 10px 14px; text-align: left; font-weight: 600; }
+td { padding: 10px 14px; border-bottom: 1px solid #e5e7eb; }
+tr:nth-child(even) td { background: #f9fafb; }
+.glossary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.glossary-item { background: #f8fafc; border-radius: 8px; padding: 12px 14px; }
+.glossary-item dt { font-size: 13px; font-weight: 700; color: var(--blue-dark); margin-bottom: 4px; }
+.glossary-item dd { font-size: 13px; color: var(--muted); line-height: 1.5; }
+.check-list { display: flex; flex-direction: column; gap: 10px; }
+.check-item { display: flex; gap: 12px; align-items: flex-start; padding: 12px 16px; background: #f8fafc; border-radius: 8px; cursor: pointer; }
+.check-item input { margin-top: 3px; accent-color: var(--orange); width: 16px; height: 16px; flex-shrink: 0; }
+.check-item label { font-size: 14px; cursor: pointer; }
+.memo-area { width: 100%; min-height: 120px; border: 1px solid #d1d5db; border-radius: 8px; padding: 14px; font-size: 14px; font-family: inherit; resize: vertical; outline: none; }
+.memo-area:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,150,214,.12); }
+.memo-save { margin-top: 8px; padding: 8px 20px; background: var(--blue-dark); color: white; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; }
+@media (max-width: 600px) { .process-grid, .glossary-grid { grid-template-columns: 1fr; } }
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="course-label">Course 02 &middot; Claude with the Anthropic API</div>
+  <h1>リクエストのライフサイクル</h1>
+  <div class="meta">Lecture 03 &nbsp;|&nbsp; Anthropic_02API_03.html</div>
+</header>
+<div class="progress-bar">
+  <span class="badge badge-done">1巡目 完了</span>
+  <span class="badge badge-todo">2巡目 未完了</span>
+</div>
+<div class="container">
+  <div class="card">
+    <h2>① 一言まとめ</h2>
+    <div class="summary-box">ユーザーの「送信」からClaude応答表示まで５段階の流れがあり、APIキー保護のため必ずサーバーを経由する。Claudeの内部処理はトークン化→埋め込み→文脈化→生成の４ステップ。</div>
+  </div>
+  <div class="card">
+    <h2>② 5段階のリクエストフロー</h2>
+    <div class="flow-steps">
+      <div class="flow-step"><div class="step-num">1</div><div class="step-content"><strong>クライアント &rarr; サーバー</strong><span>ユーザーが「送信」をクリック。アプリが自社サーバーにリクエストを送る</span></div></div>
+      <div class="flow-step"><div class="step-num">2</div><div class="step-content"><strong>サーバー &rarr; Anthropic API</strong><span>サーバーが安全に保管した APIキーを使って Anthropic に転送</span></div></div>
+      <div class="flow-step"><div class="step-num">3</div><div class="step-content"><strong>Claude が処理</strong><span>トークン化・埋め込み・文脈化・生成の4段階で応答を作成</span></div></div>
+      <div class="flow-step"><div class="step-num">4</div><div class="step-content"><strong>Anthropic API &rarr; サーバー</strong><span>生成テキスト・使用トークン数・停止理由を含む構造化レスポンスを返す</span></div></div>
+      <div class="flow-step"><div class="step-num">5</div><div class="step-content"><strong>サーバー &rarr; クライアント</strong><span>サーバーが応答をアプリに転送し、UIに表示される</span></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>③ サーバーが必要な理由</h2>
+    <ul class="points">
+      <li>クライアント（ブラウザ・アプリ）から直接 Anthropic API を叩いてはいけない</li>
+      <li>APIキーをクライアントコードに埋め込むと誰でも抽出・悪用が可能になる</li>
+      <li>自社サーバーを中継役にして、APIキーを安全に保管・使用する</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h2>④ APIリクエスト必須４パラメータ</h2>
+    <table>
+      <tr><th>パラメータ</th><th>説明</th><th>例</th></tr>
+      <tr><td><strong>APIキー</strong></td><td>Anthropicへのリクエストを識別</td><td>環境変数で管理</td></tr>
+      <tr><td><strong>model</strong></td><td>使用するモデル名</td><td>claude-3-sonnet</td></tr>
+      <tr><td><strong>messages</strong></td><td>ユーザー入力を含むリスト</td><td>[{role:user, content:...}]</td></tr>
+      <tr><td><strong>max_tokens</strong></td><td>生成トークン数の上限</td><td>1024</td></tr>
+    </table>
+    <p style="font-size:13px;color:var(--muted);margin-top:10px;">公式SDK提供言語：Python / TypeScript / JavaScript / Go / Ruby</p>
+  </div>
+  <div class="card">
+    <h2>⑤ Claudeの内部処理４ステップ</h2>
+    <div class="process-grid">
+      <div class="process-card"><h4>① トークン化</h4><p>テキストをトークン（単語・部分語・記号）に分割。おおよそ1単語＝1トークンのイメージ。</p></div>
+      <div class="process-card"><h4>② 埋め込み（Embedding）</h4><p>各トークンを数値ベクトルに変換。意味的な関係性を数値で表現する。</p></div>
+      <div class="process-card"><h4>③ 文脈化</h4><p>周囲の単語に基づき各埋め込みを精緯化。多義語の適切な意味を強調（例：quantum）。</p></div>
+      <div class="process-card"><h4>④ 生成</h4><p>次の単語の確率を計算し、確率＋制御されたランダム性で1トークンずつ選択・生成。</p></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>⑥ 生成が止まる3条件</h2>
+    <table>
+      <tr><th>条件</th><th>内容</th><th>stop_reason値</th></tr>
+      <tr><td>最大トークン数到達</td><td>指定した max_tokens の上限に達した</td><td>max_tokens</td></tr>
+      <tr><td>自然な終了</td><td>シーケンス終了トークン（EOS）が生成された</td><td>end_turn</td></tr>
+      <tr><td>停止シーケンス</td><td>あらかじめ定義した停止フレーズに遇遇した</td><td>stop_sequence</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h2>⑦ 用語集</h2>
+    <dl class="glossary-grid">
+      <div class="glossary-item"><dt>トークン</dt><dd>Claudeがテキストを分割する最小単位。単語・部分語・記号など</dd></div>
+      <div class="glossary-item"><dt>埋め込み（Embedding）</dt><dd>トークンを意味的関係を持つ数値ベクトルに変換したもの</dd></div>
+      <div class="glossary-item"><dt>max_tokens</dt><dd>1回の生成で出力できる最大トークン数</dd></div>
+      <div class="glossary-item"><dt>stop_reason</dt><dd>生成が止まった理由（end_turn / max_tokens / stop_sequence）</dd></div>
+      <div class="glossary-item"><dt>SDK</dt><dd>Anthropicが提供する公式ライブラリ。API呼び出しを簡素化</dd></div>
+      <div class="glossary-item"><dt>文脈化</dt><dd>周囲のトークンに基づき埋め込みを調整し、適切な意味を選ぶ処理</dd></div>
+    </dl>
+  </div>
+  <div class="card">
+    <h2>⑧ 理解度チェック</h2>
+    <div class="check-list">
+      <div class="check-item"><input type="checkbox" id="c1"><label for="c1">リクエストが5段階を経ることを説明できる</label></div>
+      <div class="check-item"><input type="checkbox" id="c2"><label for="c2">クライアントから直接APIを叩いてはいけない理由が言える</label></div>
+      <div class="check-item"><input type="checkbox" id="c3"><label for="c3">APIリクエストの必須４パラメータを列挙できる</label></div>
+      <div class="check-item"><input type="checkbox" id="c4"><label for="c4">トークン化・埋め込み・文脈化・生成の違いを説明できる</label></div>
+      <div class="check-item"><input type="checkbox" id="c5"><label for="c5">生成が止まる3つの条件と stop_reason の値が言える</label></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>⑨ 自分メモ</h2>
+    <textarea class="memo-area" id="memo" placeholder="気づき・疲問・応用アイデアを自由に..."></textarea>
+    <button class="memo-save" onclick="saveMemo()">保存</button>
+  </div>
+</div>
+<script>
+const KEY = "memo_" + location.pathname.split("/").pop();
+const el = document.getElementById("memo");
+el.value = localStorage.getItem(KEY) || "";
+function saveMemo() {
+  localStorage.setItem(KEY, el.value);
+  const btn = document.querySelector(".memo-save");
+  btn.textContent = "保存済み ✓";
+  setTimeout(() => btn.textContent = "保存", 1500);
+}
+</script>
+</body>
+</html>
