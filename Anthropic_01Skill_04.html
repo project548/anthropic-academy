@@ -176,14 +176,25 @@
 
   /* ⑥ 自分メモ */
   .memo-area {
+    width: 100%;
     background: #fffde7;
     border: 1px dashed #f9a825;
     border-radius: 8px;
     padding: 16px;
-    min-height: 80px;
+    min-height: 120px;
     font-size: 14px;
-    color: #bbb;
+    color: #333;
+    font-family: inherit;
+    line-height: 1.7;
+    resize: vertical;
+    outline: none;
+    box-sizing: border-box;
   }
+  .memo-area:focus {
+    border-color: #f9a825;
+    box-shadow: 0 0 0 3px rgba(249,168,37,0.15);
+  }
+  .memo-area::placeholder { color: #bbb; }
 
   /* ⑦ 理解度スコア */
   .score-row { display: flex; gap: 32px; flex-wrap: wrap; }
@@ -363,7 +374,7 @@
 <!-- ⑥ 自分メモ -->
 <div class="card">
   <div class="card-title">⑥ 自分メモ（気づき・疑問・次に調べること）</div>
-  <div class="memo-area">ここに自由にメモを書いてください...</div>
+  <textarea class="memo-area" placeholder="ここに自由にメモを書いてください..."></textarea>
 </div>
 
 <!-- ⑦ 理解度スコア -->
