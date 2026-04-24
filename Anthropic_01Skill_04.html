@@ -6,414 +6,258 @@
 <title>スキルとその他のClaude Code機能の比較</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blue: #0096d6;
+    --blue-light: #e8f5fc;
+    --blue-dark: #005f8a;
+    --orange: #f07800;
+    --orange-light: #fff3e8;
+    --text: #1a1a1a;
+    --text-sub: #555;
+    --divider: #e0e8ef;
+  }
   body {
-    font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', '游ゴシック', sans-serif;
-    background: #eaf1f8;
-    color: #1a3a5c;
-    padding: 24px 16px 48px;
-    line-height: 1.7;
-  }
-
-  /* ── ヘッダー ── */
-  .header {
-    background: #1a3a5c;
-    color: white;
-    border-radius: 12px;
-    padding: 24px 28px;
-    margin-bottom: 20px;
-  }
-  .header .label {
-    font-size: 12px;
-    letter-spacing: 0.1em;
-    opacity: 0.7;
-    margin-bottom: 6px;
-  }
-  .header h1 {
-    font-size: 20px;
-    font-weight: 700;
-    margin-bottom: 12px;
-    line-height: 1.4;
-  }
-  .header-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-    font-size: 13px;
-    opacity: 0.85;
-  }
-  .header-meta span::before { margin-right: 4px; }
-
-  /* ── 進捗バッジ ── */
-  .progress-row {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-  }
-  .badge {
-    padding: 6px 18px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 600;
-    border: 2px solid;
-  }
-  .badge-done { background: #1e8449; color: white; border-color: #1e8449; }
-  .badge-pending { background: white; color: #aaa; border-color: #dce3ea; }
-
-  /* ── カード共通 ── */
-  .card {
-    background: white;
-    border: 1px solid #dce3ea;
-    border-radius: 12px;
-    padding: 22px 24px;
-    margin-bottom: 16px;
-  }
-  .card-title {
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    color: #2e86c1;
-    text-transform: uppercase;
-    margin-bottom: 14px;
-    padding-bottom: 8px;
-    border-bottom: 2px solid #eaf1f8;
-  }
-
-  /* ① 要約 */
-  .summary-text {
+    font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif;
+    background: #fff;
+    color: var(--text);
+    line-height: 1.8;
     font-size: 15px;
-    color: #1a3a5c;
-    background: #f0f6fc;
-    border-left: 4px solid #2e86c1;
-    padding: 14px 16px;
-    border-radius: 0 8px 8px 0;
   }
-
-  /* ② キーポイント */
-  .kp-list { list-style: none; display: flex; flex-direction: column; gap: 14px; }
-  .kp-item { display: flex; gap: 14px; align-items: flex-start; }
-  .kp-num {
-    min-width: 30px; height: 30px;
-    background: #1a3a5c; color: white;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 700; flex-shrink: 0;
-    margin-top: 2px;
-  }
-  .kp-body {}
-  .kp-heading { font-weight: 700; font-size: 15px; color: #1a3a5c; margin-bottom: 3px; }
-  .kp-desc { font-size: 14px; color: #444; }
-
-  /* ③ 比較表 */
-  .compare-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-  }
-  .compare-table th {
-    background: #1a3a5c;
+  .header {
+    background: var(--blue-dark);
     color: white;
-    padding: 9px 12px;
-    text-align: left;
-    font-weight: 600;
+    padding: 32px 40px 28px;
+    border-bottom: 4px solid var(--orange);
   }
-  .compare-table td {
-    padding: 9px 12px;
-    border-bottom: 1px solid #eaf1f8;
-    vertical-align: top;
+  .header-label { font-size: 11px; letter-spacing: 0.15em; opacity: 0.7; margin-bottom: 8px; text-transform: uppercase; }
+  .header h1 { font-size: 21px; font-weight: 700; line-height: 1.4; margin-bottom: 16px; }
+  .header-meta { display: flex; flex-wrap: wrap; gap: 20px; font-size: 13px; opacity: 0.8; }
+  .progress-bar {
+    background: var(--blue-light);
+    padding: 12px 40px;
+    display: flex; gap: 12px;
+    border-bottom: 1px solid var(--divider);
   }
-  .compare-table tr:nth-child(even) td { background: #f7fafc; }
-  .tag {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 11px;
-    font-weight: 700;
+  .badge { padding: 5px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+  .badge-done { background: #1e8449; color: white; }
+  .badge-pending { background: white; color: #aaa; border: 1.5px solid #ddd; }
+  .content { max-width: 720px; margin: 0 auto; padding: 0 40px 60px; }
+  .section { padding: 36px 0; border-bottom: 1px solid var(--divider); }
+  .section:last-child { border-bottom: none; }
+  .section-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.14em;
+    color: var(--blue); text-transform: uppercase; margin-bottom: 18px;
+    display: flex; align-items: center; gap: 10px;
   }
-  .tag-blue { background: #d6eaf8; color: #1a5276; }
-  .tag-green { background: #d5f5e3; color: #1e5631; }
-  .tag-orange { background: #fde8d8; color: #784212; }
-  .tag-gray { background: #eaecee; color: #555; }
-
-  /* ④ 用語集 */
-  .glossary-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
+  .section-label::after { content: ""; flex: 1; height: 1px; background: var(--blue-light); }
+  .summary-box {
+    background: var(--blue-light); border-left: 4px solid var(--blue);
+    padding: 18px 20px; border-radius: 0 8px 8px 0;
+    font-size: 15px; color: var(--blue-dark); line-height: 1.8;
   }
+  .kp-list { display: flex; flex-direction: column; gap: 20px; list-style: none; }
+  .kp-item { display: flex; gap: 16px; align-items: flex-start; }
+  .kp-num {
+    min-width: 32px; height: 32px; background: var(--blue); color: white;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; flex-shrink: 0; margin-top: 2px;
+  }
+  .kp-heading { font-weight: 700; font-size: 15px; color: var(--blue-dark); margin-bottom: 4px; }
+  .kp-desc { font-size: 14px; color: var(--text-sub); }
+  .compare-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .compare-table thead tr { border-bottom: 2px solid var(--blue); }
+  .compare-table th { padding: 10px 14px; text-align: left; font-weight: 700; color: var(--blue-dark); font-size: 12px; }
+  .compare-table td { padding: 12px 14px; border-bottom: 1px solid var(--divider); vertical-align: top; }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr:hover td { background: #fafcfe; }
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+  .tag-blue { background: var(--blue-light); color: var(--blue-dark); }
+  .tag-green { background: #e8f8ef; color: #1e6031; }
+  .tag-orange { background: var(--orange-light); color: #a85200; }
+  .tag-gray { background: #f0f0f0; color: #555; }
+  .glossary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   @media (max-width: 560px) { .glossary-grid { grid-template-columns: 1fr; } }
-  .glossary-item {
-    border-left: 4px solid #2e86c1;
-    padding: 10px 12px;
-    background: #f7fafc;
-    border-radius: 0 8px 8px 0;
+  .glossary-item { border-left: 3px solid var(--blue); padding: 12px 14px; background: #fafcfe; }
+  .glossary-term { font-weight: 700; font-size: 14px; color: var(--blue-dark); margin-bottom: 4px; }
+  .glossary-desc { font-size: 13px; color: var(--text-sub); }
+  .qa-list { display: flex; flex-direction: column; }
+  .qa-item { padding: 20px 0; border-bottom: 1px solid var(--divider); }
+  .qa-item:last-child { border-bottom: none; }
+  .qa-q { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 10px; }
+  .q-badge {
+    min-width: 32px; height: 32px; background: var(--orange); color: white;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; flex-shrink: 0;
   }
-  .glossary-term { font-weight: 700; font-size: 14px; color: #1a3a5c; margin-bottom: 4px; }
-  .glossary-desc { font-size: 13px; color: #555; }
-
-  /* ⑤ 理解度チェック */
-  .qa-list { display: flex; flex-direction: column; gap: 16px; }
-  .qa-item {}
-  .qa-q {
-    background: #eaf1f8;
-    border-radius: 8px;
-    padding: 10px 14px;
-    font-weight: 600;
-    font-size: 14px;
-    color: #1a3a5c;
-    margin-bottom: 6px;
-  }
-  .qa-q::before { content: "Q. "; color: #2e86c1; }
+  .q-text { font-weight: 600; font-size: 15px; padding-top: 4px; }
   .qa-a {
-    padding: 10px 14px;
-    font-size: 14px;
-    color: #333;
-    border-left: 3px solid #1e8449;
-    background: #f0faf4;
-    border-radius: 0 8px 8px 0;
+    margin-left: 46px; font-size: 14px; color: var(--text-sub);
+    padding-left: 14px; border-left: 3px solid #1e8449; line-height: 1.75;
   }
-  .qa-a::before { content: "A. "; font-weight: 700; color: #1e8449; }
-
-  /* ⑥ 自分メモ */
   .memo-area {
-    width: 100%;
-    background: #fffde7;
-    border: 1px dashed #f9a825;
-    border-radius: 8px;
-    padding: 16px;
-    min-height: 120px;
-    font-size: 14px;
-    color: #333;
-    font-family: inherit;
-    line-height: 1.7;
-    resize: vertical;
-    outline: none;
-    box-sizing: border-box;
+    width: 100%; background: #fffbf2;
+    border: 1.5px dashed var(--orange); border-radius: 6px;
+    padding: 16px; min-height: 130px; font-size: 14px; color: var(--text);
+    font-family: inherit; line-height: 1.8; resize: vertical; outline: none;
   }
-  .memo-area:focus {
-    border-color: #f9a825;
-    box-shadow: 0 0 0 3px rgba(249,168,37,0.15);
-  }
-  .memo-area::placeholder { color: #bbb; }
-
-  /* ⑦ 理解度スコア */
-  .score-row { display: flex; gap: 32px; flex-wrap: wrap; }
-  .score-item {}
-  .score-label { font-size: 13px; color: #555; margin-bottom: 4px; font-weight: 600; }
-  .stars { font-size: 22px; }
-  .star-on { color: #f39c12; }
-  .star-off { color: #dce3ea; }
+  .memo-area:focus { box-shadow: 0 0 0 3px rgba(240,120,0,0.12); }
+  .memo-area::placeholder { color: #ccc; }
+  .memo-hint { font-size: 12px; color: #aaa; margin-top: 6px; }
+  .score-row { display: flex; gap: 40px; flex-wrap: wrap; }
+  .score-label { font-size: 13px; color: var(--text-sub); margin-bottom: 6px; font-weight: 600; }
+  .stars { font-size: 24px; letter-spacing: 2px; }
+  .star-on { color: var(--orange); }
+  .star-off { color: #ddd; }
 </style>
 </head>
 <body>
 
-<!-- ヘッダー -->
 <div class="header">
-  <div class="label">📚 LEARNING OUTPUT</div>
+  <div class="header-label">Learning Output — Claude Partner Network</div>
   <h1>スキルとその他のClaude Code機能の比較<br>— いつ何を使うべきか？</h1>
   <div class="header-meta">
-    <span>📅 学習日：2026年4月24日</span>
-    <span>🎬 動画：Skills vs Other Claude Code Features</span>
-    <span>⏱ 約2分45秒</span>
+    <span>学習日：2026年4月24日</span>
+    <span>Skills vs Other Claude Code Features</span>
+    <span>約2分45秒</span>
   </div>
 </div>
 
-<!-- 進捗バッジ -->
-<div class="progress-row">
+<div class="progress-bar">
   <span class="badge badge-done">✅ 1巡目 完了</span>
   <span class="badge badge-pending">⬜ 2巡目 未着手</span>
 </div>
 
-<!-- ① 要約 -->
-<div class="card">
-  <div class="card-title">① 一言まとめ</div>
-  <div class="summary-text">
-    Claude Codeには5つのカスタマイズ手段（Claude.md・スキル・サブエージェント・フック・MCP）があります。それぞれ「いつ」「何を」担当するかが違うので、目的に合わせて正しく使い分けることが大切です。すべてをスキルに詰め込まず、役割を分けて組み合わせるのがベストです。
-  </div>
-</div>
+<div class="content">
 
-<!-- ② キーポイント -->
-<div class="card">
-  <div class="card-title">② キーポイント</div>
-  <ul class="kp-list">
-    <li class="kp-item">
-      <div class="kp-num">1</div>
-      <div class="kp-body">
-        <div class="kp-heading">Claude.md ＝ 常時オンのルール集</div>
-        <div class="kp-desc">すべての会話に自動で読み込まれます。「このプロジェクトではTypeScriptのstrictモードを使う」「DBのスキーマは絶対に変更しない」など、いつでも守らせたいルールを書く場所です。</div>
-      </div>
-    </li>
-    <li class="kp-item">
-      <div class="kp-num">2</div>
-      <div class="kp-body">
-        <div class="kp-heading">スキル ＝ 必要なときだけ呼び出す専門知識</div>
-        <div class="kp-desc">「PRのレビューをして」と頼んだときだけ、PRレビュー用のスキルが起動します。コードを書いているときには不要な知識は読み込まれないので、会話がスッキリします。</div>
-      </div>
-    </li>
-    <li class="kp-item">
-      <div class="kp-num">3</div>
-      <div class="kp-body">
-        <div class="kp-heading">サブエージェント ＝ 別室で作業するアシスタント</div>
-        <div class="kp-desc">タスクを渡すと、メインの会話とは独立した別の部屋（コンテキスト）で作業し、結果だけを持ち帰ります。スキルは「今の会話を賢くする」、サブエージェントは「別の場所で動く」という違いがあります。</div>
-      </div>
-    </li>
-    <li class="kp-item">
-      <div class="kp-num">4</div>
-      <div class="kp-body">
-        <div class="kp-heading">フック ＝ 出来事をきっかけに自動実行される仕組み</div>
-        <div class="kp-desc">「ファイルを保存するたびにチェックツールを走らせる」など、特定の出来事（イベント）に反応して自動で動きます。スキルが「頼まれたら動く」のに対し、フックは「勝手に動く」イメージです。</div>
-      </div>
-    </li>
-    <li class="kp-item">
-      <div class="kp-num">5</div>
-      <div class="kp-body">
-        <div class="kp-heading">MCP ＝ 外部ツールとつなぐ接続口</div>
-        <div class="kp-desc">ClaudeをSlackやGitHubなど外のサービスと連携させるための仕組みです。「道具を追加する」役割で、知識を追加するスキルとは別物です。</div>
-      </div>
-    </li>
-  </ul>
-</div>
-
-<!-- ③ 比較表 -->
-<div class="card">
-  <div class="card-title">③ 5つの機能 早わかり比較表</div>
-  <table class="compare-table">
-    <thead>
-      <tr>
-        <th>機能</th>
-        <th>いつ動く？</th>
-        <th>何を追加？</th>
-        <th>向いている用途</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><strong>Claude.md</strong></td>
-        <td><span class="tag tag-blue">常時オン</span></td>
-        <td>ルール・制約</td>
-        <td>プロジェクト全体の共通ルール</td>
-      </tr>
-      <tr>
-        <td><strong>スキル</strong></td>
-        <td><span class="tag tag-green">頼まれたら</span></td>
-        <td>専門知識</td>
-        <td>タスク固有の手順・チェックリスト</td>
-      </tr>
-      <tr>
-        <td><strong>サブエージェント</strong></td>
-        <td><span class="tag tag-green">頼まれたら</span></td>
-        <td>独立した実行環境</td>
-        <td>メインとは別に動かしたい処理</td>
-      </tr>
-      <tr>
-        <td><strong>フック</strong></td>
-        <td><span class="tag tag-orange">出来事があったら</span></td>
-        <td>自動アクション</td>
-        <td>保存時チェック・バリデーション</td>
-      </tr>
-      <tr>
-        <td><strong>MCP</strong></td>
-        <td><span class="tag tag-gray">設定済みの間</span></td>
-        <td>外部ツール</td>
-        <td>Slack・GitHub等との連携</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-<!-- ④ 用語集 -->
-<div class="card">
-  <div class="card-title">④ 用語集（小学生向け解説）</div>
-  <div class="glossary-grid">
-    <div class="glossary-item">
-      <div class="glossary-term">Claude.md</div>
-      <div class="glossary-desc">「クロード設定ファイル」。教室のルールが書いてある黒板のように、Claudeが必ず最初に読む約束事の一覧です。</div>
-    </div>
-    <div class="glossary-item">
-      <div class="glossary-term">スキル（Skills）</div>
-      <div class="glossary-desc">必要なときだけ取り出すレシピ本のようなもの。料理するときだけ開く、普段は棚にしまっておける専門知識です。</div>
-    </div>
-    <div class="glossary-item">
-      <div class="glossary-term">サブエージェント（Sub-agent）</div>
-      <div class="glossary-desc">「別室で働くスタッフ」。仕事を任せると別の場所で作業して、結果だけ持ってきてくれます。</div>
-    </div>
-    <div class="glossary-item">
-      <div class="glossary-term">フック（Hooks）</div>
-      <div class="glossary-desc">「自動センサー」。ドアが開いたら電気がつく仕組みと同じで、何かが起きると自動で反応して処理を実行します。</div>
-    </div>
-    <div class="glossary-item">
-      <div class="glossary-term">コンテキスト（Context）</div>
-      <div class="glossary-desc">Claudeの「作業メモリ」。会話の内容や読み込んだ知識が入る一時的な記憶の箱です。</div>
-    </div>
-    <div class="glossary-item">
-      <div class="glossary-term">MCP（MCPサーバー）</div>
-      <div class="glossary-desc">「外部ツールとつなぐプラグ」。ClaudeをSlackやGitHubなど他のサービスに接続するための差し込み口です。</div>
+  <div class="section">
+    <div class="section-label">① 一言まとめ</div>
+    <div class="summary-box">
+      Claude Codeには5つのカスタマイズ手段（Claude.md・スキル・サブエージェント・フック・MCP）があります。それぞれ「いつ」「何を」担当するかが違うので、目的に合わせて正しく使い分けることが大切です。すべてをスキルに詰め込まず、役割を分けて組み合わせるのがベストです。
     </div>
   </div>
-</div>
 
-<!-- ⑤ 理解度チェック -->
-<div class="card">
-  <div class="card-title">⑤ 1巡目 理解度チェック</div>
-  <div class="qa-list">
-    <div class="qa-item">
-      <div class="qa-q">「このプロジェクトでは必ずTypeScriptを使うこと」というルールはどこに書くべきですか？</div>
-      <div class="qa-a">Claude.md に書きます。常にすべての会話に読み込まれるので、プロジェクト全体に常時適用したいルールに最適です。</div>
-    </div>
-    <div class="qa-item">
-      <div class="qa-q">スキルとサブエージェントの一番の違いは何ですか？</div>
-      <div class="qa-a">スキルは「今の会話に知識を追加する」もので、サブエージェントは「別の場所（独立したコンテキスト）で作業して結果を返す」ものです。スキルは今いる部屋を賢くし、サブエージェントは別室で仕事させるイメージです。</div>
-    </div>
-    <div class="qa-item">
-      <div class="qa-q">ファイルを保存するたびに自動でチェックを実行させたい場合、どの機能を使いますか？</div>
-      <div class="qa-a">フック（Hooks）を使います。フックはファイル保存などの「出来事（イベント）」をきっかけに自動で動く仕組みだからです。スキルは頼まれたときだけ動くので、この用途には向きません。</div>
-    </div>
+  <div class="section">
+    <div class="section-label">② キーポイント</div>
+    <ul class="kp-list">
+      <li class="kp-item">
+        <div class="kp-num">1</div>
+        <div><div class="kp-heading">Claude.md ＝ 常時オンのルール集</div>
+        <div class="kp-desc">すべての会話に自動で読み込まれます。「このプロジェクトではTypeScriptのstrictモードを使う」など、いつでも守らせたいルールを書く場所です。</div></div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">2</div>
+        <div><div class="kp-heading">スキル ＝ 必要なときだけ呼び出す専門知識</div>
+        <div class="kp-desc">「PRのレビューをして」と頼んだときだけ起動します。不要な知識は読み込まれないので会話がスッキリします。</div></div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">3</div>
+        <div><div class="kp-heading">サブエージェント ＝ 別室で作業するアシスタント</div>
+        <div class="kp-desc">タスクを渡すと独立したコンテキストで作業し、結果だけ持ち帰ります。スキルは「今の会話を賢くする」、サブエージェントは「別の場所で動く」。</div></div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">4</div>
+        <div><div class="kp-heading">フック ＝ 出来事をきっかけに自動実行される仕組み</div>
+        <div class="kp-desc">「ファイルを保存するたびにチェックを走らせる」など、イベントに反応して自動で動きます。スキルが「頼まれたら動く」のに対し、フックは「勝手に動く」。</div></div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">5</div>
+        <div><div class="kp-heading">MCP ＝ 外部ツールとつなぐ接続口</div>
+        <div class="kp-desc">ClaudeをSlackやGitHubなど外のサービスと連携させる仕組みです。「道具を追加する」役割で、知識を追加するスキルとは別物です。</div></div>
+      </li>
+    </ul>
   </div>
-</div>
 
-<!-- ⑥ 自分メモ -->
-<div class="card">
-  <div class="card-title">⑥ 自分メモ（気づき・疑問・次に調べること）</div>
-  <textarea class="memo-area" placeholder="ここに自由にメモを書いてください..."></textarea>
-</div>
+  <div class="section">
+    <div class="section-label">③ 5つの機能 早わかり比較表</div>
+    <table class="compare-table">
+      <thead><tr><th>機能</th><th>いつ動く？</th><th>何を追加？</th><th>向いている用途</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Claude.md</strong></td><td><span class="tag tag-blue">常時オン</span></td><td>ルール・制約</td><td>プロジェクト全体の共通ルール</td></tr>
+        <tr><td><strong>スキル</strong></td><td><span class="tag tag-green">頼まれたら</span></td><td>専門知識</td><td>タスク固有の手順・チェックリスト</td></tr>
+        <tr><td><strong>サブエージェント</strong></td><td><span class="tag tag-green">頼まれたら</span></td><td>独立した実行環境</td><td>メインとは別に動かしたい処理</td></tr>
+        <tr><td><strong>フック</strong></td><td><span class="tag tag-orange">出来事があったら</span></td><td>自動アクション</td><td>保存時チェック・バリデーション</td></tr>
+        <tr><td><strong>MCP</strong></td><td><span class="tag tag-gray">設定済みの間</span></td><td>外部ツール</td><td>Slack・GitHub等との連携</td></tr>
+      </tbody>
+    </table>
+  </div>
 
-<!-- ⑦ 理解度スコア -->
-<div class="card">
-  <div class="card-title">⑦ 理解度スコア</div>
-  <div class="score-row">
-    <div class="score-item">
-      <div class="score-label">1巡目（幹をつかむ）</div>
-      <div class="stars">
-        <span class="star-on">★</span>
-        <span class="star-on">★</span>
-        <span class="star-on">★</span>
-        <span class="star-off">★</span>
-        <span class="star-off">★</span>
+  <div class="section">
+    <div class="section-label">④ 用語集（小学生向け解説）</div>
+    <div class="glossary-grid">
+      <div class="glossary-item">
+        <div class="glossary-term">Claude.md</div>
+        <div class="glossary-desc">教室のルールが書いてある黒板。Claudeが必ず最初に読む約束事の一覧です。</div>
       </div>
-    </div>
-    <div class="score-item">
-      <div class="score-label">2巡目（枝葉を理解）</div>
-      <div class="stars">
-        <span class="star-off">★</span>
-        <span class="star-off">★</span>
-        <span class="star-off">★</span>
-        <span class="star-off">★</span>
-        <span class="star-off">★</span>
+      <div class="glossary-item">
+        <div class="glossary-term">スキル（Skills）</div>
+        <div class="glossary-desc">必要なときだけ取り出すレシピ本。料理するときだけ開く専門知識です。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">サブエージェント</div>
+        <div class="glossary-desc">別室で働くスタッフ。仕事を任せると別の場所で作業して、結果だけ持ってきてくれます。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">フック（Hooks）</div>
+        <div class="glossary-desc">自動センサー。ドアが開いたら電気がつく仕組みと同じで、出来事に反応して動きます。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">コンテキスト</div>
+        <div class="glossary-desc">Claudeの作業メモリ。会話の内容や読み込んだ知識が入る一時的な記憶の箱です。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">MCP（MCPサーバー）</div>
+        <div class="glossary-desc">外部ツールとつなぐプラグ。SlackやGitHubなど他のサービスに接続する差し込み口です。</div>
       </div>
     </div>
   </div>
-</div>
 
+  <div class="section">
+    <div class="section-label">⑤ 1巡目 理解度チェック</div>
+    <div class="qa-list">
+      <div class="qa-item">
+        <div class="qa-q"><div class="q-badge">Q</div><div class="q-text">「このプロジェクトでは必ずTypeScriptを使うこと」というルールはどこに書くべきですか？</div></div>
+        <div class="qa-a">Claude.md に書きます。常にすべての会話に読み込まれるので、プロジェクト全体に常時適用したいルールに最適です。</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><div class="q-badge">Q</div><div class="q-text">スキルとサブエージェントの一番の違いは何ですか？</div></div>
+        <div class="qa-a">スキルは「今の会話に知識を追加する」もの、サブエージェントは「別の場所（独立したコンテキスト）で作業して結果を返す」ものです。スキルは今いる部屋を賢くし、サブエージェントは別室で仕事させるイメージです。</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><div class="q-badge">Q</div><div class="q-text">ファイルを保存するたびに自動でチェックを実行させたい場合、どの機能を使いますか？</div></div>
+        <div class="qa-a">フック（Hooks）を使います。フックはファイル保存などの「出来事（イベント）」をきっかけに自動で動く仕組みだからです。スキルは頼まれたときだけ動くので、この用途には向きません。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">⑥ 自分メモ（気づき・疑問・次に調べること）</div>
+    <textarea class="memo-area" placeholder="ここに自由にメモを書いてください..."></textarea>
+    <div class="memo-hint">※ このブラウザに自動保存されます</div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">⑦ 理解度スコア</div>
+    <div class="score-row">
+      <div>
+        <div class="score-label">1巡目（幹をつかむ）</div>
+        <div class="stars"><span class="star-on">★</span><span class="star-on">★</span><span class="star-on">★</span><span class="star-off">★</span><span class="star-off">★</span></div>
+      </div>
+      <div>
+        <div class="score-label">2巡目（枝葉を理解）</div>
+        <div class="stars"><span class="star-off">★</span><span class="star-off">★</span><span class="star-off">★</span><span class="star-off">★</span><span class="star-off">★</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
 
 <script>
   (function() {
-    var KEY = 'memo_' + location.pathname.split('/').pop();
-    var ta = document.querySelector('.memo-area');
+    var KEY = "memo_" + location.pathname.split("/").pop();
+    var ta = document.querySelector(".memo-area");
     var saved = localStorage.getItem(KEY);
     if (saved) ta.value = saved;
-    ta.addEventListener('input', function() {
-      localStorage.setItem(KEY, ta.value);
-    });
+    ta.addEventListener("input", function() { localStorage.setItem(KEY, ta.value); });
   })();
 </script>
 </body>
