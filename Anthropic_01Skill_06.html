@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>スキルのトラブルシューティング</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blue: #0096d6;
+    --blue-light: #e8f5fc;
+    --blue-dark: #005f8a;
+    --orange: #f07800;
+    --orange-light: #fff3e8;
+    --text: #1a1a1a;
+    --text-sub: #555;
+    --divider: #e0e8ef;
+  }
+  body {
+    font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif;
+    background: #fff;
+    color: var(--text);
+    line-height: 1.8;
+    font-size: 15px;
+  }
+  .header {
+    background: var(--blue-dark);
+    color: white;
+    padding: 32px 40px 28px;
+    border-bottom: 4px solid var(--orange);
+  }
+  .header-label { font-size: 11px; letter-spacing: 0.15em; opacity: 0.7; margin-bottom: 8px; text-transform: uppercase; }
+  .header h1 { font-size: 21px; font-weight: 700; line-height: 1.4; margin-bottom: 16px; }
+  .header-meta { display: flex; flex-wrap: wrap; gap: 20px; font-size: 13px; opacity: 0.8; }
+  .progress-bar {
+    background: var(--blue-light);
+    padding: 12px 40px;
+    display: flex; gap: 12px;
+    border-bottom: 1px solid var(--divider);
+  }
+  .badge { padding: 5px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+  .badge-done { background: #005f8a; color: white; }
+  .badge-pending { background: white; color: #aaa; border: 1.5px solid #ddd; }
+  .content { max-width: 720px; margin: 0 auto; padding: 0 40px 60px; }
+  .section { padding: 36px 0; border-bottom: 1px solid var(--divider); }
+  .section:last-child { border-bottom: none; }
+  .section-label {
+    font-size: 15pt;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--blue-dark);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-label::after { content: ""; flex: 1; height: 1px; background: var(--blue-light); }
+  .summary-box {
+    background: var(--blue-light); border-left: 4px solid var(--blue);
+    padding: 18px 20px; border-radius: 0 8px 8px 0;
+    font-size: 15px; color: var(--blue-dark); line-height: 1.8;
+  }
+  .kp-list { display: flex; flex-direction: column; gap: 20px; list-style: none; }
+  .kp-item { display: flex; gap: 16px; align-items: flex-start; }
+  .kp-num {
+    min-width: 32px; height: 32px; background: var(--blue); color: white;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; flex-shrink: 0; margin-top: 2px;
+  }
+  .kp-heading { font-weight: 700; font-size: 15px; color: var(--blue-dark); margin-bottom: 4px; }
+  .kp-desc { font-size: 14px; color: var(--text-sub); }
+  .compare-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .compare-table thead tr { border-bottom: 2px solid var(--blue); }
+  .compare-table th { padding: 10px 14px; text-align: left; font-weight: 700; color: var(--blue-dark); font-size: 12px; }
+  .compare-table td { padding: 12px 14px; border-bottom: 1px solid var(--divider); vertical-align: top; }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr:hover td { background: #fafcfe; }
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+  .tag-blue { background: var(--blue-light); color: var(--blue-dark); }
+  .tag-green { background: #e8f8ef; color: #1e6031; }
+  .tag-orange { background: var(--orange-light); color: #a85200; }
+  .tag-gray { background: #f0f0f0; color: #555; }
+  .glossary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 560px) { .glossary-grid { grid-template-columns: 1fr; } }
+  .glossary-item { border-left: 3px solid var(--blue); padding: 12px 14px; background: #fafcfe; }
+  .glossary-term { font-weight: 700; font-size: 14px; color: var(--blue-dark); margin-bottom: 4px; }
+  .glossary-desc { font-size: 13px; color: var(--text-sub); }
+  .qa-list { display: flex; flex-direction: column; }
+  .qa-item { padding: 20px 0; border-bottom: 1px solid var(--divider); }
+  .qa-item:last-child { border-bottom: none; }
+  .qa-q { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 10px; }
+  .q-badge {
+    min-width: 32px; height: 32px; background: var(--orange); color: white;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; flex-shrink: 0;
+  }
+  .q-text { font-weight: 600; font-size: 15px; padding-top: 4px; }
+  .qa-a {
+    margin-left: 46px;
+    font-size: 14px;
+    color: var(--text-sub);
+    padding-left: 14px;
+    border-left: 3px solid #0096d6;
+    line-height: 1.75;
+  }
+  .memo-area {
+    width: 100%; background: #fffbf2;
+    border: 1.5px dashed var(--orange); border-radius: 6px;
+    padding: 16px; min-height: 130px; font-size: 14px; color: var(--text);
+    font-family: inherit; line-height: 1.8; resize: vertical; outline: none;
+  }
+  .memo-area:focus { box-shadow: 0 0 0 3px rgba(240,120,0,0.12); }
+  .memo-area::placeholder { color: #ccc; }
+  .memo-hint { font-size: 12px; color: #aaa; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-label">Learning Output — Claude Partner Network</div>
+  <h1>スキルのトラブルシューティング<br>— 動かないとき、4パターンの原因と対処法</h1>
+  <div class="header-meta">
+    <span>学習日：2026年4月24日</span>
+    <span>Debugging Skills</span>
+    <span>約3分30秒</span>
+  </div>
+</div>
+
+<div class="progress-bar">
+  <span class="badge badge-done">✅ 1巡目 完了</span>
+  <span class="badge badge-pending">⬜ 2巡目 未着手</span>
+</div>
+
+<div class="content">
+
+  <div class="section">
+    <div class="section-label">① 一言まとめ</div>
+    <div class="summary-box">
+      スキルが動かないときの原因は「起動しない・読み込まれない・競合する・実行失敗」の4パターンにほぼ集約されます。ほとんどの問題はdescriptionの修正・ファイル配置の確認・優先度の確認・依存パッケージのインストールで解決できます。
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">② キーポイント</div>
+    <ul class="kp-list">
+      <li class="kp-item">
+        <div class="kp-num">1</div>
+        <div><div class="kp-heading">まず agent skills verifier を実行する</div>
+        <div class="kp-desc">UV でインストールしてスキルディレクトリで実行するか、任意の場所からコマンドを実行します。存在確認とバリデーションが一度にできます。</div></div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">2</div>
+        <div><div class="kp-heading">起動しない → descriptionを直す</div>
+        <div class="kp-desc">Claudeはセマンティックマッチングでスキルを選ぶため、リクエスト文とdescriptionの意味が重ならないとマッチしません。「Help me profile this」「Why is this slow?」など実際に使いそうなトリガーフレーズをdescriptionに追加し、バリエーションでテストします。</div></div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">3</div>
+        <div><div class="kp-heading">読み込まれない → パスとファイル名を確認する</div>
+        <div class="kp-desc">スキルは必ず「名前のディレクトリ/SKILL.md」という構造が必要です（skillsルート直下に置くのはNG）。ファイル名はSKILL（全大文字）.md（小文字）で完全一致。<code>claude --debug</code> でロードエラーを確認できます。</div></div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">4</div>
+        <div><div class="kp-heading">競合・上書きされる → 名前と優先度を確認する</div>
+        <div class="kp-desc">descriptionが似ていると間違ったスキルが起動します。より具体的な記述で差別化します。エンタープライズスキルと同名の個人スキルは必ず負けます。管理者に確認するか、スキル名を変えるのが現実的な対処です。</div></div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">5</div>
+        <div><div class="kp-heading">実行時エラー → 依存と権限を確認する</div>
+        <div class="kp-desc">外部パッケージを使うスキルはそのパッケージがインストール済みである必要があります（descriptionに明記も推奨）。スクリプトには実行権限が必要で、パスの区切り文字はWindows含め「/」（スラッシュ）を使います。</div></div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-label">③ 症状別 チェックリスト</div>
+    <table class="compare-table">
+      <thead><tr><th>症状</th><th>原因</th><th>対処</th></tr></thead>
+      <tbody>
+        <tr><td><strong>起動しない</strong></td><td><span class="tag tag-orange">description不一致</span></td><td>トリガーフレーズを追加・バリエーションでテスト</td></tr>
+        <tr><td><strong>一覧に出ない</strong></td><td><span class="tag tag-orange">パス/ファイル名ミス</span></td><td>名前ディレクトリ/SKILL.md 構造を確認、claude --debug</td></tr>
+        <tr><td><strong>間違ったスキルが動く</strong></td><td><span class="tag tag-blue">description競合</span></td><td>descriptionをより具体的・差別化した内容に修正</td></tr>
+        <tr><td><strong>個人スキルが無視される</strong></td><td><span class="tag tag-blue">優先度負け</span></td><td>エンタープライズと同名なら改名。管理者に確認</td></tr>
+        <tr><td><strong>プラグインが見えない</strong></td><td><span class="tag tag-gray">キャッシュ残留</span></td><td>キャッシュクリア → Claude Code再起動 → 再インストール</td></tr>
+        <tr><td><strong>実行時エラー</strong></td><td><span class="tag tag-gray">依存/権限/パス</span></td><td>パッケージインストール確認、実行権限付与、パスに/使用</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <div class="section-label">④ 用語集（小学生向け解説）</div>
+    <div class="glossary-grid">
+      <div class="glossary-item">
+        <div class="glossary-term">セマンティックマッチング</div>
+        <div class="glossary-desc">単語の完全一致ではなく「意味の近さ」でマッチングする仕組み。「速くして」と「パフォーマンス改善」が同じ意味と判断されます。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">トリガーフレーズ</div>
+        <div class="glossary-desc">スキルを起動させる「合言葉」のような文章。descriptionにこれを書いておくとマッチしやすくなります。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">agent skills verifier</div>
+        <div class="glossary-desc">スキルが正しく作られているかチェックするツール。文法ミスやファイル構造の問題を自動で見つけてくれます。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">claude --debug</div>
+        <div class="glossary-desc">Claude Codeを詳細ログモードで起動するコマンド。スキルが読み込まれているかエラーが出ていないか確認できます。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">実行権限（execute permission）</div>
+        <div class="glossary-desc">ファイルを「プログラムとして動かす」許可のこと。権限がないと「ファイルはあるのに動かない」状態になります。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">キャッシュ</div>
+        <div class="glossary-desc">高速化のために保存された一時データ。古いキャッシュが残ると新しい設定が反映されないことがあります。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">⑤ 1巡目 理解度チェック</div>
+    <div class="qa-list">
+      <div class="qa-item">
+        <div class="qa-q"><div class="q-badge">Q</div><div class="q-text">スキルのdescriptionに書くべき「トリガーフレーズ」とはどのようなものですか？</div></div>
+        <div class="qa-a">実際にユーザーが入力しそうな自然な表現です。例：「Help me profile this」「Why is this slow?」「Make this faster」など。Claudeはセマンティックマッチングでスキルを選ぶため、ユーザーの実際の言い回しに近い表現をdescriptionに入れることで起動率が上がります。バリエーションでテストして、起動しなかった表現をdescriptionに追加していくのが実践的な方法です。</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><div class="q-badge">Q</div><div class="q-text">スキルが一覧（what skills are available）に出てこない場合、まず確認すべき2つのことは何ですか？</div></div>
+        <div class="qa-a">①ファイル配置の構造（スキル名のディレクトリ内にSKILL.mdがあるか、skillsルートに直置きしていないか）と、②ファイル名（SKILL.mdで大文字・小文字が正確か）の2点です。次に <code>claude --debug</code> を実行してロードエラーのログを確認します。</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><div class="q-badge">Q</div><div class="q-text">個人で作った「code review」スキルがエンタープライズの「code review」スキルに常に負ける場合、どう対処しますか？</div></div>
+        <div class="qa-a">個人スキルの名前をより具体的なものに変えます（例：「frontend-code-review」など）。エンタープライズスキルは最高優先度を持つため同名では必ず上書きされます。管理者にエンタープライズスキルの内容を確認することもできますが、改名の方が即効性があります。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">⑥ 自分メモ（気づき・疑問・次に調べること）</div>
+    <textarea class="memo-area" placeholder="ここに自由にメモを書いてください..."></textarea>
+    <div class="memo-hint">※ このブラウザに自動保存されます</div>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  var base = location.pathname.split('/').pop();
+  var ta = document.querySelector('.memo-area');
+  var memoKey = 'memo_' + base;
+  var savedMemo = localStorage.getItem(memoKey);
+  if (savedMemo) ta.value = savedMemo;
+  ta.addEventListener('input', function() {
+    localStorage.setItem(memoKey, ta.value);
+  });
+})();
+</script>
+
+</body>
+</html>
