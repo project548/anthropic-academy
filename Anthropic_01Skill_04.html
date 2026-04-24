@@ -297,7 +297,7 @@
       var v = e.target.dataset.v;
       if (v) render(parseInt(v));
     });
-    container.addEventListener('mouseout', function() {
+    container.addEventListener('mouseleave', function() {
       render(current);
     });
     container.addEventListener('click', function(e) {
