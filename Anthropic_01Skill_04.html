@@ -404,5 +404,17 @@
   </div>
 </div>
 
+
+<script>
+  (function() {
+    var KEY = 'memo_' + location.pathname.split('/').pop();
+    var ta = document.querySelector('.memo-area');
+    var saved = localStorage.getItem(KEY);
+    if (saved) ta.value = saved;
+    ta.addEventListener('input', function() {
+      localStorage.setItem(KEY, ta.value);
+    });
+  })();
+</script>
 </body>
 </html>
