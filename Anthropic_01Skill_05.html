@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>コードのためのClaude</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blue: #0096d6;
+    --blue-light: #e8f5fc;
+    --blue-dark: #005f8a;
+    --orange: #f07800;
+    --orange-light: #fff3e8;
+    --text: #1a1a1a;
+    --text-sub: #555;
+    --divider: #e0e8ef;
+  }
+  body {
+    font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif;
+    background: #fff;
+    color: var(--text);
+    line-height: 1.8;
+    font-size: 15px;
+  }
+  .header {
+    background: var(--blue-dark);
+    color: white;
+    padding: 32px 40px 28px;
+    border-bottom: 4px solid var(--orange);
+  }
+  .header-label { font-size: 11px; letter-spacing: 0.15em; opacity: 0.7; margin-bottom: 8px; text-transform: uppercase; }
+  .header h1 { font-size: 21px; font-weight: 700; line-height: 1.4; margin-bottom: 16px; }
+  .header-meta { display: flex; flex-wrap: wrap; gap: 20px; font-size: 13px; opacity: 0.8; }
+  .progress-bar {
+    background: var(--blue-light);
+    padding: 12px 40px;
+    display: flex; gap: 12px;
+    border-bottom: 1px solid var(--divider);
+  }
+  .badge { padding: 5px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+  .badge-done { background: #005f8a; color: white; }
+  .badge-pending { background: white; color: #aaa; border: 1.5px solid #ddd; }
+  .content { max-width: 720px; margin: 0 auto; padding: 0 40px 60px; }
+  .section { padding: 36px 0; border-bottom: 1px solid var(--divider); }
+  .section:last-child { border-bottom: none; }
+  .section-label {
+    font-size: 15pt;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--blue-dark);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-label::after { content: ""; flex: 1; height: 1px; background: var(--blue-light); }
+  .summary-box {
+    background: var(--blue-light); border-left: 4px solid var(--blue);
+    padding: 18px 20px; border-radius: 0 8px 8px 0;
+    font-size: 15px; color: var(--blue-dark); line-height: 1.8;
+  }
+  .kp-list { display: flex; flex-direction: column; gap: 20px; list-style: none; }
+  .kp-item { display: flex; gap: 16px; align-items: flex-start; }
+  .kp-num {
+    min-width: 32px; height: 32px; background: var(--blue); color: white;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; flex-shrink: 0; margin-top: 2px;
+  }
+  .kp-heading { font-weight: 700; font-size: 15px; color: var(--blue-dark); margin-bottom: 4px; }
+  .kp-desc { font-size: 14px; color: var(--text-sub); }
+  .compare-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .compare-table thead tr { border-bottom: 2px solid var(--blue); }
+  .compare-table th { padding: 10px 14px; text-align: left; font-weight: 700; color: var(--blue-dark); font-size: 12px; }
+  .compare-table td { padding: 12px 14px; border-bottom: 1px solid var(--divider); vertical-align: top; }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr:hover td { background: #fafcfe; }
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+  .tag-blue { background: var(--blue-light); color: var(--blue-dark); }
+  .tag-green { background: #e8f8ef; color: #1e6031; }
+  .tag-orange { background: var(--orange-light); color: #a85200; }
+  .tag-gray { background: #f0f0f0; color: #555; }
+  .glossary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 560px) { .glossary-grid { grid-template-columns: 1fr; } }
+  .glossary-item { border-left: 3px solid var(--blue); padding: 12px 14px; background: #fafcfe; }
+  .glossary-term { font-weight: 700; font-size: 14px; color: var(--blue-dark); margin-bottom: 4px; }
+  .glossary-desc { font-size: 13px; color: var(--text-sub); }
+  .qa-list { display: flex; flex-direction: column; }
+  .qa-item { padding: 20px 0; border-bottom: 1px solid var(--divider); }
+  .qa-item:last-child { border-bottom: none; }
+  .qa-q { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 10px; }
+  .q-badge {
+    min-width: 32px; height: 32px; background: var(--orange); color: white;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; flex-shrink: 0;
+  }
+  .q-text { font-weight: 600; font-size: 15px; padding-top: 4px; }
+  .qa-a {
+    margin-left: 46px;
+    font-size: 14px;
+    color: var(--text-sub);
+    padding-left: 14px;
+    border-left: 3px solid #0096d6;
+    line-height: 1.75;
+  }
+  .memo-area {
+    width: 100%; background: #fffbf2;
+    border: 1.5px dashed var(--orange); border-radius: 6px;
+    padding: 16px; min-height: 130px; font-size: 14px; color: var(--text);
+    font-family: inherit; line-height: 1.8; resize: vertical; outline: none;
+  }
+  .memo-area:focus { box-shadow: 0 0 0 3px rgba(240,120,0,0.12); }
+  .memo-area::placeholder { color: #ccc; }
+  .memo-hint { font-size: 12px; color: #aaa; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-label">Learning Output — Claude Partner Network</div>
+  <h1>コードのためのClaude<br>— コーディング作業をAIと一緒に進める方法</h1>
+  <div class="header-meta">
+    <span>学習日：2026年4月24日</span>
+    <span>Claude for Code</span>
+    <span>約3分</span>
+  </div>
+</div>
+
+<div class="progress-bar">
+  <span class="badge badge-done">✅ 1巡目 完了</span>
+  <span class="badge badge-pending">⬜ 2巡目 未着手</span>
+</div>
+
+<div class="content">
+
+  <div class="section">
+    <div class="section-label">① 一言まとめ</div>
+    <div class="summary-box">
+      Claudeはコード生成・レビュー・デバッグ・リファクタリングをすべてこなせる頼れるコーディングパートナーです。「何を作りたいか」を自然言語で伝えるだけで動くコードを書いてくれますが、出力は必ず自分の目で確認・テストする習慣が重要です。
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">② キーポイント</div>
+    <ul class="kp-list">
+      <li class="kp-item">
+        <div class="kp-num">1</div>
+        <div><div class="kp-heading">コード生成 — 自然言語からコードへ</div>
+        <div class="kp-desc">「Pythonで〇〇するスクリプトを書いて」と頼むだけで動くコードを生成します。要件が具体的なほど精度が上がります。言語・フレームワーク・スタイルを指定するとさらに的確です。</div></div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">2</div>
+        <div><div class="kp-heading">コードレビュー — 品質と安全性の確認</div>
+        <div class="kp-desc">既存コードを貼り付けて「レビューして」と依頼するとバグ・セキュリティリスク・改善点を指摘してくれます。コードレビューの経験が少ない場面で特に力を発揮します。</div></div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">3</div>
+        <div><div class="kp-heading">デバッグ — エラーメッセージを渡すだけ</div>
+        <div class="kp-desc">エラーメッセージとコードを一緒に渡すと原因と修正案を提示します。「このエラーが出た」と伝えるだけで的確な診断が得られます。</div></div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">4</div>
+        <div><div class="kp-heading">リファクタリング — 動くコードをもっとよく</div>
+        <div class="kp-desc">「読みやすくして」「パフォーマンスを改善して」「関数に分けて」などの指示で既存コードを改善します。動作を変えずに品質を上げるのが得意です。</div></div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">5</div>
+        <div><div class="kp-heading">ドキュメント生成 — コメントとREADMEを自動化</div>
+        <div class="kp-desc">コードを渡して「コメントを追加して」「READMEを書いて」と依頼すると文書化を自動化できます。英語コードの日本語コメント化も得意です。</div></div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-label">③ コーディング用途 早わかり比較表</div>
+    <table class="compare-table">
+      <thead><tr><th>用途</th><th>頼み方の例</th><th>得意な場面</th><th>注意点</th></tr></thead>
+      <tbody>
+        <tr><td><strong>コード生成</strong></td><td>「〇〇するPythonスクリプトを書いて」</td><td><span class="tag tag-green">ゼロから作る</span></td><td>必ず動作確認する</td></tr>
+        <tr><td><strong>コードレビュー</strong></td><td>「このコードをレビューして」</td><td><span class="tag tag-blue">品質向上</span></td><td>指摘は取捨選択する</td></tr>
+        <tr><td><strong>デバッグ</strong></td><td>「このエラーの原因と修正方法は？」</td><td><span class="tag tag-orange">問題解決</span></td><td>コードも一緒に渡す</td></tr>
+        <tr><td><strong>リファクタリング</strong></td><td>「このコードを読みやすく改善して」</td><td><span class="tag tag-green">品質改善</span></td><td>テストを先に書く</td></tr>
+        <tr><td><strong>ドキュメント</strong></td><td>「READMEとコメントを追加して」</td><td><span class="tag tag-gray">文書化</span></td><td>内容の正確さを確認</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <div class="section-label">④ 用語集（小学生向け解説）</div>
+    <div class="glossary-grid">
+      <div class="glossary-item">
+        <div class="glossary-term">コード生成</div>
+        <div class="glossary-desc">お願いするだけでプログラムを書いてくれること。作文を代わりに書いてもらうようなイメージです。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">コードレビュー</div>
+        <div class="glossary-desc">書いたプログラムの間違いや改善点を見つけること。先生が答案用紙を採点するようなイメージです。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">デバッグ</div>
+        <div class="glossary-desc">プログラムのバグ（不具合）を見つけて直すこと。「デバッグ」の「バグ」は虫という意味で、プログラムの中の不具合を虫に例えています。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">リファクタリング</div>
+        <div class="glossary-desc">動いているプログラムの「中身の整理整頓」。動作は変えずに読みやすく・管理しやすくする作業です。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">ドキュメント</div>
+        <div class="glossary-desc">プログラムの説明書。コードを読まなくても「何をするプログラムか」がわかるようにした文章です。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">プロンプト（コード用）</div>
+        <div class="glossary-desc">Claudeへの指示文。具体的な言語・条件・制約を書くほど、期待通りのコードが返ってきやすくなります。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">⑤ 1巡目 理解度チェック</div>
+    <div class="qa-list">
+      <div class="qa-item">
+        <div class="qa-q"><div class="q-badge">Q</div><div class="q-text">Claudeにコードを書いてもらったあと、必ずすべきことは何ですか？</div></div>
+        <div class="qa-a">必ず自分で動作確認・テストをすることです。Claudeは非常に高精度ですが、コンテキストが不足していたり要件の解釈がずれたりすると意図と違うコードを生成することがあります。「動いているように見える」だけでなく、期待通りの挙動かどうかを自分で検証することが重要です。</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><div class="q-badge">Q</div><div class="q-text">デバッグをお願いするとき、Claudeに渡すべき情報は何ですか？</div></div>
+        <div class="qa-a">エラーメッセージとコード（できれば問題が起きている部分）の両方を渡します。エラーメッセージだけでは原因が特定しにくく、コードだけではどこで問題が起きているかわかりません。「〇行目でこのエラーが出た」と具体的に伝えるとより的確な診断が得られます。</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><div class="q-badge">Q</div><div class="q-text">リファクタリングをお願いするとき、事前にすべきことは何ですか？</div></div>
+        <div class="qa-a">テストを先に書いておくことです。リファクタリングは「動作を変えずにコードを改善する」作業ですが、テストがないと改善後に動作が変わっていないか確認できません。テストがあればリファクタリング後も安心して動作を検証できます。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">⑥ 自分メモ（気づき・疑問・次に調べること）</div>
+    <textarea class="memo-area" placeholder="ここに自由にメモを書いてください..."></textarea>
+    <div class="memo-hint">※ このブラウザに自動保存されます</div>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  var base = location.pathname.split('/').pop();
+  var ta = document.querySelector('.memo-area');
+  var memoKey = 'memo_' + base;
+  var savedMemo = localStorage.getItem(memoKey);
+  if (savedMemo) ta.value = savedMemo;
+  ta.addEventListener('input', function() {
+    localStorage.setItem(memoKey, ta.value);
+  });
+})();
+</script>
+
+</body>
+</html>
