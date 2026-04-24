@@ -112,12 +112,6 @@
   .memo-area:focus { box-shadow: 0 0 0 3px rgba(240,120,0,0.12); }
   .memo-area::placeholder { color: #ccc; }
   .memo-hint { font-size: 12px; color: #aaa; margin-top: 6px; }
-  .score-row { display: flex; gap: 40px; flex-wrap: wrap; }
-  .score-label { font-size: 13px; color: var(--text-sub); margin-bottom: 8px; font-weight: 600; }
-  .stars { font-size: 28px; letter-spacing: 4px; }
-  .stars span { cursor: pointer; transition: color 0.15s; user-select: none; }
-  .stars span.on { color: var(--orange); }
-  .stars span.off { color: #ddd; }
 </style>
 </head>
 <body>
@@ -245,19 +239,6 @@
     <div class="memo-hint">※ このブラウザに自動保存されます</div>
   </div>
 
-  <div class="section">
-    <div class="section-label">⑦ 理解度スコア</div>
-    <div class="score-row">
-      <div>
-        <div class="score-label">1巡目（幹をつかむ）</div>
-        <div class="stars" id="stars-1"></div>
-      </div>
-      <div>
-        <div class="score-label">2巡目（枝葉を理解）</div>
-        <div class="stars" id="stars-2"></div>
-      </div>
-    </div>
-  </div>
 
 </div>
 
@@ -274,43 +255,6 @@
     localStorage.setItem(memoKey, ta.value);
   });
 
-  // 星評価
-  function initStars(id, storeKey) {
-    var container = document.getElementById(id);
-    var key = storeKey + '_' + base;
-    var current = parseInt(localStorage.getItem(key) || '0');
-
-    function render(highlight) {
-      container.innerHTML = '';
-      for (var i = 1; i <= 5; i++) {
-        var s = document.createElement('span');
-        s.textContent = '★';
-        s.className = i <= highlight ? 'on' : 'off';
-        s.dataset.v = i;
-        container.appendChild(s);
-      }
-    }
-
-    render(current);
-
-    container.addEventListener('mouseover', function(e) {
-      var v = e.target.dataset.v;
-      if (v) render(parseInt(v));
-    });
-    container.addEventListener('mouseleave', function() {
-      render(current);
-    });
-    container.addEventListener('click', function(e) {
-      var v = e.target.dataset.v;
-      if (!v) return;
-      current = (parseInt(v) === current) ? 0 : parseInt(v);
-      localStorage.setItem(key, current);
-      render(current);
-    });
-  }
-
-  initStars('stars-1', 'score1');
-  initStars('stars-2', 'score2');
 })();
 </script>
 
