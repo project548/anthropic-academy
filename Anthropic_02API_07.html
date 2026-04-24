@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>02API-07 Claudeモデルの概要 | Anthropic Academy</title>
+<style>
+:root { --blue: #0096d6; --blue-dark: #005f8a; --orange: #f07800; --bg: #f5f7fa; --card: #ffffff; --text: #1a1a2e; --muted: #6b7280; --radius: 12px; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans", "Yu Gothic", sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+header { background: var(--blue-dark); color: white; padding: 24px 32px; border-bottom: 4px solid var(--orange); }
+header .course-label { font-size: 12px; opacity: 0.8; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+header h1 { font-size: 24px; font-weight: 700; }
+header .meta { font-size: 13px; opacity: 0.7; margin-top: 6px; }
+.progress-bar { background: white; padding: 12px 32px; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid #e5e7eb; }
+.badge { padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.badge-done { background: #dcfce7; color: #16a34a; }
+.badge-todo { background: #f3f4f6; color: #6b7280; }
+.container { max-width: 860px; margin: 0 auto; padding: 32px 24px; display: flex; flex-direction: column; gap: 24px; }
+.card { background: var(--card); border-radius: var(--radius); padding: 28px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+.card h2 { font-size: 16px; color: var(--blue-dark); font-weight: 700; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid var(--orange); }
+.summary-box { background: linear-gradient(135deg, #e0f2fe, #f0fdf4); border-radius: 10px; padding: 20px 24px; font-size: 15px; font-weight: 500; line-height: 1.8; }
+.model-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.model-card { border-radius: 10px; padding: 18px; text-align: center; }
+.model-card.haiku { background: #f0fdf4; border: 2px solid #86efac; }
+.model-card.sonnet { background: #eff6ff; border: 2px solid #93c5fd; }
+.model-card.opus { background: #faf5ff; border: 2px solid #c4b5fd; }
+.model-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+.model-card.haiku h3 { color: #16a34a; }
+.model-card.sonnet h3 { color: #2563eb; }
+.model-card.opus h3 { color: #7c3aed; }
+.model-card p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+.model-card .tag { display: inline-block; margin-top: 8px; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+.haiku .tag { background: #dcfce7; color: #16a34a; }
+.sonnet .tag { background: #dbeafe; color: #2563eb; }
+.opus .tag { background: #ede9fe; color: #7c3aed; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { background: var(--blue-dark); color: white; padding: 10px 14px; text-align: left; font-weight: 600; }
+td { padding: 10px 14px; border-bottom: 1px solid #e5e7eb; }
+tr:nth-child(even) td { background: #f9fafb; }
+ul.points { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+ul.points li { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; }
+ul.points li::before { content: "\25B6"; color: var(--orange); font-size: 11px; margin-top: 4px; flex-shrink: 0; }
+.glossary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.glossary-item { background: #f8fafc; border-radius: 8px; padding: 12px 14px; }
+.glossary-item dt { font-size: 13px; font-weight: 700; color: var(--blue-dark); margin-bottom: 4px; }
+.glossary-item dd { font-size: 13px; color: var(--muted); line-height: 1.5; }
+.check-list { display: flex; flex-direction: column; gap: 10px; }
+.check-item { display: flex; gap: 12px; align-items: flex-start; padding: 12px 16px; background: #f8fafc; border-radius: 8px; cursor: pointer; }
+.check-item input { margin-top: 3px; accent-color: var(--orange); width: 16px; height: 16px; flex-shrink: 0; }
+.check-item label { font-size: 14px; cursor: pointer; }
+.memo-area { width: 100%; min-height: 120px; border: 1px solid #d1d5db; border-radius: 8px; padding: 14px; font-size: 14px; font-family: inherit; resize: vertical; outline: none; }
+.memo-area:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,150,214,.12); }
+.memo-save { margin-top: 8px; padding: 8px 20px; background: var(--blue-dark); color: white; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; }
+@media (max-width: 600px) { .model-grid { grid-template-columns: 1fr; } .glossary-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="course-label">Course 02 &middot; Claude with the Anthropic API</div>
+  <h1>Claudeモデルの概要</h1>
+  <div class="meta">Lecture 07 &nbsp;|&nbsp; Anthropic_02API_07.html</div>
+</header>
+<div class="progress-bar">
+  <span class="badge badge-done">1巡目 完了</span>
+  <span class="badge badge-todo">2巡目 未完了</span>
+</div>
+<div class="container">
+  <div class="card">
+    <h2>① 一言まとめ</h2>
+    <div class="summary-box">ClaudeにはHaiku・Sonnet・Opusの3つのティアがあり、速度・コスト・能力のトレードオフで使い分ける。最新モデルを原則使い、ユースケースに応じてティアを選択するのが基本戦略。</div>
+  </div>
+
+  <div class="card">
+    <h2>② 3つのモデルティア</h2>
+    <div class="model-grid">
+      <div class="model-card haiku">
+        <h3>Haiku</h3>
+        <p>最速・最安。シンプルなタスク、高頻度呼び出し、リアルタイム応答に最適。</p>
+        <span class="tag">速度重視</span>
+      </div>
+      <div class="model-card sonnet">
+        <h3>Sonnet</h3>
+        <p>バランス型。コーディング・分析・複雑な推論など多くの本番ユースケースに対応。</p>
+        <span class="tag">汎用・推奨</span>
+      </div>
+      <div class="model-card opus">
+        <h3>Opus</h3>
+        <p>最高性能。複雑な推論・研究・深い分析が必要な場面で使用。コスト高め。</p>
+        <span class="tag">性能重視</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>③ 最新モデル一覧（Claude 4系）</h2>
+    <table>
+      <tr><th>モデルID</th><th>ティア</th><th>コンテキスト</th><th>主な用途</th></tr>
+      <tr><td>claude-opus-4-5</td><td>Opus</td><td>200K tokens</td><td>最高難度の推論・研究</td></tr>
+      <tr><td>claude-sonnet-4-5</td><td>Sonnet</td><td>200K tokens</td><td>本番開発・汎用</td></tr>
+      <tr><td>claude-haiku-4-5</td><td>Haiku</td><td>200K tokens</td><td>高速・大量処理</td></tr>
+    </table>
+    <p style="font-size:13px;color:var(--muted);margin-top:10px;">※ モデルIDは随時更新される。Anthropicのモデル一覧ページで最新を確認すること</p>
+  </div>
+
+  <div class="card">
+    <h2>④ モデル選択の考え方</h2>
+    <ul class="points">
+      <li><strong>まずSonnetで試す</strong> — 大半のユースケースに対応。精度が不足したらOpusへ、コスト削減したいならHaikuへ</li>
+      <li><strong>最新モデルを使う</strong> — 同ティアなら新しいモデルほど性能・コスト効率が向上している</li>
+      <li><strong>用途でティアを分ける</strong> — オーケストレーター（Opus）＋ワーカー（Haiku）のマルチエージェント構成が効果的</li>
+      <li><strong>コンテキスト長に注意</strong> — 200Kトークンは約15万語。長文処理でも余裕を持って対応可能</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>⑤ APIでのモデル指定</h2>
+    <table>
+      <tr><th>コード例</th><th>説明</th></tr>
+      <tr><td><code>model: "claude-sonnet-4-5"</code></td><td>Sonnet（推奨・汎用）</td></tr>
+      <tr><td><code>model: "claude-haiku-4-5"</code></td><td>Haiku（高速・低コスト）</td></tr>
+      <tr><td><code>model: "claude-opus-4-5"</code></td><td>Opus（最高性能）</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>⑥ 用語集</h2>
+    <dl class="glossary-grid">
+      <div class="glossary-item"><dt>モデルティア</dt><dd>Haiku / Sonnet / Opus の3段階。速度・コスト・性能のトレードオフ</dd></div>
+      <div class="glossary-item"><dt>コンテキストウィンドウ</dt><dd>一度に処理できるトークン数の上限。200K = 約15万語</dd></div>
+      <div class="glossary-item"><dt>モデルID</dt><dd>APIで使用するモデルの識別子（例: claude-sonnet-4-5）</dd></div>
+      <div class="glossary-item"><dt>マルチエージェント構成</dt><dd>OpusをオーケストレーターにHaikuをワーカーに使う分業パターン</dd></div>
+    </dl>
+  </div>
+
+  <div class="card">
+    <h2>⑦ 理解度チェック</h2>
+    <div class="check-list">
+      <div class="check-item"><input type="checkbox" id="c1"><label for="c1">Haiku / Sonnet / Opus の使い分けを説明できる</label></div>
+      <div class="check-item"><input type="checkbox" id="c2"><label for="c2">APIでモデルIDを指定する方法を知っている</label></div>
+      <div class="check-item"><input type="checkbox" id="c3"><label for="c3">コンテキストウィンドウの意味と200Kの目安が分かる</label></div>
+      <div class="check-item"><input type="checkbox" id="c4"><label for="c4">マルチエージェントでのモデル使い分けを説明できる</label></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>⑧ 自分メモ</h2>
+    <textarea class="memo-area" id="memo" placeholder="気づき・疑問・応用アイデアを自由に..."></textarea>
+    <button class="memo-save" onclick="saveMemo()">保存</button>
+  </div>
+</div>
+<script>
+const KEY = "memo_" + location.pathname.split("/").pop();
+const el = document.getElementById("memo");
+el.value = localStorage.getItem(KEY) || "";
+function saveMemo() {
+  localStorage.setItem(KEY, el.value);
+  const btn = document.querySelector(".memo-save");
+  btn.textContent = "保存済み ✓";
+  setTimeout(() => btn.textContent = "保存", 1500);
+}
+</script>
+</body>
+</html>
