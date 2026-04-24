@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>スキルの共有とサブエージェント活用</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blue: #0096d6;
+    --blue-light: #e8f5fc;
+    --blue-dark: #005f8a;
+    --orange: #f07800;
+    --orange-light: #fff3e8;
+    --text: #1a1a1a;
+    --text-sub: #555;
+    --divider: #e0e8ef;
+  }
+  body {
+    font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif;
+    background: #fff;
+    color: var(--text);
+    line-height: 1.8;
+    font-size: 15px;
+  }
+  .header {
+    background: var(--blue-dark);
+    color: white;
+    padding: 32px 40px 28px;
+    border-bottom: 4px solid var(--orange);
+  }
+  .header-label { font-size: 11px; letter-spacing: 0.15em; opacity: 0.7; margin-bottom: 8px; text-transform: uppercase; }
+  .header h1 { font-size: 21px; font-weight: 700; line-height: 1.4; margin-bottom: 16px; }
+  .header-meta { display: flex; flex-wrap: wrap; gap: 20px; font-size: 13px; opacity: 0.8; }
+  .progress-bar {
+    background: var(--blue-light);
+    padding: 12px 40px;
+    display: flex; gap: 12px;
+    border-bottom: 1px solid var(--divider);
+  }
+  .badge { padding: 5px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+  .badge-done { background: #005f8a; color: white; }
+  .badge-pending { background: white; color: #aaa; border: 1.5px solid #ddd; }
+  .content { max-width: 720px; margin: 0 auto; padding: 0 40px 60px; }
+  .section { padding: 36px 0; border-bottom: 1px solid var(--divider); }
+  .section:last-child { border-bottom: none; }
+  .section-label {
+    font-size: 15pt;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--blue-dark);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-label::after { content: ""; flex: 1; height: 1px; background: var(--blue-light); }
+  .summary-box {
+    background: var(--blue-light); border-left: 4px solid var(--blue);
+    padding: 18px 20px; border-radius: 0 8px 8px 0;
+    font-size: 15px; color: var(--blue-dark); line-height: 1.8;
+  }
+  .kp-list { display: flex; flex-direction: column; gap: 20px; list-style: none; }
+  .kp-item { display: flex; gap: 16px; align-items: flex-start; }
+  .kp-num {
+    min-width: 32px; height: 32px; background: var(--blue); color: white;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; flex-shrink: 0; margin-top: 2px;
+  }
+  .kp-heading { font-weight: 700; font-size: 15px; color: var(--blue-dark); margin-bottom: 4px; }
+  .kp-desc { font-size: 14px; color: var(--text-sub); }
+  .compare-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .compare-table thead tr { border-bottom: 2px solid var(--blue); }
+  .compare-table th { padding: 10px 14px; text-align: left; font-weight: 700; color: var(--blue-dark); font-size: 12px; }
+  .compare-table td { padding: 12px 14px; border-bottom: 1px solid var(--divider); vertical-align: top; }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr:hover td { background: #fafcfe; }
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+  .tag-blue { background: var(--blue-light); color: var(--blue-dark); }
+  .tag-green { background: #e8f8ef; color: #1e6031; }
+  .tag-orange { background: var(--orange-light); color: #a85200; }
+  .tag-gray { background: #f0f0f0; color: #555; }
+  .glossary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 560px) { .glossary-grid { grid-template-columns: 1fr; } }
+  .glossary-item { border-left: 3px solid var(--blue); padding: 12px 14px; background: #fafcfe; }
+  .glossary-term { font-weight: 700; font-size: 14px; color: var(--blue-dark); margin-bottom: 4px; }
+  .glossary-desc { font-size: 13px; color: var(--text-sub); }
+  .qa-list { display: flex; flex-direction: column; }
+  .qa-item { padding: 20px 0; border-bottom: 1px solid var(--divider); }
+  .qa-item:last-child { border-bottom: none; }
+  .qa-q { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 10px; }
+  .q-badge {
+    min-width: 32px; height: 32px; background: var(--orange); color: white;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; flex-shrink: 0;
+  }
+  .q-text { font-weight: 600; font-size: 15px; padding-top: 4px; }
+  .qa-a {
+    margin-left: 46px;
+    font-size: 14px;
+    color: var(--text-sub);
+    padding-left: 14px;
+    border-left: 3px solid #0096d6;
+    line-height: 1.75;
+  }
+  .memo-area {
+    width: 100%; background: #fffbf2;
+    border: 1.5px dashed var(--orange); border-radius: 6px;
+    padding: 16px; min-height: 130px; font-size: 14px; color: var(--text);
+    font-family: inherit; line-height: 1.8; resize: vertical; outline: none;
+  }
+  .memo-area:focus { box-shadow: 0 0 0 3px rgba(240,120,0,0.12); }
+  .memo-area::placeholder { color: #ccc; }
+  .memo-hint { font-size: 12px; color: #aaa; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-label">Learning Output — Claude Partner Network</div>
+  <h1>スキルの共有とサブエージェント活用<br>— チーム・組織でスキルを使い回す方法</h1>
+  <div class="header-meta">
+    <span>学習日：2026年4月24日</span>
+    <span>Sharing Skills &amp; Sub-agents</span>
+    <span>約3分30秒</span>
+  </div>
+</div>
+
+<div class="progress-bar">
+  <span class="badge badge-done">✅ 1巡目 完了</span>
+  <span class="badge badge-pending">⬜ 2巡目 未着手</span>
+</div>
+
+<div class="content">
+
+  <div class="section">
+    <div class="section-label">① 一言まとめ</div>
+    <div class="summary-box">
+      スキルは1人で使うより、チーム・組織で共有するほど価値が高まります。共有方法は「リポジトリ」「プラグイン」「エンタープライズ設定」の3段階。サブエージェントはスキルを自動引き継ぎしないため、使わせたいスキルはエージェント定義ファイルに明示的に列挙する必要があります。
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">② キーポイント</div>
+    <ul class="kp-list">
+      <li class="kp-item">
+        <div class="kp-num">1</div>
+        <div><div class="kp-heading">リポジトリで共有 ― 最もシンプルな方法</div>
+        <div class="kp-desc">.claude/skills/ にスキルをコミットするだけ。リポジトリをクローンした全員が追加インストール不要で自動的に取得でき、プッシュすれば次回プルで全員に届きます。チームのコーディング規約・プロジェクト固有ワークフローに最適です。</div></div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">2</div>
+        <div><div class="kp-heading">プラグインで配布 ― リポジトリをまたいで使い回す</div>
+        <div class="kp-desc">プラグインプロジェクト内に skills/ ディレクトリを作り、スキルファイルを配置してマーケットプレイスに公開します。プロジェクト固有でない汎用スキルをコミュニティに提供する場合に適しています。</div></div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">3</div>
+        <div><div class="kp-heading">エンタープライズ設定 ― 組織全体への強制適用</div>
+        <div class="kp-desc">管理者がマネージドセッティングで組織全体にデプロイできます。エンタープライズスキルは最高優先度を持ち、同名の個人・プロジェクト・プラグインスキルを上書きします。セキュリティ要件・コンプライアンス・必須の統一コーディング基準に使います。</div></div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">4</div>
+        <div><div class="kp-heading">サブエージェントはスキルを自動引き継ぎしない</div>
+        <div class="kp-desc">タスクをサブエージェントに委任すると、サブエージェントはまっさらなコンテキストで起動します。ビルトインエージェント（explorer・plan・verify）はスキルに一切アクセスできません。スキルを使わせるには .claude/agents/ にカスタムサブエージェントの agent.md を作り、skills フィールドに明示的に列挙します。</div></div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">5</div>
+        <div><div class="kp-heading">サブエージェントのスキルはオンデマンドではなく起動時ロード</div>
+        <div class="kp-desc">メイン会話のスキルはオンデマンドで読み込まれますが、サブエージェントのスキルはエージェント起動時に全量ロードされます。そのため「このサブエージェントが常に必要とするスキルのみ」を列挙するのが原則です。</div></div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-label">③ 3つの共有方法 早わかり比較表</div>
+    <table class="compare-table">
+      <thead><tr><th>方法</th><th>対象範囲</th><th>優先度</th><th>向いている用途</th></tr></thead>
+      <tbody>
+        <tr><td><strong>リポジトリ</strong><br>.claude/skills/</td><td><span class="tag tag-blue">同リポジトリ全員</span></td><td>通常</td><td>チーム規約・プロジェクト固有フロー</td></tr>
+        <tr><td><strong>プラグイン</strong><br>マーケットプレイス</td><td><span class="tag tag-green">リポジトリ横断</span></td><td>通常</td><td>汎用スキルのコミュニティ共有</td></tr>
+        <tr><td><strong>エンタープライズ</strong><br>マネージド設定</td><td><span class="tag tag-orange">組織全体</span></td><td>最高（強制）</td><td>セキュリティ・コンプライアンス・統一基準</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <div class="section-label">④ 用語集（小学生向け解説）</div>
+    <div class="glossary-grid">
+      <div class="glossary-item">
+        <div class="glossary-term">プラグイン</div>
+        <div class="glossary-desc">拡張パーツのこと。アプリに後から機能を追加できる部品で、他の人にも配れます。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">マーケットプレイス</div>
+        <div class="glossary-desc">プラグインを公開・配布する場所。アプリストアのようなイメージです。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">エンタープライズ設定</div>
+        <div class="glossary-desc">会社の管理者が全員に強制適用できる設定。学校のルールのように、誰も無視できません。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">カスタムサブエージェント</div>
+        <div class="glossary-desc">.claude/agents/ に自分で定義したアシスタント。スキルを持たせることができます。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">ビルトインエージェント</div>
+        <div class="glossary-desc">Claude Codeに最初から入っているエージェント（explorer・plan・verify）。スキルは使えません。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">skills フィールド</div>
+        <div class="glossary-desc">agent.md の中でサブエージェントに渡すスキルを列挙する設定項目。書かないとスキルは届きません。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">⑤ 1巡目 理解度チェック</div>
+    <div class="qa-list">
+      <div class="qa-item">
+        <div class="qa-q"><div class="q-badge">Q</div><div class="q-text">チーム全員に同じスキルを使わせる最もシンプルな方法は何ですか？</div></div>
+        <div class="qa-a">リポジトリの .claude/skills/ にスキルをコミットする方法です。リポジトリをクローンすれば追加インストール不要で全員が取得でき、更新もプッシュ→プルで自動的に届きます。</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><div class="q-badge">Q</div><div class="q-text">サブエージェントにスキルを使わせるには何が必要ですか？</div></div>
+        <div class="qa-a">2つのことが必要です。①カスタムサブエージェントであること（ビルトインエージェントは不可）、②そのエージェントの agent.md ファイルの skills フィールドに使わせたいスキルを明示的に列挙すること。委任しただけでは自動引き継ぎされません。</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><div class="q-badge">Q</div><div class="q-text">エンタープライズスキルが「同名の個人スキル」より強い理由は何ですか？</div></div>
+        <div class="qa-a">エンタープライズスキルは最高優先度を持つよう設計されているためです。セキュリティ要件やコンプライアンスといった「必ず守らせなければならない」基準を個人設定で上書きできないようにするためです。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">⑥ 自分メモ（気づき・疑問・次に調べること）</div>
+    <textarea class="memo-area" placeholder="ここに自由にメモを書いてください..."></textarea>
+    <div class="memo-hint">※ このブラウザに自動保存されます</div>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  var base = location.pathname.split('/').pop();
+  var ta = document.querySelector('.memo-area');
+  var memoKey = 'memo_' + base;
+  var savedMemo = localStorage.getItem(memoKey);
+  if (savedMemo) ta.value = savedMemo;
+  ta.addEventListener('input', function() {
+    localStorage.setItem(memoKey, ta.value);
+  });
+})();
+</script>
+
+</body>
+</html>
