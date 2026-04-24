@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>02API-11 はじめてのAPIリクエスト | Anthropic Academy</title>
+<style>
+:root { --blue: #0096d6; --blue-dark: #005f8a; --orange: #f07800; --bg: #f5f7fa; --card: #ffffff; --text: #1a1a2e; --muted: #6b7280; --radius: 12px; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans", "Yu Gothic", sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+header { background: var(--blue-dark); color: white; padding: 24px 32px; border-bottom: 4px solid var(--orange); }
+header .course-label { font-size: 12px; opacity: 0.8; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+header h1 { font-size: 24px; font-weight: 700; }
+header .meta { font-size: 13px; opacity: 0.7; margin-top: 6px; }
+.source-bar { background: #1a3a4a; padding: 10px 32px; }
+.source-bar a { color: #7dd3fc; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+.source-bar a:hover { color: #fff; text-decoration: underline; }
+.source-bar a::before { content: "\1F517"; font-size: 12px; }
+.progress-bar { background: white; padding: 12px 32px; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid #e5e7eb; }
+.badge { padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.badge-done { background: #dcfce7; color: #16a34a; }
+.badge-todo { background: #f3f4f6; color: #6b7280; }
+.container { max-width: 860px; margin: 0 auto; padding: 32px 24px; display: flex; flex-direction: column; gap: 24px; }
+.card { background: var(--card); border-radius: var(--radius); padding: 28px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+.card h2 { font-size: 16px; color: var(--blue-dark); font-weight: 700; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid var(--orange); }
+.summary-box { background: linear-gradient(135deg, #e0f2fe, #f0fdf4); border-radius: 10px; padding: 20px 24px; font-size: 15px; font-weight: 500; line-height: 1.8; }
+pre { background: #1e293b; color: #e2e8f0; border-radius: 8px; padding: 16px 18px; font-size: 13px; font-family: "Consolas", "Courier New", monospace; overflow-x: auto; line-height: 1.6; margin: 8px 0; }
+.code-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+ul.points { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+ul.points li { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; }
+ul.points li::before { content: "\25B6"; color: var(--orange); font-size: 11px; margin-top: 4px; flex-shrink: 0; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { background: var(--blue-dark); color: white; padding: 10px 14px; text-align: left; font-weight: 600; }
+td { padding: 10px 14px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+tr:nth-child(even) td { background: #f9fafb; }
+.glossary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.glossary-item { background: #f8fafc; border-radius: 8px; padding: 12px 14px; }
+.glossary-item dt { font-size: 13px; font-weight: 700; color: var(--blue-dark); margin-bottom: 4px; }
+.glossary-item dd { font-size: 13px; color: var(--muted); line-height: 1.5; }
+.check-list { display: flex; flex-direction: column; gap: 10px; }
+.check-item { display: flex; gap: 12px; align-items: flex-start; padding: 12px 16px; background: #f8fafc; border-radius: 8px; cursor: pointer; }
+.check-item input { margin-top: 3px; accent-color: var(--orange); width: 16px; height: 16px; flex-shrink: 0; }
+.check-item label { font-size: 14px; cursor: pointer; }
+.memo-area { width: 100%; min-height: 120px; border: 1px solid #d1d5db; border-radius: 8px; padding: 14px; font-size: 14px; font-family: inherit; resize: vertical; outline: none; }
+.memo-area:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,150,214,.12); }
+.memo-save { margin-top: 8px; padding: 8px 20px; background: var(--blue-dark); color: white; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; }
+code { background: #f1f5f9; color: #0f4c75; padding: 1px 6px; border-radius: 4px; font-size: 13px; font-family: "Consolas", monospace; }
+.warn-box { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 10px; padding: 14px 18px; font-size: 14px; color: #92400e; margin-top: 10px; }
+@media (max-width: 600px) { .glossary-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="course-label">Course 02 &middot; Claude with the Anthropic API</div>
+  <h1>はじめてのAPIリクエスト</h1>
+  <div class="meta">Lecture 11 &nbsp;|&nbsp; Anthropic_02API_11.html</div>
+</header>
+<div class="source-bar">
+  <a href="#" target="_blank" rel="noopener">URL未設定</a>
+</div>
+<div class="progress-bar">
+  <span class="badge badge-done">1巡目 完了</span>
+  <span class="badge badge-todo">2巡目 未完了</span>
+</div>
+<div class="container">
+
+  <div class="card">
+    <h2>① 一言まとめ</h2>
+    <div class="summary-box">Pythonで <code>anthropic</code> パッケージをインストールし、<code>.env</code> でAPIキーを管理したら、<code>client.messages.create()</code> の3パラメータでClaudeにリクエストを送れる。レスポンスは <code>message.content[0].text</code> で取得。</div>
+  </div>
+
+  <div class="card">
+    <h2>② 環境セットアップ</h2>
+    <div class="code-label">① パッケージインストール</div>
+    <pre>%pip install anthropic python-dotenv</pre>
+    <div class="code-label" style="margin-top:14px;">② .env ファイルにAPIキーを保存</div>
+    <pre>ANTHROPIC_API_KEY="your-api-key-here"</pre>
+    <div class="code-label" style="margin-top:14px;">③ 環境変数を読み込みクライアント作成</div>
+    <pre>from dotenv import load_dotenv
+load_dotenv()
+
+from anthropic import Anthropic
+
+client = Anthropic()
+model = "claude-sonnet-4-0"</pre>
+    <div class="warn-box">&#9888; <code>.env</code> は必ず <code>.gitignore</code> に追記してバージョン管理から除外すること。</div>
+  </div>
+
+  <div class="card">
+    <h2>③ messages.create() の3必須パラメータ</h2>
+    <table>
+      <tr><th>パラメータ</th><th>説明</th><th>補足</th></tr>
+      <tr><td><code>model</code></td><td>使用するClaudeモデル名</td><td>例: <code>claude-sonnet-4-0</code></td></tr>
+      <tr><td><code>max_tokens</code></td><td>レスポンスの最大トークン数（安全制限）</td><td>目標値ではなく上限。Claudeは適切な長さで停止する</td></tr>
+      <tr><td><code>messages</code></td><td>会話履歴のリスト</td><td>role（user/assistant）とcontentの辞書</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>④ はじめてのリクエスト例</h2>
+    <pre>message = client.messages.create(
+    model=model,
+    max_tokens=1000,
+    messages=[
+        {
+            "role": "user",
+            "content": "What is quantum computing? Answer in one sentence"
+        }
+    ]
+)
+
+# レスポンステキストの取得
+print(message.content[0].text)</pre>
+  </div>
+
+  <div class="card">
+    <h2>⑤ メッセージの構造</h2>
+    <ul class="points">
+      <li><strong>userメッセージ</strong>：Claudeに送る内容（人間が作成）</li>
+      <li><strong>assistantメッセージ</strong>：Claudeが生成した応答</li>
+      <li>各メッセージは <code>role</code>（"user" or "assistant"）と <code>content</code>（テキスト）の辞書</li>
+      <li>会話を続けるには両方のメッセージを配列に積み重ねていく</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>⑥ 用語集</h2>
+    <dl class="glossary-grid">
+      <div class="glossary-item"><dt>messages.create()</dt><dd>Anthropic APIへのリクエストを行う中心的な関数</dd></div>
+      <div class="glossary-item"><dt>max_tokens</dt><dd>生成の上限。Claudeはこの値に達したら停止するが、目標値ではない</dd></div>
+      <div class="glossary-item"><dt>message.content[0].text</dt><dd>レスポンスから生成テキストを取り出す方法</dd></div>
+      <div class="glossary-item"><dt>.env ファイル</dt><dd>APIキーなどの機密情報をコードから分離して管理するファイル</dd></div>
+      <div class="glossary-item"><dt>python-dotenv</dt><dd>.envファイルの内容を環境変数として読み込むパッケージ</dd></div>
+      <div class="glossary-item"><dt>role</dt><dd>メッセージの送り主。"user"（人間）か"assistant"（Claude）</dd></div>
+    </dl>
+  </div>
+
+  <div class="card">
+    <h2>⑦ 理解度チェック</h2>
+    <div class="check-list">
+      <div class="check-item"><input type="checkbox" id="c1"><label for="c1">anthropic パッケージのインストール方法が分かる</label></div>
+      <div class="check-item"><input type="checkbox" id="c2"><label for="c2">.env でAPIキーを管理する理由と方法が説明できる</label></div>
+      <div class="check-item"><input type="checkbox" id="c3"><label for="c3">messages.create() の3必須パラメータを列挙できる</label></div>
+      <div class="check-item"><input type="checkbox" id="c4"><label for="c4">max_tokens が目標値でなく上限であることを理解している</label></div>
+      <div class="check-item"><input type="checkbox" id="c5"><label for="c5">レスポンステキストの取り出し方（content[0].text）が分かる</label></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>⑧ 自分メモ</h2>
+    <textarea class="memo-area" id="memo" placeholder="気づき・疑問・応用アイデアを自由に..."></textarea>
+    <button class="memo-save" onclick="saveMemo()">保存</button>
+  </div>
+
+</div>
+<script>
+const KEY = "memo_" + location.pathname.split("/").pop();
+const el = document.getElementById("memo");
+el.value = localStorage.getItem(KEY) || "";
+function saveMemo() {
+  localStorage.setItem(KEY, el.value);
+  const btn = document.querySelector(".memo-save");
+  btn.textContent = "保存済み ✓";
+  setTimeout(() => btn.textContent = "保存", 1500);
+}
+</script>
+</body>
+</html>
