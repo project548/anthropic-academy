@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fine Grained Tool Calling | Anthropic Academy</title>
+<title>Chat exercise | Anthropic Academy</title>
 <style>
   :root {
     --blue: #0096d6; --blue-dark: #005f8a; --blue-light: #e0f2fe;
@@ -64,14 +64,6 @@
   .kp-heading { font-weight: 700; font-size: 14px; color: var(--blue-dark); margin-bottom: 5px; }
   .kp-desc { font-size: 13.5px; color: var(--text-sub); line-height: 1.7; }
 
-  /* ③ 比較表 */
-  .compare-table { width: 100%; border-collapse: collapse; font-size: 13.5px; border-radius: var(--radius); overflow: hidden; }
-  .compare-table thead tr { border-bottom: 2px solid var(--orange); background: var(--surface2); }
-  .compare-table th { padding: 11px 16px; text-align: left; font-weight: 700; color: var(--blue-dark); font-size: 12px; }
-  .compare-table td { padding: 12px 16px; border-bottom: 1px solid var(--border-light); vertical-align: top; }
-  .compare-table tr:last-child td { border-bottom: none; }
-  .compare-table tr:hover td { background: var(--blue-light); }
-
   /* ③ ステップ */
   .steps { display: flex; flex-direction: column; gap: 12px; }
   .step { display: flex; gap: 16px; background: var(--surface2); border-radius: var(--radius); padding: 16px 18px; border-left: 4px solid var(--blue); }
@@ -130,17 +122,17 @@
 
 <header>
   <div class="course-label">Claude with the Anthropic API</div>
-  <h1>Fine Grained Tool Calling</h1>
-  <div class="lecture-title-en"></div>
+  <h1>Chat exercise</h1>
+  <div class="lecture-title-en">Chat exercise</div>
   <div class="header-meta">
     <span>📅 2026/04/26</span>
     <span>⏱ 約10分</span>
-    <span>📌 Lecture 14</span>
+    <span>📌 Lecture 13</span>
   </div>
 </header>
 
 <div class="source-bar">
-  <span style="color:#7dd3fc;font-size:13px;">🔗 SkillJar URL — 未設定（Lecture 14 の正式URLを確認後に追加してください）</span>
+  <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287727" target="_blank" rel="noopener">https://anthropic.skilljar.com/claude-with-the-anthropic-api/287727</a>
 </div>
 
 <div class="progress-bar">
@@ -151,7 +143,7 @@
 <nav>
   <a href="#summary">① まとめ</a>
   <a href="#keypoints">② キーポイント</a>
-  <a href="#details">③ 比較表</a>
+  <a href="#details">③ 会話フロー</a>
   <a href="#glossary">④ 用語集</a>
   <a href="#check">⑤ 理解度チェック</a>
   <a href="#memo">⑥ メモ</a>
@@ -162,7 +154,7 @@
   <div class="section" id="summary">
     <div class="section-label">① 一言まとめ</div>
     <div class="summary-box">
-      このレクチャーでは<strong>ツール使用時のストリーミング</strong>と、JSONバリデーションを無効化して即時チャンクを受け取る<strong>Fine-Grainedツール呼び出し</strong>を学ぶ。デフォルトモードとFine-Grainedモードのトレードオフを理解することで、レスポンシブなUIとデータ整合性のバランスを適切に取れるようになる。
+      このレクチャーでは<strong>マルチターン会話（Chat exercise）</strong>の実装を練習する。Anthropic APIはステートレスで会話履歴を保持しないため、<strong>メッセージリストを手動で管理し、毎リクエストに全履歴を含めて送信する</strong>仕組みを習得することが目標。
     </div>
   </div>
 
@@ -172,136 +164,136 @@
       <li class="kp-item">
         <div class="kp-num">1</div>
         <div>
-          <div class="kp-heading">ツールストリーミングの追加イベント</div>
+          <div class="kp-heading">APIはステートレス — 会話を覚えない</div>
           <div class="kp-desc">
-            通常のストリーミングに加え、ツール使用時は <code>input_json_delta</code> イベントが追加される。各イベントは <code>partial_json</code>（そのチャンクの断片）と <code>snapshot</code>（受信済み累積）の2フィールドを持つ。
-            <div class="code-block">// ストリーミングイベント例
-{ type: "input_json_delta",
-  partial_json: '"city": "Tokyo"',
-  snapshot: '{"city": "Tokyo"' }</div>
+            Anthropic APIは各リクエストを独立して処理する。前のやり取りは自動では引き継がれない。
+            <div class="highlight-box warning">⚠️ 同じAPIを使っても「前回の続き」は自動では成立しない。開発者がコード側で会話履歴を管理する必要がある。</div>
           </div>
         </div>
       </li>
       <li class="kp-item">
         <div class="kp-num">2</div>
         <div>
-          <div class="kp-heading">デフォルト動作の遅延原因</div>
-          <div class="kp-desc">デフォルトでは、APIがJSONの完全なキーバリューペアが揃うまでバッファリングし、スキーマに対してバリデーションを行ってから送信する。そのため処理が遅延し、検証完了後にまとめてバースト状に届く。</div>
+          <div class="kp-heading">メッセージ構造: role と content のリスト</div>
+          <div class="kp-desc">
+            会話履歴は <code>role</code>（<code>"user"</code> または <code>"assistant"</code>）と <code>content</code>（テキスト）のペアのリストとして表現する。
+            <div class="code-block">messages = [
+  {"role": "user",      "content": "こんにちは！"},
+  {"role": "assistant", "content": "こんにちは！何かお手伝いできますか？"},
+  {"role": "user",      "content": "Pythonを教えてください"}
+]</div>
+          </div>
         </div>
       </li>
       <li class="kp-item">
         <div class="kp-num">3</div>
         <div>
-          <div class="kp-heading">Fine-Grainedモードの有効化</div>
+          <div class="kp-heading">毎リクエストに全履歴を送信する</div>
           <div class="kp-desc">
-            <code>fine_grained: true</code> を設定するとAPIサイドのJSONバリデーションが無効化され、生成直後のチャンクが即送信される。
-            <div class="code-block">client.messages.stream({
-  model: "claude-opus-4-5",
-  tools: [...],
-  fine_grained: true,   // ← バリデーション無効化
-  messages: [...]
-})</div>
-            <div class="highlight-box success">✅ 従来のストリーミング体験と同等のリアルタイム応答が実現できる</div>
+            フォローアップ質問をするときも、会話の全履歴を <code>messages</code> リストに含めてAPIに送る。これによりClaudeは文脈を把握して回答できる。
+            <div class="highlight-box success">✅ 履歴なしだと「前の話って何？」という文脈ゼロの回答になる。履歴ありなら「さっき話したPythonについてですね」と続けられる。</div>
           </div>
         </div>
       </li>
       <li class="kp-item">
         <div class="kp-num">4</div>
         <div>
-          <div class="kp-heading">Fine-Grainedのリスクと対処</div>
+          <div class="kp-heading">3つのヘルパー関数で実装をシンプルに</div>
           <div class="kp-desc">
-            バリデーション省略により、<code>null</code> の代わりに <code>"undefined"</code> など不正なJSONが届く可能性がある。クライアント側で必ずエラーハンドリングを実装すること。
-            <div class="highlight-box warning">⚠️ デフォルトモードでは不正なJSONが文字列としてラップされる場合がある。Fine-Grainedでは生チャンクが来るためtry-catchが必須。</div>
+            実装時は以下3つの関数を用意すると管理しやすい：
+            <div class="code-block">def add_user_message(messages, text):
+    messages.append({"role": "user", "content": text})
+    return messages
+
+def add_assistant_message(messages, text):
+    messages.append({"role": "assistant", "content": text})
+    return messages
+
+def chat(messages):
+    response = client.messages.create(
+        model=model, max_tokens=1000, messages=messages
+    )
+    return response.content[0].text</div>
           </div>
         </div>
       </li>
       <li class="kp-item">
         <div class="kp-num">5</div>
         <div>
-          <div class="kp-heading">用途に応じたモード選択指針</div>
-          <div class="kp-desc">UIの即時更新やツール引数の早期処理が必要な場合はFine-Grainedを選ぶ。バリデーション遅延が許容できる場合はデフォルトで十分。まずデフォルトで始め、UX改善が必要なときだけFine-Grainedを検討する。</div>
+          <div class="kp-heading">アシスタントの返答もリストに追加する</div>
+          <div class="kp-desc">APIからの返答を受け取ったら <code>add_assistant_message</code> でリストに追加し、次のリクエスト時に含める。これを繰り返すことで会話が蓄積される。</div>
         </div>
       </li>
     </ul>
   </div>
 
   <div class="section" id="details">
-    <div class="section-label">③ 比較表</div>
-    <table class="compare-table">
-      <thead><tr>
-        <th>項目</th>
-        <th>デフォルトモード</th>
-        <th>Fine-Grainedモード（fine_grained: true）</th>
-      </tr></thead>
-      <tbody>
-        <tr>
-          <td>チャンク送信タイミング</td>
-          <td>キーバリューペア完成後・バリデーション後</td>
-          <td>生成直後、即時送信</td>
-        </tr>
-        <tr>
-          <td>APIサイドJSONバリデーション</td>
-          <td>あり（スキーマ検証）</td>
-          <td>なし（省略）</td>
-        </tr>
-        <tr>
-          <td>遅延パターン</td>
-          <td>バースト状（遅延→まとめて到着）</td>
-          <td>均一なリアルタイムストリーム</td>
-        </tr>
-        <tr>
-          <td>不正JSONリスク</td>
-          <td>低い（検証済み）</td>
-          <td>あり（"undefined"等の可能性）</td>
-        </tr>
-        <tr>
-          <td>クライアント側対応</td>
-          <td>最小限でOK</td>
-          <td>try-catchによるエラーハンドリング必須</td>
-        </tr>
-        <tr>
-          <td>推奨ユースケース</td>
-          <td>信頼性重視・バックエンド処理</td>
-          <td>即時UI更新・引数の早期処理</td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="section-label">③ 会話フロー（ステップ）</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <strong>空のメッセージリストを用意</strong>
+          <p><code>messages = []</code> で空リストを初期化する。これがチャット全体の履歴バッファになる。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <strong>ユーザーのメッセージを追加</strong>
+          <p><code>add_user_message(messages, "質問内容")</code> でリストに追加。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <strong>全履歴をAPIに送信して返答を取得</strong>
+          <p><code>response = chat(messages)</code> でメッセージ全体をAPIに渡して応答を受け取る。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <strong>アシスタントの返答を履歴に追加</strong>
+          <p><code>add_assistant_message(messages, response)</code> で返答もリストに追加する。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <strong>ステップ2〜4を繰り返す</strong>
+          <p>次のユーザー入力でステップ2に戻り、会話を続ける。リストは毎回蓄積されていく。</p>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="section" id="glossary">
     <div class="section-label">④ 用語集（初心者向け解説）</div>
     <div class="glossary-grid">
       <div class="glossary-item">
-        <div class="glossary-term">content_block_delta</div>
-        <div class="glossary-desc">ストリーミング中にテキストのかけら（チャンク）を伝えるイベント。通常のテキスト応答で使われる。</div>
+        <div class="glossary-term">マルチターン会話</div>
+        <div class="glossary-desc">「こんにちは」→「こんにちは！」→「じゃあ〜は？」のように複数回やり取りが続く会話のこと。</div>
       </div>
       <div class="glossary-item">
-        <div class="glossary-term">input_json_delta</div>
-        <div class="glossary-desc">ツール呼び出しのJSON引数のかけらを伝えるストリーミングイベント。ツール使用時に追加される。</div>
+        <div class="glossary-term">ステートレス</div>
+        <div class="glossary-desc">「状態を覚えない」という意味。リクエストのたびに白紙から始まる。前の会話を覚えていない状態。</div>
       </div>
       <div class="glossary-item">
-        <div class="glossary-term">partial_json</div>
-        <div class="glossary-desc">そのチャンクで届いたJSONの断片。単体では不完全なJSONであることが多い。</div>
+        <div class="glossary-term">メッセージ履歴</div>
+        <div class="glossary-desc">これまでのやり取り（ユーザーとアシスタント両方）をリスト形式で記録したもの。文脈を伝えるために使う。</div>
       </div>
       <div class="glossary-item">
-        <div class="glossary-term">snapshot</div>
-        <div class="glossary-desc">その時点までに受信したJSONの累積文字列。これを使うと途中経過を追いやすい。</div>
+        <div class="glossary-term">role（ロール）</div>
+        <div class="glossary-desc">メッセージの送り主を示すキー。"user"（人間）か "assistant"（AI）かを区別する。</div>
       </div>
       <div class="glossary-item">
-        <div class="glossary-term">Fine-Grained</div>
-        <div class="glossary-desc">「細粒度」の意味。ツール呼び出し時にJSONバリデーションをスキップして即座にチャンクを送る設定。</div>
+        <div class="glossary-term">content（コンテンツ）</div>
+        <div class="glossary-desc">メッセージの本文テキスト。roleとセットで一つのメッセージを構成する。</div>
       </div>
       <div class="glossary-item">
-        <div class="glossary-term">バリデーション</div>
-        <div class="glossary-desc">データが正しい形式・構造かどうかをチェックすること。不正なデータを弾くための検証処理。</div>
-      </div>
-      <div class="glossary-item">
-        <div class="glossary-term">バースト</div>
-        <div class="glossary-desc">遅延の後にまとめてデータが一気に届く現象。デフォルトのツールストリーミングで見られる。</div>
-      </div>
-      <div class="glossary-item">
-        <div class="glossary-term">ストリーミング</div>
-        <div class="glossary-desc">完成を待たず、生成しながらリアルタイムで結果を少しずつ送り続ける技術。</div>
+        <div class="glossary-term">コンテキスト</div>
+        <div class="glossary-desc">「前後の文脈」のこと。過去のやり取りを渡すことで、AIが話の流れを理解できるようになる。</div>
       </div>
     </div>
   </div>
@@ -312,31 +304,31 @@
       <div class="qa-item">
         <div class="qa-q">
           <div class="q-badge">Q1</div>
-          <div class="q-text">Fine-Grainedモードを有効にするには、APIリクエストに何を追加しますか？</div>
+          <div class="q-text">Anthropic APIが「ステートレス」とはどういう意味ですか？マルチターン会話にどのような影響がありますか？</div>
         </div>
         <details>
           <summary>答えを見る</summary>
-          <div class="qa-a"><code>fine_grained: true</code> を追加する。これによりAPIサイドのJSONバリデーションが無効になり、生成直後のチャンクが即座に送信される。</div>
+          <div class="qa-a">ステートレスとは、APIが各リクエストを独立して処理し、過去の会話を自動で記憶しないということ。そのため、マルチターン会話を実現するには開発者がコード側でメッセージ履歴リストを管理し、毎リクエストに全履歴を含めて送信する必要がある。</div>
         </details>
       </div>
       <div class="qa-item">
         <div class="qa-q">
           <div class="q-badge">Q2</div>
-          <div class="q-text">デフォルトのツールストリーミングで遅延（バースト）が発生する理由を説明してください。</div>
+          <div class="q-text">マルチターン会話に必要な3つのヘルパー関数の名前と役割を答えてください。</div>
         </div>
         <details>
           <summary>答えを見る</summary>
-          <div class="qa-a">APIがJSONの完全なキーバリューペアが揃うまでバッファリングし、スキーマに対してバリデーションを行ってからチャンクを送信するため。検証が終わるとまとめてバーストで届く。</div>
+          <div class="qa-a">① <code>add_user_message(messages, text)</code>: ユーザーメッセージを履歴リストに追加する。② <code>add_assistant_message(messages, text)</code>: アシスタントの返答を履歴リストに追加する。③ <code>chat(messages)</code>: メッセージ履歴全体をAPIに送信してレスポンスを返す。</div>
         </details>
       </div>
       <div class="qa-item">
         <div class="qa-q">
           <div class="q-badge">Q3</div>
-          <div class="q-text">Fine-Grainedモードを使う場合、クライアント側でどのような対応が必要ですか？その理由も答えてください。</div>
+          <div class="q-text">APIからの返答を受け取った後、次のリクエストを送る前に必ずやるべきことは何ですか？</div>
         </div>
         <details>
           <summary>答えを見る</summary>
-          <div class="qa-a">try-catchでJSONパースエラーをキャッチするエラーハンドリングを実装する必要がある。理由はAPIバリデーションが省略されるため、<code>null</code>の代わりに<code>"undefined"</code>等の不正なJSONが届く可能性があるから。</div>
+          <div class="qa-a"><code>add_assistant_message</code> を使ってAPIの返答をメッセージ履歴リストに追加すること。これをしないと、次のリクエスト時にアシスタントの発言が抜けた不完全な履歴が送られてしまい、会話の文脈が途切れる。</div>
         </details>
       </div>
     </div>
