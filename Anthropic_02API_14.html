@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fine Grained Tool Calling | Anthropic Academy</title>
+<title>System prompts | Anthropic Academy</title>
 <style>
   :root {
     --blue: #0096d6; --blue-dark: #005f8a; --blue-light: #e0f2fe;
@@ -130,8 +130,8 @@
 
 <header>
   <div class="course-label">Claude with the Anthropic API</div>
-  <h1>Fine Grained Tool Calling</h1>
-  <div class="lecture-title-en"></div>
+  <h1>System prompts</h1>
+  <div class="lecture-title-en">System prompts</div>
   <div class="header-meta">
     <span>📅 2026/04/26</span>
     <span>⏱ 約10分</span>
@@ -162,7 +162,7 @@
   <div class="section" id="summary">
     <div class="section-label">① 一言まとめ</div>
     <div class="summary-box">
-      このレクチャーでは<strong>ツール使用時のストリーミング</strong>と、JSONバリデーションを無効化して即時チャンクを受け取る<strong>Fine-Grainedツール呼び出し</strong>を学ぶ。デフォルトモードとFine-Grainedモードのトレードオフを理解することで、レスポンシブなUIとデータ整合性のバランスを適切に取れるようになる。
+      システムプロンプトは、Claudeの<strong>応答スタイルとトーン</strong>をロール（役割）の割り当てによりカスタマイズする技術。「<strong>何を答えるか</strong>」ではなく「<strong>どう答えるか</strong>」を制御することで、同じ質問でも目的に応じた全く異なる応答スタイルを実現できる。
     </div>
   </div>
 
@@ -172,97 +172,106 @@
       <li class="kp-item">
         <div class="kp-num">1</div>
         <div>
-          <div class="kp-heading">ツールストリーミングの追加イベント</div>
+          <div class="kp-heading">システムプロンプトの目的：「どう答えるか」の制御</div>
           <div class="kp-desc">
-            通常のストリーミングに加え、ツール使用時は <code>input_json_delta</code> イベントが追加される。各イベントは <code>partial_json</code>（そのチャンクの断片）と <code>snapshot</code>（受信済み累積）の2フィールドを持つ。
-            <div class="code-block">// ストリーミングイベント例
-{ type: "input_json_delta",
-  partial_json: '"city": "Tokyo"',
-  snapshot: '{"city": "Tokyo"' }</div>
+            システムプロンプトはClaudeの応答「内容」ではなく「スタイルと姿勢」を制御する。同じ質問でも、割り当てるロールによって応答の方向性が変わる。
+            <div class="highlight-box">💡 例：「2 + 2 = ?」に対して<br>・ロールなし → 「4です」<br>・数学チューター → 「一緒に考えてみましょう。2つのリンゴと2つのリンゴを合わせると…？」</div>
           </div>
         </div>
       </li>
       <li class="kp-item">
         <div class="kp-num">2</div>
         <div>
-          <div class="kp-heading">デフォルト動作の遅延原因</div>
-          <div class="kp-desc">デフォルトでは、APIがJSONの完全なキーバリューペアが揃うまでバッファリングし、スキーマに対してバリデーションを行ってから送信する。そのため処理が遅延し、検証完了後にまとめてバースト状に届く。</div>
+          <div class="kp-heading">実装方法：<code>system</code> キーワード引数に文字列を渡す</div>
+          <div class="kp-desc">
+            <code>client.messages.create()</code> の <code>system</code> パラメータにプレーンな文字列として渡す。
+            <div class="code-block">response = client.messages.create(
+    model="claude-opus-4-5",
+    max_tokens=1024,
+    system="You are a patient math tutor. Give hints, not answers.",
+    messages=[{"role": "user", "content": "What is 2 + 2?"}]
+)</div>
+          </div>
         </div>
       </li>
       <li class="kp-item">
         <div class="kp-num">3</div>
         <div>
-          <div class="kp-heading">Fine-Grainedモードの有効化</div>
+          <div class="kp-heading">構造：最初の行でロール宣言 → 具体的な行動指示</div>
           <div class="kp-desc">
-            <code>fine_grained: true</code> を設定するとAPIサイドのJSONバリデーションが無効化され、生成直後のチャンクが即送信される。
-            <div class="code-block">client.messages.stream({
-  model: "claude-opus-4-5",
-  tools: [...],
-  fine_grained: true,   // ← バリデーション無効化
-  messages: [...]
-})</div>
-            <div class="highlight-box success">✅ 従来のストリーミング体験と同等のリアルタイム応答が実現できる</div>
+            システムプロンプトの典型的な構造は「役割の宣言」を最初に置き、続けて具体的な振る舞いの指示を記述する。
+            <div class="code-block">You are a patient math tutor.
+Help students learn by giving hints rather than direct answers.
+Ask guiding questions to encourage student thinking.
+Never simply provide the answer without explanation.</div>
           </div>
         </div>
       </li>
       <li class="kp-item">
         <div class="kp-num">4</div>
         <div>
-          <div class="kp-heading">Fine-Grainedのリスクと対処</div>
+          <div class="kp-heading">Noneケースの実装：システムプロンプトが不要な場合は除外する</div>
           <div class="kp-desc">
-            バリデーション省略により、<code>null</code> の代わりに <code>"undefined"</code> など不正なJSONが届く可能性がある。クライアント側で必ずエラーハンドリングを実装すること。
-            <div class="highlight-box warning">⚠️ デフォルトモードでは不正なJSONが文字列としてラップされる場合がある。Fine-Grainedでは生チャンクが来るためtry-catchが必須。</div>
+            システムプロンプトが <code>None</code> の場合は <code>system</code> パラメータ自体を渡さない。paramsディクショナリを使った <code>**</code> アンパックが便利。
+            <div class="code-block">def chat(messages, system=None):
+    params = {
+        "model": "claude-opus-4-5",
+        "max_tokens": 1024,
+        "messages": messages,
+    }
+    if system:
+        params["system"] = system
+    return client.messages.create(**params)</div>
+            <div class="highlight-box warning">⚠️ <code>system=None</code> をそのままAPIに渡すとエラーになることがある。条件分岐で除外するのがベストプラクティス。</div>
           </div>
         </div>
       </li>
       <li class="kp-item">
         <div class="kp-num">5</div>
         <div>
-          <div class="kp-heading">用途に応じたモード選択指針</div>
-          <div class="kp-desc">UIの即時更新やツール引数の早期処理が必要な場合はFine-Grainedを選ぶ。バリデーション遅延が許容できる場合はデフォルトで十分。まずデフォルトで始め、UX改善が必要なときだけFine-Grainedを検討する。</div>
+          <div class="kp-heading">ユースケース例：数学チューター</div>
+          <div class="kp-desc">
+            「あなたは忍耐強い数学チューターです」というロールを与えると、Claudeは直接答えを出さず、ヒントや誘導質問で学習者の思考を促すようになる。このように、同一のロジックで異なるペルソナを使い分けられるのがシステムプロンプトの強力な点。
+            <div class="highlight-box success">✅ システムプロンプトはマルチターン会話（チャット）全体に継続的に適用される。最初に一度設定すれば会話中ずっと有効。</div>
+          </div>
         </div>
       </li>
     </ul>
   </div>
 
   <div class="section" id="details">
-    <div class="section-label">③ 比較表</div>
+    <div class="section-label">③ システムプロンプトあり vs なし 比較表</div>
     <table class="compare-table">
       <thead><tr>
-        <th>項目</th>
-        <th>デフォルトモード</th>
-        <th>Fine-Grainedモード（fine_grained: true）</th>
+        <th>観点</th>
+        <th>システムプロンプトなし</th>
+        <th>システムプロンプトあり</th>
       </tr></thead>
       <tbody>
         <tr>
-          <td>チャンク送信タイミング</td>
-          <td>キーバリューペア完成後・バリデーション後</td>
-          <td>生成直後、即時送信</td>
+          <td>応答スタイル</td>
+          <td>デフォルト（汎用的・中立的）</td>
+          <td>ロールに応じた特化スタイル</td>
         </tr>
         <tr>
-          <td>APIサイドJSONバリデーション</td>
-          <td>あり（スキーマ検証）</td>
-          <td>なし（省略）</td>
+          <td>質問への対応</td>
+          <td>直接・簡潔に答える</td>
+          <td>ロールの目的に沿った応答（例：ヒントのみ）</td>
         </tr>
         <tr>
-          <td>遅延パターン</td>
-          <td>バースト状（遅延→まとめて到着）</td>
-          <td>均一なリアルタイムストリーム</td>
+          <td>実装</td>
+          <td><code>system</code> パラメータ省略</td>
+          <td><code>system="..."</code> を <code>create()</code> に追加</td>
         </tr>
         <tr>
-          <td>不正JSONリスク</td>
-          <td>低い（検証済み）</td>
-          <td>あり（"undefined"等の可能性）</td>
+          <td>会話全体への影響</td>
+          <td>なし</td>
+          <td>マルチターン全体に継続適用される</td>
         </tr>
         <tr>
-          <td>クライアント側対応</td>
-          <td>最小限でOK</td>
-          <td>try-catchによるエラーハンドリング必須</td>
-        </tr>
-        <tr>
-          <td>推奨ユースケース</td>
-          <td>信頼性重視・バックエンド処理</td>
-          <td>即時UI更新・引数の早期処理</td>
+          <td>典型的な用途</td>
+          <td>一般的なQ&A・情報検索</td>
+          <td>チューター・カスタマーサポート・キャラクター設定</td>
         </tr>
       </tbody>
     </table>
@@ -272,36 +281,28 @@
     <div class="section-label">④ 用語集（初心者向け解説）</div>
     <div class="glossary-grid">
       <div class="glossary-item">
-        <div class="glossary-term">content_block_delta</div>
-        <div class="glossary-desc">ストリーミング中にテキストのかけら（チャンク）を伝えるイベント。通常のテキスト応答で使われる。</div>
+        <div class="glossary-term">システムプロンプト</div>
+        <div class="glossary-desc">Claudeの「役割」や「振る舞い方」を事前に設定するための特別な指示文。会話全体の姿勢を決める。</div>
       </div>
       <div class="glossary-item">
-        <div class="glossary-term">input_json_delta</div>
-        <div class="glossary-desc">ツール呼び出しのJSON引数のかけらを伝えるストリーミングイベント。ツール使用時に追加される。</div>
+        <div class="glossary-term">ロール（役割）</div>
+        <div class="glossary-desc">「あなたは○○です」とClaudeに担わせる役割。数学チューター・カスタマーサポート担当など。</div>
       </div>
       <div class="glossary-item">
-        <div class="glossary-term">partial_json</div>
-        <div class="glossary-desc">そのチャンクで届いたJSONの断片。単体では不完全なJSONであることが多い。</div>
+        <div class="glossary-term"><code>system</code> パラメータ</div>
+        <div class="glossary-desc"><code>client.messages.create()</code> に渡す引数のひとつ。文字列でシステムプロンプトを指定する。</div>
       </div>
       <div class="glossary-item">
-        <div class="glossary-term">snapshot</div>
-        <div class="glossary-desc">その時点までに受信したJSONの累積文字列。これを使うと途中経過を追いやすい。</div>
+        <div class="glossary-term"><code>**</code> アンパック（展開）</div>
+        <div class="glossary-desc">Pythonの辞書（dict）をキーワード引数として関数に渡す記法。<code>func(**{"a": 1})</code> は <code>func(a=1)</code> と同じ。</div>
       </div>
       <div class="glossary-item">
-        <div class="glossary-term">Fine-Grained</div>
-        <div class="glossary-desc">「細粒度」の意味。ツール呼び出し時にJSONバリデーションをスキップして即座にチャンクを送る設定。</div>
+        <div class="glossary-term">paramsディクショナリ</div>
+        <div class="glossary-desc">APIリクエストに渡す引数を辞書形式でまとめたもの。条件に応じてキーを追加してからアンパックで渡せる。</div>
       </div>
       <div class="glossary-item">
-        <div class="glossary-term">バリデーション</div>
-        <div class="glossary-desc">データが正しい形式・構造かどうかをチェックすること。不正なデータを弾くための検証処理。</div>
-      </div>
-      <div class="glossary-item">
-        <div class="glossary-term">バースト</div>
-        <div class="glossary-desc">遅延の後にまとめてデータが一気に届く現象。デフォルトのツールストリーミングで見られる。</div>
-      </div>
-      <div class="glossary-item">
-        <div class="glossary-term">ストリーミング</div>
-        <div class="glossary-desc">完成を待たず、生成しながらリアルタイムで結果を少しずつ送り続ける技術。</div>
+        <div class="glossary-term">マルチターン会話</div>
+        <div class="glossary-desc">複数の発言を往復する会話。システムプロンプトはこの会話全体に渡って有効になる。</div>
       </div>
     </div>
   </div>
@@ -312,31 +313,31 @@
       <div class="qa-item">
         <div class="qa-q">
           <div class="q-badge">Q1</div>
-          <div class="q-text">Fine-Grainedモードを有効にするには、APIリクエストに何を追加しますか？</div>
+          <div class="q-text">システムプロンプトで制御するのは「何を答えるか」と「どう答えるか」のどちらですか？</div>
         </div>
         <details>
           <summary>答えを見る</summary>
-          <div class="qa-a"><code>fine_grained: true</code> を追加する。これによりAPIサイドのJSONバリデーションが無効になり、生成直後のチャンクが即座に送信される。</div>
+          <div class="qa-a">「どう答えるか」。システムプロンプトはClaudeの応答スタイル・トーン・姿勢を制御するもので、情報の内容自体ではなく応答のアプローチを変える。</div>
         </details>
       </div>
       <div class="qa-item">
         <div class="qa-q">
           <div class="q-badge">Q2</div>
-          <div class="q-text">デフォルトのツールストリーミングで遅延（バースト）が発生する理由を説明してください。</div>
+          <div class="q-text">システムプロンプトが提供されない（<code>None</code>）場合、どのように実装すればよいですか？</div>
         </div>
         <details>
           <summary>答えを見る</summary>
-          <div class="qa-a">APIがJSONの完全なキーバリューペアが揃うまでバッファリングし、スキーマに対してバリデーションを行ってからチャンクを送信するため。検証が終わるとまとめてバーストで届く。</div>
+          <div class="qa-a">paramsディクショナリを使って条件分岐し、<code>system</code> が <code>None</code> でなければだけ辞書に追加する。その後 <code>**params</code> でアンパックして <code>create()</code> に渡すことで、<code>system</code> パラメータ自体を渡さないようにできる。</div>
         </details>
       </div>
       <div class="qa-item">
         <div class="qa-q">
           <div class="q-badge">Q3</div>
-          <div class="q-text">Fine-Grainedモードを使う場合、クライアント側でどのような対応が必要ですか？その理由も答えてください。</div>
+          <div class="q-text">数学チューターのシステムプロンプトを設定すると、Claudeの応答はどう変わりますか？</div>
         </div>
         <details>
           <summary>答えを見る</summary>
-          <div class="qa-a">try-catchでJSONパースエラーをキャッチするエラーハンドリングを実装する必要がある。理由はAPIバリデーションが省略されるため、<code>null</code>の代わりに<code>"undefined"</code>等の不正なJSONが届く可能性があるから。</div>
+          <div class="qa-a">直接的な答えを出さず、ヒントや誘導質問を通じて学習者自身が考えて解答にたどり着けるよう促す。同じ「2+2は？」という質問でも、答え「4」を言う代わりに考え方を一緒に探る応答になる。</div>
         </details>
       </div>
     </div>
