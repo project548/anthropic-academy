@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>コース全体マップ — Claude API 開発の全技術体系 | Anthropic Academy</title>
+<style>
+  :root {
+    --blue: #0096d6; --blue-dark: #005f8a; --blue-light: #e0f2fe;
+    --orange: #f07800; --orange-light: #fff3e8; --orange-dark: #a85200;
+    --bg: #f5f7fa; --surface: #ffffff; --surface2: #f8fafc;
+    --text: #1a1a2e; --text-sub: #374151; --text-muted: #6b7280;
+    --border: #d1d7dc; --border-light: #e5e7eb;
+    --success: #16a34a; --warning: #f59e0b; --danger: #dc2626;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.06); --shadow: 0 2px 8px rgba(0,0,0,.08); --shadow-lg: 0 8px 24px rgba(0,0,0,.10);
+    --radius: 8px; --radius-lg: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--bg); color: var(--text); line-height: 1.75; -webkit-font-smoothing: antialiased; }
+
+  /* Header */
+  header { background: linear-gradient(135deg, #003d5c 0%, var(--blue-dark) 60%, #0077aa 100%); padding: 48px 40px 40px; color: #fff; position: relative; overflow: hidden; border-bottom: 4px solid var(--orange); }
+  header::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 85% 20%, rgba(240,120,0,.20) 0%, transparent 55%), radial-gradient(ellipse at 10% 90%, rgba(255,255,255,.05) 0%, transparent 50%); }
+  header > * { position: relative; max-width: 860px; margin: 0 auto; }
+  .course-label { font-size: 11px; letter-spacing: .15em; opacity: .75; text-transform: uppercase; margin-bottom: 10px; }
+  header h1 { font-size: 1.9rem; font-weight: 800; line-height: 1.35; }
+  .header-meta { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 10px; font-size: 13px; }
+  .header-meta span { background: rgba(255,255,255,.14); color: #fff; padding: 5px 14px; border-radius: 4px; border: 1px solid rgba(255,255,255,.2); font-weight: 500; }
+
+  /* Source bar */
+  .source-bar { background: #002a3f; padding: 9px 40px; }
+  .source-bar a { color: #7dd3fc; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+  .source-bar a::before { content: "🔗"; font-size: 12px; }
+  .source-bar a:hover { color: #fff; text-decoration: underline; }
+
+  /* Progress bar */
+  .progress-bar { background: var(--surface); padding: 11px 40px; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid var(--border-light); }
+  .badge { padding: 5px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+  .badge-done { background: #dcfce7; color: #15803d; }
+  .badge-todo { background: #f3f4f6; color: #9ca3af; border: 1.5px solid #e5e7eb; }
+
+  /* Sticky nav */
+  nav { background: var(--surface); padding: 10px 24px; display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--border-light); position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow-sm); }
+  nav a { color: var(--text-sub); text-decoration: none; font-size: 12px; font-weight: 600; padding: 7px 13px; border-radius: 6px; transition: all .15s; white-space: nowrap; }
+  nav a:hover { color: var(--blue-dark); background: var(--blue-light); }
+
+  /* Main */
+  main { max-width: 860px; margin: 0 auto; padding: 40px 24px 80px; display: flex; flex-direction: column; gap: 24px; }
+
+  /* Section card */
+  .section { background: var(--surface); border-radius: var(--radius-lg); padding: 28px 32px; box-shadow: var(--shadow-sm); scroll-margin-top: 80px; }
+  .section-label { font-size: 13px; font-weight: 800; color: var(--blue-dark); margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid var(--orange); letter-spacing: .04em; }
+
+  /* ① 一言まとめ */
+  .summary-box { background: linear-gradient(135deg, var(--blue-light), #f0fdf4); border-radius: var(--radius); padding: 20px 24px; font-size: 15px; font-weight: 500; line-height: 1.85; color: var(--blue-dark); }
+  .summary-box strong { color: var(--orange-dark); }
+
+  /* ② キーポイント */
+  .kp-list { display: flex; flex-direction: column; gap: 14px; list-style: none; }
+  .kp-item { display: flex; gap: 16px; align-items: flex-start; background: var(--surface2); border-radius: var(--radius); padding: 16px 18px; border-left: 4px solid var(--blue); }
+  .kp-num { min-width: 30px; height: 30px; background: var(--blue-dark); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .kp-heading { font-weight: 700; font-size: 14px; color: var(--blue-dark); margin-bottom: 5px; }
+  .kp-desc { font-size: 13.5px; color: var(--text-sub); line-height: 1.7; }
+
+  /* ③ 比較表 */
+  .compare-table { width: 100%; border-collapse: collapse; font-size: 13.5px; border-radius: var(--radius); overflow: hidden; }
+  .compare-table thead tr { border-bottom: 2px solid var(--orange); background: var(--surface2); }
+  .compare-table th { padding: 11px 16px; text-align: left; font-weight: 700; color: var(--blue-dark); font-size: 12px; }
+  .compare-table td { padding: 12px 16px; border-bottom: 1px solid var(--border-light); vertical-align: top; }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr:hover td { background: var(--blue-light); }
+
+  /* ③ ステップ */
+  .steps { display: flex; flex-direction: column; gap: 12px; }
+  .step { display: flex; gap: 16px; background: var(--surface2); border-radius: var(--radius); padding: 16px 18px; border-left: 4px solid var(--blue); }
+  .step-num { background: var(--blue-dark); color: #fff; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .step-body strong { display: block; font-size: 14px; font-weight: 700; margin-bottom: 4px; color: var(--blue-dark); }
+  .step-body p { font-size: 13.5px; color: var(--text-sub); line-height: 1.65; }
+
+  /* ④ 用語集 */
+  .glossary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 560px) { .glossary-grid { grid-template-columns: 1fr; } }
+  .glossary-item { background: var(--surface2); border-left: 3px solid var(--blue); border-radius: 0 var(--radius) var(--radius) 0; padding: 13px 15px; }
+  .glossary-term { font-weight: 700; font-size: 14px; color: var(--blue-dark); margin-bottom: 4px; }
+  .glossary-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+
+  /* ⑤ 理解度チェック */
+  .qa-list { display: flex; flex-direction: column; }
+  .qa-item { padding: 18px 0; border-bottom: 1px solid var(--border-light); }
+  .qa-item:last-child { border-bottom: none; }
+  .qa-q { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 8px; }
+  .q-badge { min-width: 30px; height: 30px; background: var(--orange); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .q-text { font-weight: 600; font-size: 14.5px; padding-top: 4px; }
+  details { margin-left: 44px; }
+  summary { font-size: 13px; color: var(--blue); cursor: pointer; font-weight: 600; padding: 4px 0; user-select: none; }
+  summary:hover { color: var(--blue-dark); }
+  .qa-a { font-size: 13.5px; color: var(--text-sub); padding: 10px 14px; border-left: 3px solid var(--blue); margin-top: 8px; line-height: 1.75; background: var(--blue-light); border-radius: 0 var(--radius) var(--radius) 0; }
+
+  /* ⑥ メモ */
+  .memo-area { width: 100%; min-height: 120px; background: #fffbf2; border: 1.5px dashed var(--orange); border-radius: var(--radius); padding: 14px; font-size: 14px; font-family: inherit; line-height: 1.75; resize: vertical; outline: none; color: var(--text); }
+  .memo-area:focus { box-shadow: 0 0 0 3px rgba(240,120,0,.12); border-style: solid; }
+  .memo-area::placeholder { color: #ccc; }
+  .memo-hint { font-size: 12px; color: #bbb; margin-top: 6px; }
+
+  /* 動的要素 */
+  .code-block { background: #1e1e1e; border-radius: var(--radius); padding: 16px 18px; font-family: "SF Mono","Consolas",monospace; font-size: 13px; color: #d4d4d4; overflow-x: auto; margin: 12px 0; line-height: 1.7; }
+  .highlight-box { border-left: 4px solid var(--blue); background: var(--blue-light); padding: 14px 18px; border-radius: 0 var(--radius) var(--radius) 0; margin: 12px 0; font-size: 13.5px; color: var(--text-sub); line-height: 1.75; }
+  .highlight-box.warning { border-color: var(--warning); background: #fef3c7; color: #78350f; }
+  .highlight-box.success { border-color: var(--success); background: #dcfce7; color: #14532d; }
+  .highlight-box.danger  { border-color: var(--danger);  background: #fee2e2; color: #7f1d1d; }
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+  .tag-blue   { background: var(--blue-light); color: var(--blue-dark); }
+  .tag-orange { background: var(--orange-light); color: var(--orange-dark); }
+  .tag-green  { background: #dcfce7; color: #15803d; }
+  .tag-gray   { background: #f3f4f6; color: #6b7280; }
+
+  footer { text-align: center; padding: 36px 24px; color: var(--text-muted); font-size: 12px; background: var(--surface2); border-top: 1px solid var(--border-light); margin-top: 8px; }
+  footer strong { color: var(--text-sub); font-size: 13px; display: block; margin-bottom: 4px; }
+
+  @media (max-width: 640px) {
+    header { padding: 32px 20px; } header h1 { font-size: 1.4rem; }
+    .source-bar, .progress-bar { padding-left: 20px; padding-right: 20px; }
+    .section { padding: 20px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="course-label">Claude with the Anthropic API</div>
+  <h1>コース全体マップ — Claude API 開発の全技術体系</h1>
+  <div class="header-meta">
+    <span>📅 2026/04/26</span>
+    <span>⏱ 約90分</span>
+    <span>📌 Course Overview</span>
+  </div>
+</header>
+
+<div class="source-bar">
+  <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287725" target="_blank" rel="noopener">https://anthropic.skilljar.com/claude-with-the-anthropic-api/287725</a>
+</div>
+
+<div class="progress-bar">
+  <span class="badge badge-todo">1巡目</span>
+  <span class="badge badge-todo">2巡目</span>
+</div>
+
+<nav>
+  <a href="#summary">① まとめ</a>
+  <a href="#keypoints">② キーポイント</a>
+  <a href="#details">③ 比較表</a>
+  <a href="#glossary">④ 用語集</a>
+  <a href="#check">⑤ 理解度チェック</a>
+  <a href="#memo">⑥ メモ</a>
+</nav>
+
+<main>
+
+  <div class="section" id="summary">
+    <div class="section-label">① 一言まとめ</div>
+    <div class="summary-box">
+      このコースでは<strong>Anthropic API を使ったClaude アプリ開発に必要な全技術</strong>を体系的に学ぶ。
+      モデル選択・APIリクエスト・ツール使用・RAGパイプライン・プロンプトエンジニアリング・MCP・エージェント設計まで、
+      実際のプロダクト開発で使えるスキルセットが一度に身につく。
+    </div>
+  </div>
+
+  <div class="section" id="keypoints">
+    <div class="section-label">② キーポイント</div>
+    <ul class="kp-list">
+
+      <li class="kp-item">
+        <div class="kp-num">1</div>
+        <div>
+          <div class="kp-heading">Claudeモデル3種の使い分け</div>
+          <div class="kp-desc">
+            <span class="tag tag-blue">Haiku</span> 速度・低コスト・大量処理（推論機能なし）&nbsp;
+            <span class="tag tag-orange">Sonnet</span> バランス重視・コーディング得意・実用的なほとんどのケース&nbsp;
+            <span class="tag tag-green">Opus</span> 複雑な多段階タスク・深い推論・高コスト許容の場面。
+            1つのアプリ内でタスクごとに使い分けるのが現実的なアプローチ。
+          </div>
+        </div>
+      </li>
+
+      <li class="kp-item">
+        <div class="kp-num">2</div>
+        <div>
+          <div class="kp-heading">APIはステートレス — 全履歴を毎回送る</div>
+          <div class="kp-desc">
+            Anthropic API はリクエスト間でメッセージを保存しない。マルチターン会話を実現するには
+            過去の全メッセージをコードで管理し、毎回まとめて送信する必要がある。
+            <div class="code-block">client.messages.create(
+  model="claude-sonnet-4-6",
+  max_tokens=1000,
+  messages=[
+    {"role": "user",      "content": "最初の質問"},
+    {"role": "assistant", "content": "最初の回答"},
+    {"role": "user",      "content": "続きの質問"},  # 全履歴を毎回送る
+  ]
+)</div>
+          </div>
+        </div>
+      </li>
+
+      <li class="kp-item">
+        <div class="kp-num">3</div>
+        <div>
+          <div class="kp-heading">プロンプトエンジニアリング4技法</div>
+          <div class="kp-desc">
+            ①<strong>明確な動詞で始める</strong>（"Generate a one-day meal plan…"）
+            ②<strong>属性/手順ガイドラインを追加</strong>（出力フォーマット・考慮すべき手順）
+            ③<strong>XMLタグで構造化</strong>（&lt;athlete_info&gt; 等で入力データを明示）
+            ④<strong>例示を追加</strong>（one-shot / multi-shot）
+            <div class="highlight-box success">✅ 4つを組み合わせることでスコアが 2.32 → 7.86 に改善した実例あり。プロンプト評価パイプライン（データセット生成 → LLM実行 → モデルベース採点）で客観的に計測すること。</div>
+          </div>
+        </div>
+      </li>
+
+      <li class="kp-item">
+        <div class="kp-num">4</div>
+        <div>
+          <div class="kp-heading">ツール使用のループ構造</div>
+          <div class="kp-desc">
+            ツールスキーマを渡す → Claude が <code>tool_use</code> ブロックで呼び出し要求 → サーバーが実行 → <code>tool_result</code> を返す → 繰り返し。
+            <code>stop_reason == "tool_use"</code> の間ループを続け、そうでなければ終了。
+            <div class="code-block">while True:
+    response = chat(messages, tools=tools)
+    messages.append(response)
+    if response.stop_reason != "tool_use":
+        break
+    tool_results = run_tools(response)   # tool_use ブロックを実行
+    messages.append({"role": "user", "content": tool_results})</div>
+            <div class="highlight-box">ℹ️ Batch Tool パターンを使うと、Claude が複数ツールを1リクエストで並列呼び出しできる。逐次呼び出しの往復を削減。</div>
+          </div>
+        </div>
+      </li>
+
+      <li class="kp-item">
+        <div class="kp-num">5</div>
+        <div>
+          <div class="kp-heading">RAGパイプライン — 大規模文書の活用</div>
+          <div class="kp-desc">
+            ① チャンキング（サイズ/構造/セマンティック）→ ② 埋め込み生成（Voyage AI）→ ③ ベクトルDB保存 →
+            ④ クエリ変換 → ⑤ <strong>ハイブリッド検索（セマンティック + BM25）</strong> → ⑥ Reciprocal Rank Fusion で統合 →
+            ⑦ Reranking（LLM）→ ⑧ プロンプト組み立て。
+            <div class="highlight-box">ℹ️ Contextual Retrieval: チャンクを埋め込む前に LLM で文書全体のコンテキストを付加すると検索精度が大幅に向上する。</div>
+          </div>
+        </div>
+      </li>
+
+      <li class="kp-item">
+        <div class="kp-num">6</div>
+        <div>
+          <div class="kp-heading">MCPの本質 — ツール実装負担をオフロード</div>
+          <div class="kp-desc">
+            MCP（Model Context Protocol）は Claude とサービスをつなぐ標準プロトコル。
+            サーバー側が <strong>Tools（アクション）</strong>・<strong>Resources（データ）</strong>・<strong>Prompts（テンプレート）</strong> を提供し、
+            開発者はツールスキーマの実装から解放される。Claude Code 自体もMCPクライアントとして動作し、
+            <code>claude mcp add</code> コマンドで任意のサーバーを接続できる。
+          </div>
+        </div>
+      </li>
+
+      <li class="kp-item">
+        <div class="kp-num">7</div>
+        <div>
+          <div class="kp-heading">エージェント vs ワークフロー — 信頼性を優先</div>
+          <div class="kp-desc">
+            <strong>ワークフロー</strong>：手順が明確なタスク向け。高信頼性・テスト容易・完了率が高い。
+            チェーン / 並列化 / ルーティング / 評価-最適化の4パターンがある。<br>
+            <strong>エージェント</strong>：手順が不明なタスク向け。柔軟だが完了率が低下する。
+            <div class="highlight-box warning">⚠️ エージェントは便利に見えるが完了率が下がる。まずワークフローで解決できないかを検討すること。「ユーザーは100%動くプロダクトを求めている」</div>
+          </div>
+        </div>
+      </li>
+
+    </ul>
+  </div>
+
+  <div class="section" id="details">
+    <div class="section-label">③ 比較表</div>
+
+    <table class="compare-table">
+      <thead><tr>
+        <th>項目</th>
+        <th>ワークフロー</th>
+        <th>エージェント</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>手順の決め方</strong></td>
+          <td>開発者が事前に定義</td>
+          <td>Claude が実行時に動的決定</td>
+        </tr>
+        <tr>
+          <td><strong>信頼性</strong></td>
+          <td>高い（構造が固定）</td>
+          <td>低め（柔軟性の代償）</td>
+        </tr>
+        <tr>
+          <td><strong>テストしやすさ</strong></td>
+          <td>容易（実行経路が既知）</td>
+          <td>困難（経路が不定）</td>
+        </tr>
+        <tr>
+          <td><strong>ユーザー入力</strong></td>
+          <td>特定形式の入力が必要</td>
+          <td>不足情報を自分で質問できる</td>
+        </tr>
+        <tr>
+          <td><strong>向いているタスク</strong></td>
+          <td>手順が明確・繰り返し作業</td>
+          <td>手順未知・複雑な問題解決</td>
+        </tr>
+        <tr>
+          <td><strong>推奨優先度</strong></td>
+          <td><span class="tag tag-green">優先</span></td>
+          <td><span class="tag tag-gray">柔軟性が必要な場合のみ</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="margin-top:24px;">
+      <strong style="font-size:13px; color:var(--blue-dark); display:block; margin-bottom:10px;">主要ワークフローパターン</strong>
+      <table class="compare-table">
+        <thead><tr><th>パターン</th><th>概要</th><th>典型ユースケース</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>チェーニング</strong></td>
+            <td>前ステップの出力が次の入力になる直列処理</td>
+            <td>トピック選択→調査→スクリプト生成→動画投稿</td>
+          </tr>
+          <tr>
+            <td><strong>並列化</strong></td>
+            <td>サブタスクを同時実行して結果を集約</td>
+            <td>複数素材を並列評価して最良を選択</td>
+          </tr>
+          <tr>
+            <td><strong>ルーティング</strong></td>
+            <td>入力をカテゴリ分類し専用パイプラインに振り分け</td>
+            <td>教育/エンタメ/ビジネス別に最適なプロンプトを適用</td>
+          </tr>
+          <tr>
+            <td><strong>評価-最適化</strong></td>
+            <td>生成→評価→フィードバック→再生成のループ</td>
+            <td>画像→3Dモデル生成のイテレーション</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section" id="glossary">
+    <div class="section-label">④ 用語集（初心者向け解説）</div>
+    <div class="glossary-grid">
+      <div class="glossary-item">
+        <div class="glossary-term">トークン</div>
+        <div class="glossary-desc">文章を分割した最小単位。英語1単語≈1トークン、日本語は1〜2文字。APIの料金はトークン数で決まる。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">エンベディング</div>
+        <div class="glossary-desc">テキストの「意味」を-1〜+1の数値リストで表したもの。意味が近い文章ほど数値が近くなるため、RAGの類似検索に使う。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">RAG</div>
+        <div class="glossary-desc">大きな文書から質問に関係する部分だけを取り出してClaudeに渡す技術。コンテキスト長の制限問題を解決する。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">MCP</div>
+        <div class="glossary-desc">Model Context Protocol。ClaudeとサービスをつなぐためのAPI仕様。サービス側がツールを定義するため開発者の実装コストが下がる。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">プロンプトキャッシュ</div>
+        <div class="glossary-desc">同じ入力を再利用するとき前回の計算結果を再使用してコスト削減・高速化する仕組み。最長1時間有効。最低1024トークン必要。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">ストップシーケンス</div>
+        <div class="glossary-desc">Claudeの生成を止めるトリガー文字列。特定のテキストが出た瞬間に生成が止まる。構造化データ取得に便利。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">ツールスキーマ</div>
+        <div class="glossary-desc">Claudeに「どんなツールが使えるか」を教えるJSON定義。関数名・説明・引数の型と説明を記載する。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">アシスタントプリフィル</div>
+        <div class="glossary-desc">会話の最後にアシスタントメッセージを手動で追加してClaudeの回答方向を誘導する技法。構造化データ出力に効果的。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="check">
+    <div class="section-label">⑤ 理解度チェック</div>
+    <div class="qa-list">
+
+      <div class="qa-item">
+        <div class="qa-q">
+          <div class="q-badge">Q1</div>
+          <div class="q-text">Claudeの3つのモデルファミリー（Haiku・Sonnet・Opus）の強みと最適な使用場面を答えてください。</div>
+        </div>
+        <details>
+          <summary>答えを見る</summary>
+          <div class="qa-a">
+            <strong>Haiku</strong>：最速・最低コスト。推論機能なし。リアルタイム対話・高ボリューム処理・シンプルなタスクに最適。<br>
+            <strong>Sonnet</strong>：知性・速度・コストのバランスが良く、コーディング能力が高い。実用的なほとんどのユースケースに推奨。<br>
+            <strong>Opus</strong>：最高知性。複雑な多段階タスクや深い推論が必要な場面向け。コスト・レイテンシが高いのがトレードオフ。<br>
+            実際のアプリでは1種類に絞らず、タスクの性質に応じて複数モデルを使い分けるのが現実的。
+          </div>
+        </details>
+      </div>
+
+      <div class="qa-item">
+        <div class="qa-q">
+          <div class="q-badge">Q2</div>
+          <div class="q-text">RAGパイプラインで「ハイブリッド検索」が推奨される理由を、セマンティック検索とBM25それぞれの弱点をふまえて説明してください。</div>
+        </div>
+        <details>
+          <summary>答えを見る</summary>
+          <div class="qa-a">
+            <strong>セマンティック検索の弱点</strong>：意味的な類似度で検索するため、特定の専門用語や固有名詞の完全一致を見逃すことがある。<br>
+            <strong>BM25の弱点</strong>：キーワードの出現頻度に依存するため、言い回しが変わると見つけられない。<br>
+            <strong>ハイブリッド検索</strong>：両者の結果をReciprocal Rank Fusionで統合することで、意味的な近さと用語の一致を両立できる。「ENGチーム」と「エンジニアリングチーム」のような表記ゆれにも対応可能になる。
+          </div>
+        </details>
+      </div>
+
+      <div class="qa-item">
+        <div class="qa-q">
+          <div class="q-badge">Q3</div>
+          <div class="q-text">エージェントよりワークフローを優先すべき理由と、エージェントを選択すべき場面の判断基準を説明してください。</div>
+        </div>
+        <details>
+          <summary>答えを見る</summary>
+          <div class="qa-a">
+            <strong>ワークフロー優先の理由</strong>：手順が固定されているためテストしやすく、タスク完了率が高い。ユーザーは高機能より「確実に動く」ことを求めている。<br>
+            <strong>エージェントを選ぶ判断基準</strong>：タスクの実行手順が事前に特定できないとき。エージェントは提供したツールを組み合わせて動的に問題を解決できるが、完了率は低下する。<br>
+            <strong>原則</strong>：まずワークフローで解決できないかを検討し、どうしても手順が予測できない場合のみエージェントを採用する。
+          </div>
+        </details>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="section" id="memo">
+    <div class="section-label">⑥ 自分メモ（気づき・疑問・次に調べること）</div>
+    <textarea class="memo-area" placeholder="ここに自由にメモを書いてください..."></textarea>
+    <div class="memo-hint">※ このブラウザに自動保存されます</div>
+  </div>
+
+</main>
+
+<footer>
+  <strong>Claude with the Anthropic API</strong>
+  Generated by <code>/anthropic-academy-html</code>
+</footer>
+
+<script>
+(function() {
+  var key = 'memo_' + location.pathname.split('/').pop();
+  var ta = document.querySelector('.memo-area');
+  var saved = localStorage.getItem(key);
+  if (saved) ta.value = saved;
+  ta.addEventListener('input', function() { localStorage.setItem(key, ta.value); });
+})();
+</script>
+
+</body>
+</html>
