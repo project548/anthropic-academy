@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Temperature（温度パラメーター） | Anthropic Academy</title>
+<style>
+  :root {
+    --blue: #0096d6; --blue-dark: #005f8a; --blue-light: #e0f2fe;
+    --orange: #f07800; --orange-light: #fff3e8; --orange-dark: #a85200;
+    --bg: #f5f7fa; --surface: #ffffff; --surface2: #f8fafc;
+    --text: #1a1a2e; --text-sub: #374151; --text-muted: #6b7280;
+    --border: #d1d7dc; --border-light: #e5e7eb;
+    --success: #16a34a; --warning: #f59e0b; --danger: #dc2626;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.06); --shadow: 0 2px 8px rgba(0,0,0,.08); --shadow-lg: 0 8px 24px rgba(0,0,0,.10);
+    --radius: 8px; --radius-lg: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--bg); color: var(--text); line-height: 1.75; -webkit-font-smoothing: antialiased; }
+
+  header { background: linear-gradient(135deg, #003d5c 0%, var(--blue-dark) 60%, #0077aa 100%); padding: 48px 40px 40px; color: #fff; position: relative; overflow: hidden; border-bottom: 4px solid var(--orange); }
+  header::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 85% 20%, rgba(240,120,0,.20) 0%, transparent 55%), radial-gradient(ellipse at 10% 90%, rgba(255,255,255,.05) 0%, transparent 50%); }
+  header > * { position: relative; max-width: 860px; margin: 0 auto; }
+  .course-label { font-size: 11px; letter-spacing: .15em; opacity: .75; text-transform: uppercase; margin-bottom: 10px; }
+  header h1 { font-size: 1.9rem; font-weight: 800; line-height: 1.35; }
+  .lecture-title-en { font-size: 1rem; opacity: .6; margin-top: 6px; font-weight: 400; letter-spacing: .04em; font-family: "SF Pro Display","Segoe UI",sans-serif; }
+  .header-meta { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 10px; font-size: 13px; }
+  .header-meta span { background: rgba(255,255,255,.14); color: #fff; padding: 5px 14px; border-radius: 4px; border: 1px solid rgba(255,255,255,.2); font-weight: 500; }
+
+  .source-bar { background: #002a3f; padding: 9px 40px; }
+  .source-bar a { color: #7dd3fc; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+  .source-bar a::before { content: "🔗"; font-size: 12px; }
+  .source-bar a:hover { color: #fff; text-decoration: underline; }
+
+  .progress-bar { background: var(--surface); padding: 11px 40px; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid var(--border-light); }
+  .badge { padding: 5px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+  .badge-done { background: #dcfce7; color: #15803d; }
+  .badge-todo { background: #f3f4f6; color: #9ca3af; border: 1.5px solid #e5e7eb; }
+
+  nav { background: var(--surface); padding: 10px 24px; display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--border-light); position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow-sm); }
+  nav a { color: var(--text-sub); text-decoration: none; font-size: 12px; font-weight: 600; padding: 7px 13px; border-radius: 6px; transition: all .15s; white-space: nowrap; }
+  nav a:hover { color: var(--blue-dark); background: var(--blue-light); }
+
+  main { max-width: 860px; margin: 0 auto; padding: 40px 24px 80px; display: flex; flex-direction: column; gap: 24px; }
+
+  .section { background: var(--surface); border-radius: var(--radius-lg); padding: 28px 32px; box-shadow: var(--shadow-sm); scroll-margin-top: 80px; }
+  .section-label { font-size: 13px; font-weight: 800; color: var(--blue-dark); margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid var(--orange); letter-spacing: .04em; }
+
+  .summary-box { background: linear-gradient(135deg, var(--blue-light), #f0fdf4); border-radius: var(--radius); padding: 20px 24px; font-size: 15px; font-weight: 500; line-height: 1.85; color: var(--blue-dark); }
+  .summary-box strong { color: var(--orange-dark); }
+
+  .kp-list { display: flex; flex-direction: column; gap: 14px; list-style: none; }
+  .kp-item { display: flex; gap: 16px; align-items: flex-start; background: var(--surface2); border-radius: var(--radius); padding: 16px 18px; border-left: 4px solid var(--blue); }
+  .kp-num { min-width: 30px; height: 30px; background: var(--blue-dark); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .kp-heading { font-weight: 700; font-size: 14px; color: var(--blue-dark); margin-bottom: 5px; }
+  .kp-desc { font-size: 13.5px; color: var(--text-sub); line-height: 1.7; }
+
+  .compare-table { width: 100%; border-collapse: collapse; font-size: 13.5px; border-radius: var(--radius); overflow: hidden; }
+  .compare-table thead tr { border-bottom: 2px solid var(--orange); background: var(--surface2); }
+  .compare-table th { padding: 11px 16px; text-align: left; font-weight: 700; color: var(--blue-dark); font-size: 12px; }
+  .compare-table td { padding: 12px 16px; border-bottom: 1px solid var(--border-light); vertical-align: top; }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr:hover td { background: var(--blue-light); }
+
+  .glossary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 560px) { .glossary-grid { grid-template-columns: 1fr; } }
+  .glossary-item { background: var(--surface2); border-left: 3px solid var(--blue); border-radius: 0 var(--radius) var(--radius) 0; padding: 13px 15px; }
+  .glossary-term { font-weight: 700; font-size: 14px; color: var(--blue-dark); margin-bottom: 4px; }
+  .glossary-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+
+  .qa-list { display: flex; flex-direction: column; }
+  .qa-item { padding: 18px 0; border-bottom: 1px solid var(--border-light); }
+  .qa-item:last-child { border-bottom: none; }
+  .qa-q { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 8px; }
+  .q-badge { min-width: 30px; height: 30px; background: var(--orange); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .q-text { font-weight: 600; font-size: 14.5px; padding-top: 4px; }
+  details { margin-left: 44px; }
+  summary { font-size: 13px; color: var(--blue); cursor: pointer; font-weight: 600; padding: 4px 0; user-select: none; }
+  summary:hover { color: var(--blue-dark); }
+  .qa-a { font-size: 13.5px; color: var(--text-sub); padding: 10px 14px; border-left: 3px solid var(--blue); margin-top: 8px; line-height: 1.75; background: var(--blue-light); border-radius: 0 var(--radius) var(--radius) 0; }
+
+  .memo-area { width: 100%; min-height: 120px; background: #fffbf2; border: 1.5px dashed var(--orange); border-radius: var(--radius); padding: 14px; font-size: 14px; font-family: inherit; line-height: 1.75; resize: vertical; outline: none; color: var(--text); }
+  .memo-area:focus { box-shadow: 0 0 0 3px rgba(240,120,0,.12); border-style: solid; }
+  .memo-area::placeholder { color: #ccc; }
+  .memo-hint { font-size: 12px; color: #bbb; margin-top: 6px; }
+
+  .code-block { background: #1e1e1e; border-radius: var(--radius); padding: 16px 18px; font-family: "SF Mono","Consolas",monospace; font-size: 13px; color: #d4d4d4; overflow-x: auto; margin: 12px 0; line-height: 1.7; }
+  .highlight-box { border-left: 4px solid var(--blue); background: var(--blue-light); padding: 14px 18px; border-radius: 0 var(--radius) var(--radius) 0; margin: 12px 0; font-size: 13.5px; color: var(--text-sub); line-height: 1.75; }
+  .highlight-box.warning { border-color: var(--warning); background: #fef3c7; color: #78350f; }
+  .highlight-box.success { border-color: var(--success); background: #dcfce7; color: #14532d; }
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+  .tag-blue   { background: var(--blue-light); color: var(--blue-dark); }
+  .tag-orange { background: var(--orange-light); color: var(--orange-dark); }
+
+  footer { text-align: center; padding: 36px 24px; color: var(--text-muted); font-size: 12px; background: var(--surface2); border-top: 1px solid var(--border-light); margin-top: 8px; }
+  footer strong { color: var(--text-sub); font-size: 13px; display: block; margin-bottom: 4px; }
+
+  @media (max-width: 640px) {
+    header { padding: 32px 20px; } header h1 { font-size: 1.4rem; }
+    .source-bar, .progress-bar { padding-left: 20px; padding-right: 20px; }
+    .section { padding: 20px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="course-label">Claude with the Anthropic API</div>
+  <h1>Temperature（温度パラメーター）</h1>
+  <div class="lecture-title-en">Temperature</div>
+  <div class="header-meta">
+    <span>📅 2026/04/30</span>
+    <span>⏱ 約5分</span>
+    <span>📌 Lecture 16</span>
+  </div>
+</header>
+
+<div class="source-bar">
+  <a href="https://academy.anthropic.com" target="_blank" rel="noopener">https://academy.anthropic.com</a>
+</div>
+
+<div class="progress-bar">
+  <span class="badge badge-done">1巡目 ✓</span>
+  <span class="badge badge-todo">2巡目</span>
+</div>
+
+<nav>
+  <a href="#summary">① まとめ</a>
+  <a href="#keypoints">② キーポイント</a>
+  <a href="#details">③ 比較表</a>
+  <a href="#glossary">④ 用語集</a>
+  <a href="#check">⑤ 理解度チェック</a>
+  <a href="#memo">⑥ メモ</a>
+</nav>
+
+<main>
+
+  <div class="section" id="summary">
+    <div class="section-label">① 一言まとめ</div>
+    <div class="summary-box">
+      このレクチャーでは<strong>Temperature（0〜1）</strong>を学ぶ。
+      次のトークンを選ぶ確率分布の「広がり」を制御するパラメーターで、
+      低い値は事実確認・データ抽出に、高い値はブレインストーミングや創作など
+      <strong>創造性が必要なタスク</strong>に使い分けることができる。
+    </div>
+  </div>
+
+  <div class="section" id="keypoints">
+    <div class="section-label">② キーポイント</div>
+    <ul class="kp-list">
+      <li class="kp-item">
+        <div class="kp-num">1</div>
+        <div>
+          <div class="kp-heading">Temperatureとは</div>
+          <div class="kp-desc">
+            0〜1の数値で、Claudeがテキストを生成するときの「ランダム性」を調整する。
+            内部では次のトークンの確率分布を「鋭くする（低）」か「平坦にする（高）」かに影響する。
+            <div class="highlight-box">ℹ️ テキスト生成の流れ：入力 → トークン化 → 確率割り当て → Temperature適用 → トークン選択 → 繰り返し</div>
+          </div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">2</div>
+        <div>
+          <div class="kp-heading">Temperature 0 = 決定論的出力</div>
+          <div class="kp-desc">
+            常に最も確率の高いトークンを選ぶため、同じ入力から毎回ほぼ同じ回答が返ってくる。
+            <div class="code-block">response = client.messages.create(
+    model=model,
+    max_tokens=1000,
+    temperature=0,   # 一貫性・再現性が重要なタスク向け
+    messages=[{"role": "user", "content": prompt}]
+)</div>
+          </div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">3</div>
+        <div>
+          <div class="kp-heading">高Temperature = 創造的・多様な出力</div>
+          <div class="kp-desc">
+            低確率のトークンも選ばれやすくなり、予想外の言い回しやアイデアが生まれやすくなる。
+            ブレインストーミング・物語・マーケティングコピー・ジョーク生成などに向く。
+            <div class="highlight-box warning">⚠️ 高いTemperatureは「異なる出力が出る可能性を高める」だけ。異なる出力を保証するわけではない。</div>
+          </div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">4</div>
+        <div>
+          <div class="kp-heading">タスク別の推奨値</div>
+          <div class="kp-desc">
+            <span class="tag tag-blue">低（0〜0.3）</span> データ抽出・分類・ファクトチェック・コード生成<br><br>
+            <span class="tag tag-orange">高（0.7〜1）</span> ブレスト・創作・広告コピー・アイデア出し
+            <div class="highlight-box success">✅ 評価パイプラインで複数のTemperature値を試し、タスクに最適な値を定量的に選ぶのがベストプラクティス。</div>
+          </div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">5</div>
+        <div>
+          <div class="kp-heading">実装はシンプル</div>
+          <div class="kp-desc">
+            既存のAPI呼び出しに <code>temperature=値</code> を追加するだけ。他のパラメーターはそのまま使える。
+            <div class="code-block">client.messages.create(
+    model=model,
+    max_tokens=1000,
+    temperature=1,   # 創造的タスク向け
+    messages=messages
+)</div>
+          </div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="section" id="details">
+    <div class="section-label">③ 比較表（Temperature別の特性と使い分け）</div>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>項目</th>
+          <th>低Temperature（0〜0.3）</th>
+          <th>高Temperature（0.7〜1）</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>トークン選択</td>
+          <td>最確率トークンを優先</td>
+          <td>低確率トークンも選ばれやすい</td>
+        </tr>
+        <tr>
+          <td>出力の一貫性</td>
+          <td>高い（毎回ほぼ同じ）</td>
+          <td>低い（毎回変化しやすい）</td>
+        </tr>
+        <tr>
+          <td>適したタスク</td>
+          <td>データ抽出・事実回答・コード生成・分類</td>
+          <td>ブレスト・創作・コピー・ジョーク</td>
+        </tr>
+        <tr>
+          <td>リスク</td>
+          <td>硬直した・退屈な答えになりやすい</td>
+          <td>事実誤りや脈絡のない内容が混じる可能性</td>
+        </tr>
+        <tr>
+          <td>コード例</td>
+          <td><code>temperature=0</code></td>
+          <td><code>temperature=1</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section" id="glossary">
+    <div class="section-label">④ 用語集（初心者向け解説）</div>
+    <div class="glossary-grid">
+      <div class="glossary-item">
+        <div class="glossary-term">Temperature（温度）</div>
+        <div class="glossary-desc">AIの返答のランダム性を0〜1で調整するつまみ。0に近いほど「いつも同じ答え」、1に近いほど「毎回違う答え」になる。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">確率分布</div>
+        <div class="glossary-desc">「次にどの単語が来るか」を確率で表したリスト。Temperatureはこのリストの「広がり方」を変える。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">決定論的（Deterministic）</div>
+        <div class="glossary-desc">同じ入力を与えると毎回必ず同じ出力が得られる性質。Temperature=0に近い設定がこれに当たる。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">トークン（Token）</div>
+        <div class="glossary-desc">AIが文章を分解した最小単位。単語や記号など。AIはトークン単位で次の言葉を確率的に予測して生成する。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">トークン選択</div>
+        <div class="glossary-desc">確率リストをもとに次のトークンを選ぶ工程。Temperatureが低いと最高確率のものを選び、高いと低確率のものも選びやすくなる。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">ランダム性</div>
+        <div class="glossary-desc">「どれくらい予測不能か」の度合い。Temperatureが高いほどランダム性が増し、毎回異なる出力になりやすい。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="check">
+    <div class="section-label">⑤ 理解度チェック</div>
+    <div class="qa-list">
+      <div class="qa-item">
+        <div class="qa-q">
+          <div class="q-badge">Q1</div>
+          <div class="q-text">Temperatureを0に設定すると出力はどうなりますか？</div>
+        </div>
+        <details>
+          <summary>答えを見る</summary>
+          <div class="qa-a">決定論的な出力になる。常に最も確率の高いトークンが選ばれるため、同じ入力に対して毎回ほぼ同じ回答が返ってくる。データ抽出や事実確認など一貫性が重要なタスクに適している。</div>
+        </details>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">
+          <div class="q-badge">Q2</div>
+          <div class="q-text">マーケティングコピーの大量案出しをしたい場合、Temperatureは高くすべきか低くすべきか？理由も答えてください。</div>
+        </div>
+        <details>
+          <summary>答えを見る</summary>
+          <div class="qa-a">高くすべき（0.7〜1程度）。多様なアイデアや予想外の表現が欲しいため、低確率のトークンも選ばれやすい高Temperatureが適している。低Temperatureでは毎回似たコピーしか出てこず、バリエーションが生まれにくい。</div>
+        </details>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">
+          <div class="q-badge">Q3</div>
+          <div class="q-text">「Temperature=1にすれば必ず前回と違う出力が得られる」は正しいですか？</div>
+        </div>
+        <details>
+          <summary>答えを見る</summary>
+          <div class="qa-a">正しくない。高Temperatureは「低確率トークンが選ばれる可能性を高める」だけで、異なる出力を保証するわけではない。確率的に変化しやすくなるが、同じ出力が返ることもある。</div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="memo">
+    <div class="section-label">⑥ 自分メモ（気づき・疑問・次に調べること）</div>
+    <textarea class="memo-area" placeholder="ここに自由にメモを書いてください..."></textarea>
+    <div class="memo-hint">※ このブラウザに自動保存されます</div>
+  </div>
+
+</main>
+
+<footer>
+  <strong>Claude with the Anthropic API</strong>
+  Generated by <code>/anthropic-academy-html</code>
+</footer>
+
+<script>
+(function() {
+  var key = 'memo_' + location.pathname.split('/').pop();
+  var ta = document.querySelector('.memo-area');
+  var saved = localStorage.getItem(key);
+  if (saved) ta.value = saved;
+  ta.addEventListener('input', function() { localStorage.setItem(key, ta.value); });
+})();
+</script>
+
+</body>
+</html>
