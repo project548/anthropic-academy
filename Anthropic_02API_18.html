@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>レスポンスストリーミング | Anthropic Academy</title>
+<style>
+  :root {
+    --blue: #0096d6; --blue-dark: #005f8a; --blue-light: #e0f2fe;
+    --orange: #f07800; --orange-light: #fff3e8; --orange-dark: #a85200;
+    --bg: #f5f7fa; --surface: #ffffff; --surface2: #f8fafc;
+    --text: #1a1a2e; --text-sub: #374151; --text-muted: #6b7280;
+    --border: #d1d7dc; --border-light: #e5e7eb;
+    --success: #16a34a; --warning: #f59e0b; --danger: #dc2626;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.06); --shadow: 0 2px 8px rgba(0,0,0,.08); --shadow-lg: 0 8px 24px rgba(0,0,0,.10);
+    --radius: 8px; --radius-lg: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--bg); color: var(--text); line-height: 1.75; -webkit-font-smoothing: antialiased; }
+
+  /* Header */
+  header { background: linear-gradient(135deg, #003d5c 0%, var(--blue-dark) 60%, #0077aa 100%); padding: 48px 40px 40px; color: #fff; position: relative; overflow: hidden; border-bottom: 4px solid var(--orange); }
+  header::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 85% 20%, rgba(240,120,0,.20) 0%, transparent 55%), radial-gradient(ellipse at 10% 90%, rgba(255,255,255,.05) 0%, transparent 50%); }
+  header > * { position: relative; max-width: 860px; margin: 0 auto; }
+  .course-label { font-size: 11px; letter-spacing: .15em; opacity: .75; text-transform: uppercase; margin-bottom: 10px; }
+  header h1 { font-size: 1.9rem; font-weight: 800; line-height: 1.35; }
+  .lecture-title-en { font-size: 1rem; opacity: .6; margin-top: 6px; font-weight: 400; letter-spacing: .04em; font-family: "SF Pro Display","Segoe UI",sans-serif; }
+  .header-meta { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 10px; font-size: 13px; }
+  .header-meta span { background: rgba(255,255,255,.14); color: #fff; padding: 5px 14px; border-radius: 4px; border: 1px solid rgba(255,255,255,.2); font-weight: 500; }
+
+  /* Source bar */
+  .source-bar { background: #002a3f; padding: 9px 40px; }
+  .source-bar a { color: #7dd3fc; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+  .source-bar a::before { content: "🔗"; font-size: 12px; }
+  .source-bar a:hover { color: #fff; text-decoration: underline; }
+
+  /* Progress bar */
+  .progress-bar { background: var(--surface); padding: 11px 40px; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid var(--border-light); }
+  .badge { padding: 5px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+  .badge-done { background: #dcfce7; color: #15803d; }
+  .badge-todo { background: #f3f4f6; color: #9ca3af; border: 1.5px solid #e5e7eb; }
+
+  /* Sticky nav */
+  nav { background: var(--surface); padding: 10px 24px; display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--border-light); position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow-sm); }
+  nav a { color: var(--text-sub); text-decoration: none; font-size: 12px; font-weight: 600; padding: 7px 13px; border-radius: 6px; transition: all .15s; white-space: nowrap; }
+  nav a:hover { color: var(--blue-dark); background: var(--blue-light); }
+
+  /* Main */
+  main { max-width: 860px; margin: 0 auto; padding: 40px 24px 80px; display: flex; flex-direction: column; gap: 24px; }
+
+  /* Section card */
+  .section { background: var(--surface); border-radius: var(--radius-lg); padding: 28px 32px; box-shadow: var(--shadow-sm); scroll-margin-top: 80px; }
+  .section-label { font-size: 13px; font-weight: 800; color: var(--blue-dark); margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid var(--orange); letter-spacing: .04em; }
+
+  /* ① 一言まとめ */
+  .summary-box { background: linear-gradient(135deg, var(--blue-light), #f0fdf4); border-radius: var(--radius); padding: 20px 24px; font-size: 15px; font-weight: 500; line-height: 1.85; color: var(--blue-dark); }
+  .summary-box strong { color: var(--orange-dark); }
+
+  /* ② キーポイント */
+  .kp-list { display: flex; flex-direction: column; gap: 14px; list-style: none; }
+  .kp-item { display: flex; gap: 16px; align-items: flex-start; background: var(--surface2); border-radius: var(--radius); padding: 16px 18px; border-left: 4px solid var(--blue); }
+  .kp-num { min-width: 30px; height: 30px; background: var(--blue-dark); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .kp-heading { font-weight: 700; font-size: 14px; color: var(--blue-dark); margin-bottom: 5px; }
+  .kp-desc { font-size: 13.5px; color: var(--text-sub); line-height: 1.7; }
+
+  /* ③ ステップ */
+  .steps { display: flex; flex-direction: column; gap: 12px; }
+  .step { display: flex; gap: 16px; background: var(--surface2); border-radius: var(--radius); padding: 16px 18px; border-left: 4px solid var(--blue); }
+  .step-num { background: var(--blue-dark); color: #fff; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .step-body strong { display: block; font-size: 14px; font-weight: 700; margin-bottom: 4px; color: var(--blue-dark); }
+  .step-body p { font-size: 13.5px; color: var(--text-sub); line-height: 1.65; }
+
+  /* ④ 用語集 */
+  .glossary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 560px) { .glossary-grid { grid-template-columns: 1fr; } }
+  .glossary-item { background: var(--surface2); border-left: 3px solid var(--blue); border-radius: 0 var(--radius) var(--radius) 0; padding: 13px 15px; }
+  .glossary-term { font-weight: 700; font-size: 14px; color: var(--blue-dark); margin-bottom: 4px; }
+  .glossary-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+
+  /* ⑤ 理解度チェック */
+  .qa-list { display: flex; flex-direction: column; }
+  .qa-item { padding: 18px 0; border-bottom: 1px solid var(--border-light); }
+  .qa-item:last-child { border-bottom: none; }
+  .qa-q { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 8px; }
+  .q-badge { min-width: 30px; height: 30px; background: var(--orange); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .q-text { font-weight: 600; font-size: 14.5px; padding-top: 4px; }
+  details { margin-left: 44px; }
+  summary { font-size: 13px; color: var(--blue); cursor: pointer; font-weight: 600; padding: 4px 0; user-select: none; }
+  summary:hover { color: var(--blue-dark); }
+  .qa-a { font-size: 13.5px; color: var(--text-sub); padding: 10px 14px; border-left: 3px solid var(--blue); margin-top: 8px; line-height: 1.75; background: var(--blue-light); border-radius: 0 var(--radius) var(--radius) 0; }
+
+  /* ⑥ メモ */
+  .memo-area { width: 100%; min-height: 120px; background: #fffbf2; border: 1.5px dashed var(--orange); border-radius: var(--radius); padding: 14px; font-size: 14px; font-family: inherit; line-height: 1.75; resize: vertical; outline: none; color: var(--text); }
+  .memo-area:focus { box-shadow: 0 0 0 3px rgba(240,120,0,.12); border-style: solid; }
+  .memo-area::placeholder { color: #ccc; }
+  .memo-hint { font-size: 12px; color: #bbb; margin-top: 6px; }
+
+  /* 動的要素 */
+  .code-block { background: #1e1e1e; border-radius: var(--radius); padding: 16px 18px; font-family: "SF Mono","Consolas",monospace; font-size: 13px; color: #d4d4d4; overflow-x: auto; margin: 12px 0; line-height: 1.7; }
+  .highlight-box { border-left: 4px solid var(--blue); background: var(--blue-light); padding: 14px 18px; border-radius: 0 var(--radius) var(--radius) 0; margin: 12px 0; font-size: 13.5px; color: var(--text-sub); line-height: 1.75; }
+  .highlight-box.warning { border-color: var(--warning); background: #fef3c7; color: #78350f; }
+  .highlight-box.success { border-color: var(--success); background: #dcfce7; color: #14532d; }
+  .highlight-box.danger  { border-color: var(--danger);  background: #fee2e2; color: #7f1d1d; }
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+  .tag-blue   { background: var(--blue-light); color: var(--blue-dark); }
+  .tag-orange { background: var(--orange-light); color: var(--orange-dark); }
+  .tag-green  { background: #dcfce7; color: #15803d; }
+  .tag-gray   { background: #f3f4f6; color: #6b7280; }
+
+  footer { text-align: center; padding: 36px 24px; color: var(--text-muted); font-size: 12px; background: var(--surface2); border-top: 1px solid var(--border-light); margin-top: 8px; }
+  footer strong { color: var(--text-sub); font-size: 13px; display: block; margin-bottom: 4px; }
+
+  @media (max-width: 640px) {
+    header { padding: 32px 20px; } header h1 { font-size: 1.4rem; }
+    .source-bar, .progress-bar { padding-left: 20px; padding-right: 20px; }
+    .section { padding: 20px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="course-label">Claude with the Anthropic API — Lecture 18</div>
+  <h1>レスポンスストリーミング</h1>
+  <div class="lecture-title-en">Response Streaming</div>
+  <div class="header-meta">
+    <span>📅 2026-04-30</span>
+    <span>⏱ 5 min</span>
+    <span>📌 Lecture 18</span>
+  </div>
+</header>
+
+<div class="source-bar">
+  <a href="https://learn.deeplearning.ai/courses/claude-with-the-anthropic-api" target="_blank" rel="noopener">https://learn.deeplearning.ai/courses/claude-with-the-anthropic-api</a>
+</div>
+
+<div class="progress-bar">
+  <span class="badge badge-done">✅ 視聴済み</span>
+  <span class="badge badge-todo">📝 復習中</span>
+</div>
+
+<nav>
+  <a href="#summary">① まとめ</a>
+  <a href="#keypoints">② キーポイント</a>
+  <a href="#details">③ 実装ステップ</a>
+  <a href="#glossary">④ 用語集</a>
+  <a href="#check">⑤ 理解度チェック</a>
+  <a href="#memo">⑥ メモ</a>
+</nav>
+
+<main>
+
+  <div class="section" id="summary">
+    <div class="section-label">① 一言まとめ</div>
+    <div class="summary-box">
+      AIの応答をリアルタイムで<strong>チャンク（断片）ごとに表示</strong>する技術。10〜30秒かかる長い応答でも「すぐ何かが動いている」感を与え、ユーザー体験を劇的に改善できる。Pythonでは <strong><code>stream=True</code></strong> または <strong><code>messages.stream()</code></strong> で簡単に実現できる。
+    </div>
+  </div>
+
+  <div class="section" id="keypoints">
+    <div class="section-label">② キーポイント</div>
+    <ul class="kp-list">
+      <li class="kp-item">
+        <div class="kp-num">1</div>
+        <div>
+          <div class="kp-heading">なぜストリーミングが必要か</div>
+          <div class="kp-desc">AIの応答生成には10〜30秒かかることがある。通常モードでは完成まで何も表示されないため、ユーザーはただ待つしかない。ストリーミングは「チャンクが届き次第すぐ表示」することでこの問題を解決する。</div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">2</div>
+        <div>
+          <div class="kp-heading">イベントの流れ（4種類）</div>
+          <div class="kp-desc">
+            ストリーミング応答は複数のイベントで構成される：<br>
+            <code>message_start</code> → 開始の合図（テキストなし）<br>
+            <code>content_block_start</code> → テキスト生成の開始<br>
+            <code>content_block_delta</code> → <strong>実際のテキストチャンク（最重要）</strong><br>
+            <code>content_block_stop / message_stop</code> → 生成完了
+          </div>
+          <div class="code-block"><span style="color:#9cdcfe">event</span>.<span style="color:#dcdcaa">type</span> == <span style="color:#ce9178">"content_block_delta"</span>  <span style="color:#6a9955"># ここに本文が入っている</span></div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">3</div>
+        <div>
+          <div class="kp-heading">基本実装: <code>stream=True</code></div>
+          <div class="kp-desc">通常のリクエストに <code>stream=True</code> を追加するだけでイベントイテレータが返る。各イベントをループして <code>content_block_delta</code> を取り出すことでリアルタイム表示できる。</div>
+          <div class="code-block"><span style="color:#9cdcfe">response</span> = <span style="color:#9cdcfe">client</span>.<span style="color:#dcdcaa">messages</span>.<span style="color:#dcdcaa">create</span>(
+  <span style="color:#9cdcfe">model</span>=<span style="color:#9cdcfe">model</span>,
+  <span style="color:#9cdcfe">max_tokens</span>=<span style="color:#b5cea8">1000</span>,
+  <span style="color:#9cdcfe">messages</span>=[{<span style="color:#ce9178">"role"</span>: <span style="color:#ce9178">"user"</span>, <span style="color:#ce9178">"content"</span>: <span style="color:#9cdcfe">prompt</span>}],
+  <span style="color:#9cdcfe">stream</span>=<span style="color:#569cd6">True</span>
+)
+<span style="color:#c586c0">for</span> <span style="color:#9cdcfe">event</span> <span style="color:#c586c0">in</span> <span style="color:#9cdcfe">response</span>:
+  <span style="color:#c586c0">if</span> <span style="color:#9cdcfe">event</span>.<span style="color:#9cdcfe">type</span> == <span style="color:#ce9178">"content_block_delta"</span>:
+    <span style="color:#dcdcaa">print</span>(<span style="color:#9cdcfe">event</span>.<span style="color:#9cdcfe">delta</span>.<span style="color:#9cdcfe">text</span>, <span style="color:#9cdcfe">end</span>=<span style="color:#ce9178">""</span>, <span style="color:#9cdcfe">flush</span>=<span style="color:#569cd6">True</span>)</div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">4</div>
+        <div>
+          <div class="kp-heading">簡易実装: <code>messages.stream()</code> + <code>text_stream</code></div>
+          <div class="kp-desc">SDKが提供する高レベルAPI。<code>text_stream</code> プロパティがテキストチャンクのみを自動で取り出してくれるため、イベントの種類を気にせず書ける。</div>
+          <div class="code-block"><span style="color:#c586c0">with</span> <span style="color:#9cdcfe">client</span>.<span style="color:#dcdcaa">messages</span>.<span style="color:#dcdcaa">stream</span>(
+  <span style="color:#9cdcfe">model</span>=<span style="color:#9cdcfe">model</span>,
+  <span style="color:#9cdcfe">max_tokens</span>=<span style="color:#b5cea8">1000</span>,
+  <span style="color:#9cdcfe">messages</span>=[{<span style="color:#ce9178">"role"</span>: <span style="color:#ce9178">"user"</span>, <span style="color:#ce9178">"content"</span>: <span style="color:#9cdcfe">prompt</span>}]
+) <span style="color:#c586c0">as</span> <span style="color:#9cdcfe">stream</span>:
+  <span style="color:#c586c0">for</span> <span style="color:#9cdcfe">chunk</span> <span style="color:#c586c0">in</span> <span style="color:#9cdcfe">stream</span>.<span style="color:#9cdcfe">text_stream</span>:
+    <span style="color:#dcdcaa">print</span>(<span style="color:#9cdcfe">chunk</span>, <span style="color:#9cdcfe">end</span>=<span style="color:#ce9178">""</span>, <span style="color:#9cdcfe">flush</span>=<span style="color:#569cd6">True</span>)</div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">5</div>
+        <div>
+          <div class="kp-heading">DBへの保存: <code>get_final_message()</code></div>
+          <div class="kp-desc">ストリーミング中はチャンクが断片として届くため、そのままでは保存に使いにくい。<code>stream.get_final_message()</code> を呼ぶと全チャンクを結合した完全なメッセージオブジェクトを取得できる。</div>
+          <div class="code-block"><span style="color:#c586c0">with</span> <span style="color:#9cdcfe">client</span>.<span style="color:#dcdcaa">messages</span>.<span style="color:#dcdcaa">stream</span>(...) <span style="color:#c586c0">as</span> <span style="color:#9cdcfe">stream</span>:
+  <span style="color:#c586c0">for</span> <span style="color:#9cdcfe">chunk</span> <span style="color:#c586c0">in</span> <span style="color:#9cdcfe">stream</span>.<span style="color:#9cdcfe">text_stream</span>:
+    <span style="color:#dcdcaa">print</span>(<span style="color:#9cdcfe">chunk</span>, <span style="color:#9cdcfe">end</span>=<span style="color:#ce9178">""</span>, <span style="color:#9cdcfe">flush</span>=<span style="color:#569cd6">True</span>)
+  <span style="color:#9cdcfe">final</span> = <span style="color:#9cdcfe">stream</span>.<span style="color:#dcdcaa">get_final_message</span>()  <span style="color:#6a9955"># DBに保存</span></div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="section" id="details">
+    <div class="section-label">③ 実装ステップ</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <strong>要件を確認する</strong>
+          <p>リアルタイム表示が必要か判断する。チャットUIや長文生成ならストリーミングが有効。バックグラウンド処理なら通常モードで十分。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <strong>実装方式を選ぶ</strong>
+          <p>イベント詳細を制御したい → <code>stream=True</code>（低レベル）。シンプルに書きたい → <code>messages.stream()</code>（高レベル）。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <strong>チャンクを表示する</strong>
+          <p><code>print(chunk, end="", flush=True)</code> パターンで逐次出力。<code>flush=True</code> がないとバッファリングされて「まとめて表示」になってしまう。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <strong>完成メッセージを保存する</strong>
+          <p>ストリーム終了後に <code>get_final_message()</code> で完全な応答オブジェクトを取得。トークン使用量などのメタデータも含まれる。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <strong>フロントエンドへ転送する（本番構成）</strong>
+          <p>実際のWebアプリでは、サーバーがチャンクを受け取り次第フロントエンドへSSE（Server-Sent Events）やWebSocketで転送する。</p>
+          <div class="highlight-box warning">サーバー経由が必須: APIキーを隠すためにも、フロントからAnthropicに直接アクセスしてはいけない。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="glossary">
+    <div class="section-label">④ 用語集（初心者向け解説）</div>
+    <div class="glossary-grid">
+      <div class="glossary-item">
+        <div class="glossary-term">ストリーミング（Streaming）</div>
+        <div class="glossary-desc">データを一気に送るのではなく、できた部分からリアルタイムで流すこと。動画配信の「ストリーミング再生」と同じ考え方。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">チャンク（Chunk）</div>
+        <div class="glossary-desc">データの断片・かたまりのこと。ストリーミングでは応答が数文字〜数十文字のチャンクに分割されて届く。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">content_block_delta</div>
+        <div class="glossary-desc">ストリーミングイベントの一種で、実際のテキストが含まれているもの。これだけ取り出せば画面に表示できる。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">text_stream</div>
+        <div class="glossary-desc"><code>messages.stream()</code> が提供するプロパティ。イベントの種類を気にせず、テキストチャンクだけを順番に取り出せる。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">get_final_message()</div>
+        <div class="glossary-desc">ストリーミング完了後に全チャンクを結合した「完全な応答」を返すメソッド。DBへの保存などに使う。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">flush=True</div>
+        <div class="glossary-desc">Pythonの<code>print</code>オプション。バッファに貯めずにすぐ出力させる指定。ストリーミング表示に必須。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">SSE（Server-Sent Events）</div>
+        <div class="glossary-desc">サーバーからブラウザへ一方向でイベントを送り続けるWeb技術。チャットUIでのストリーミング表示によく使われる。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">イテレータ（Iterator）</div>
+        <div class="glossary-desc">データを一個ずつ順番に取り出せるオブジェクト。<code>for event in response</code> のように使う。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="check">
+    <div class="section-label">⑤ 理解度チェック</div>
+    <div class="qa-list">
+      <div class="qa-item">
+        <div class="qa-q">
+          <div class="q-badge">Q1</div>
+          <div class="q-text">ストリーミングを使う主な理由は何ですか？</div>
+        </div>
+        <details>
+          <summary>答えを見る</summary>
+          <div class="qa-a">AIの応答生成に10〜30秒かかることがあり、完成まで何も表示されないとユーザー体験が悪い。ストリーミングにより、生成と同時にチャンクが表示されるため「すぐ反応している」感が生まれ、UXが改善される。</div>
+        </details>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">
+          <div class="q-badge">Q2</div>
+          <div class="q-text"><code>messages.stream()</code> を使う場合、テキストチャンクを取り出すにはどのプロパティを使いますか？</div>
+        </div>
+        <details>
+          <summary>答えを見る</summary>
+          <div class="qa-a"><code>stream.text_stream</code> を使う。これをfor文でループすると、イベント種別を気にせずテキストチャンクだけを順番に取得できる。</div>
+        </details>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">
+          <div class="q-badge">Q3</div>
+          <div class="q-text">ストリーミングで受け取った内容をデータベースに保存したい場合、どのメソッドを使いますか？</div>
+        </div>
+        <details>
+          <summary>答えを見る</summary>
+          <div class="qa-a"><code>stream.get_final_message()</code> を呼ぶ。ストリーミング終了後に全チャンクを結合した完全な応答オブジェクト（テキスト + トークン使用量などのメタデータ）を返すため、DBへの保存に適している。</div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="memo">
+    <div class="section-label">⑥ 自分メモ（気づき・疑問・次に調べること）</div>
+    <textarea class="memo-area" placeholder="ここに自由にメモを書いてください..."></textarea>
+    <div class="memo-hint">※ このブラウザに自動保存されます</div>
+  </div>
+
+</main>
+
+<footer>
+  <strong>Claude with the Anthropic API — Lecture 18</strong>
+  Generated by <code>/anthropic-academy-html</code>
+</footer>
+
+<script>
+(function() {
+  var key = 'memo_' + location.pathname.split('/').pop();
+  var ta = document.querySelector('.memo-area');
+  var saved = localStorage.getItem(key);
+  if (saved) ta.value = saved;
+  ta.addEventListener('input', function() { localStorage.setItem(key, ta.value); });
+})();
+</script>
+
+</body>
+</html>
