@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>プロンプト評価 | Anthropic Academy</title>
+<style>
+  :root {
+    --blue: #0096d6; --blue-dark: #005f8a; --blue-light: #e0f2fe;
+    --orange: #f07800; --orange-light: #fff3e8; --orange-dark: #a85200;
+    --bg: #f5f7fa; --surface: #ffffff; --surface2: #f8fafc;
+    --text: #1a1a2e; --text-sub: #374151; --text-muted: #6b7280;
+    --border: #d1d7dc; --border-light: #e5e7eb;
+    --success: #16a34a; --warning: #f59e0b; --danger: #dc2626;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.06); --shadow: 0 2px 8px rgba(0,0,0,.08); --shadow-lg: 0 8px 24px rgba(0,0,0,.10);
+    --radius: 8px; --radius-lg: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--bg); color: var(--text); line-height: 1.75; -webkit-font-smoothing: antialiased; }
+  header { background: linear-gradient(135deg, #003d5c 0%, var(--blue-dark) 60%, #0077aa 100%); padding: 48px 40px 40px; color: #fff; position: relative; overflow: hidden; border-bottom: 4px solid var(--orange); }
+  header::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 85% 20%, rgba(240,120,0,.20) 0%, transparent 55%), radial-gradient(ellipse at 10% 90%, rgba(255,255,255,.05) 0%, transparent 50%); }
+  header > * { position: relative; max-width: 860px; margin: 0 auto; }
+  .course-label { font-size: 11px; letter-spacing: .15em; opacity: .75; text-transform: uppercase; margin-bottom: 10px; }
+  header h1 { font-size: 1.9rem; font-weight: 800; line-height: 1.35; }
+  .lecture-title-en { font-size: 1rem; opacity: .6; margin-top: 6px; font-weight: 400; letter-spacing: .04em; font-family: "SF Pro Display","Segoe UI",sans-serif; }
+  .header-meta { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 10px; font-size: 13px; }
+  .header-meta span { background: rgba(255,255,255,.14); color: #fff; padding: 5px 14px; border-radius: 4px; border: 1px solid rgba(255,255,255,.2); font-weight: 500; }
+  .source-bar { background: #002a3f; padding: 9px 40px; }
+  .source-bar a { color: #7dd3fc; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+  .source-bar a::before { content: "🔗"; font-size: 12px; }
+  .source-bar a:hover { color: #fff; text-decoration: underline; }
+  .progress-bar { background: var(--surface); padding: 11px 40px; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid var(--border-light); }
+  .badge { padding: 5px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+  .badge-done { background: #dcfce7; color: #15803d; }
+  .badge-todo { background: #f3f4f6; color: #9ca3af; border: 1.5px solid #e5e7eb; }
+  nav { background: var(--surface); padding: 10px 24px; display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--border-light); position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow-sm); }
+  nav a { color: var(--text-sub); text-decoration: none; font-size: 12px; font-weight: 600; padding: 7px 13px; border-radius: 6px; transition: all .15s; white-space: nowrap; }
+  nav a:hover { color: var(--blue-dark); background: var(--blue-light); }
+  main { max-width: 860px; margin: 0 auto; padding: 40px 24px 80px; display: flex; flex-direction: column; gap: 24px; }
+  .section { background: var(--surface); border-radius: var(--radius-lg); padding: 28px 32px; box-shadow: var(--shadow-sm); scroll-margin-top: 80px; }
+  .section-label { font-size: 13px; font-weight: 800; color: var(--blue-dark); margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid var(--orange); letter-spacing: .04em; }
+  .summary-box { background: linear-gradient(135deg, var(--blue-light), #f0fdf4); border-radius: var(--radius); padding: 20px 24px; font-size: 15px; font-weight: 500; line-height: 1.85; color: var(--blue-dark); }
+  .summary-box strong { color: var(--orange-dark); }
+  .kp-list { display: flex; flex-direction: column; gap: 14px; list-style: none; }
+  .kp-item { display: flex; gap: 16px; align-items: flex-start; background: var(--surface2); border-radius: var(--radius); padding: 16px 18px; border-left: 4px solid var(--blue); }
+  .kp-num { min-width: 30px; height: 30px; background: var(--blue-dark); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .kp-heading { font-weight: 700; font-size: 14px; color: var(--blue-dark); margin-bottom: 5px; }
+  .kp-desc { font-size: 13.5px; color: var(--text-sub); line-height: 1.7; }
+  .compare-table { width: 100%; border-collapse: collapse; font-size: 13.5px; border-radius: var(--radius); overflow: hidden; }
+  .compare-table thead tr { border-bottom: 2px solid var(--orange); background: var(--surface2); }
+  .compare-table th { padding: 11px 16px; text-align: left; font-weight: 700; color: var(--blue-dark); font-size: 12px; }
+  .compare-table td { padding: 12px 16px; border-bottom: 1px solid var(--border-light); vertical-align: top; }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr:hover td { background: var(--blue-light); }
+  .glossary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 560px) { .glossary-grid { grid-template-columns: 1fr; } }
+  .glossary-item { background: var(--surface2); border-left: 3px solid var(--blue); border-radius: 0 var(--radius) var(--radius) 0; padding: 13px 15px; }
+  .glossary-term { font-weight: 700; font-size: 14px; color: var(--blue-dark); margin-bottom: 4px; }
+  .glossary-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+  .qa-list { display: flex; flex-direction: column; }
+  .qa-item { padding: 18px 0; border-bottom: 1px solid var(--border-light); }
+  .qa-item:last-child { border-bottom: none; }
+  .qa-q { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 8px; }
+  .q-badge { min-width: 30px; height: 30px; background: var(--orange); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .q-text { font-weight: 600; font-size: 14.5px; padding-top: 4px; }
+  details { margin-left: 44px; }
+  summary { font-size: 13px; color: var(--blue); cursor: pointer; font-weight: 600; padding: 4px 0; user-select: none; }
+  summary:hover { color: var(--blue-dark); }
+  .qa-a { font-size: 13.5px; color: var(--text-sub); padding: 10px 14px; border-left: 3px solid var(--blue); margin-top: 8px; line-height: 1.75; background: var(--blue-light); border-radius: 0 var(--radius) var(--radius) 0; }
+  .memo-area { width: 100%; min-height: 120px; background: #fffbf2; border: 1.5px dashed var(--orange); border-radius: var(--radius); padding: 14px; font-size: 14px; font-family: inherit; line-height: 1.75; resize: vertical; outline: none; color: var(--text); }
+  .memo-area:focus { box-shadow: 0 0 0 3px rgba(240,120,0,.12); border-style: solid; }
+  .memo-area::placeholder { color: #ccc; }
+  .memo-hint { font-size: 12px; color: #bbb; margin-top: 6px; }
+  .highlight-box { border-left: 4px solid var(--blue); background: var(--blue-light); padding: 14px 18px; border-radius: 0 var(--radius) var(--radius) 0; margin: 12px 0; font-size: 13.5px; color: var(--text-sub); line-height: 1.75; }
+  .highlight-box.warning { border-color: var(--warning); background: #fef3c7; color: #78350f; }
+  .highlight-box.success { border-color: var(--success); background: #dcfce7; color: #14532d; }
+  footer { text-align: center; padding: 36px 24px; color: var(--text-muted); font-size: 12px; background: var(--surface2); border-top: 1px solid var(--border-light); margin-top: 8px; }
+  footer strong { color: var(--text-sub); font-size: 13px; display: block; margin-bottom: 4px; }
+  @media (max-width: 640px) {
+    header { padding: 32px 20px; } header h1 { font-size: 1.4rem; }
+    .source-bar, .progress-bar { padding-left: 20px; padding-right: 20px; }
+    .section { padding: 20px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="course-label">Claude with the Anthropic API — Lecture 22</div>
+  <h1>プロンプト評価</h1>
+  <div class="lecture-title-en">Prompt evaluation</div>
+  <div class="header-meta">
+    <span>📅 2026-05-04</span>
+    <span>⏱ 5 min</span>
+    <span>📌 Lecture 22</span>
+  </div>
+</header>
+
+<div class="source-bar">
+  <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287731" target="_blank" rel="noopener">https://anthropic.skilljar.com/claude-with-the-anthropic-api/287731</a>
+</div>
+
+<div class="progress-bar">
+  <span class="badge badge-done">✅ 視聴済み</span>
+  <span class="badge badge-todo">📝 復習中</span>
+</div>
+
+<nav>
+  <a href="#summary">① まとめ</a>
+  <a href="#keypoints">② キーポイント</a>
+  <a href="#details">③ 3つの選択肢比較</a>
+  <a href="#glossary">④ 用語集</a>
+  <a href="#check">⑤ 理解度チェック</a>
+  <a href="#memo">⑥ メモ</a>
+</nav>
+
+<main>
+
+  <div class="section" id="summary">
+    <div class="section-label">① 一言まとめ</div>
+    <div class="summary-box">
+      Claude で良いプロンプトを書くだけでは不十分。<strong>prompt engineering</strong>（書き方を改善する技術）と <strong>prompt evaluation</strong>（自動テストで効果を測定する仕組み）の両輪が必要。本番投入前に <strong>evaluation pipeline</strong> で客観的スコアを出して反復改善するのが、信頼性の高い AI アプリの王道。
+    </div>
+  </div>
+
+  <div class="section" id="keypoints">
+    <div class="section-label">② キーポイント</div>
+    <ul class="kp-list">
+      <li class="kp-item">
+        <div class="kp-num">1</div>
+        <div>
+          <div class="kp-heading">Prompt Engineering と Prompt Evaluation は別物・補完関係</div>
+          <div class="kp-desc"><strong>Prompt Engineering</strong> = 書き方の技術（multishot prompting、XML tags 構造化など）。Claude にどう伝えるかを工夫する。<br><strong>Prompt Evaluation</strong> = 自動テストで「実際にうまく動くか」を測る。プロンプトの効果を客観的に検証する。</div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">2</div>
+        <div>
+          <div class="kp-heading">プロンプトを書いた後の3つの選択肢</div>
+          <div class="kp-desc">
+            <strong>Option 1</strong>: 1〜2回テストしてOKと判断 → 本番投入。**production で壊れるリスク大**<br>
+            <strong>Option 2</strong>: 数回テストして corner case を1〜2個対応 → 想定外入力で破綻しがち<br>
+            <strong>Option 3</strong>: <strong>evaluation pipeline</strong> で点数化 → 客観的指標で iterate（推奨）
+          </div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">3</div>
+        <div>
+          <div class="kp-heading">なぜ大半のエンジニアが Option 1/2 の罠にハマるか</div>
+          <div class="kp-desc">真面目なアプリなのに、十分テストしないまま本番投入してしまうのはよくある罠。実ユーザーが想定外の使い方をする量を過小評価するから。<strong>limited testing で通った prompt も、real-world inputs では崩れる</strong>。</div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">4</div>
+        <div>
+          <div class="kp-heading">Evaluation-First Approach（評価優先アプローチ）</div>
+          <div class="kp-desc">Option 3 = systematic approach。evaluation pipeline で <strong>objective metrics</strong> を取得し、<strong>data-driven</strong> に改善ループを回す。</div>
+          <div class="highlight-box success">
+            ✅ Identify weaknesses before they become production issues<br>
+            ✅ Compare different prompt versions objectively<br>
+            ✅ Iterate with confidence based on measurable improvements<br>
+            ✅ Build more reliable AI applications
+          </div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">5</div>
+        <div>
+          <div class="kp-heading">投資対効果：先行投資 vs 信頼性</div>
+          <div class="kp-desc">Evaluation pipeline は **upfront investment**（時間・テストインフラ）がかかるが、最終アプリの **reliability and robustness** で確実に元が取れる。「ユーザーに見つかってから直す」より「開発中に潰す」が圧倒的に安い。</div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="section" id="details">
+    <div class="section-label">③ 3つの選択肢比較</div>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>項目</th>
+          <th>Option 1: 1回テストして本番</th>
+          <th>Option 2: 数回テスト + corner case 対応</th>
+          <th>Option 3: evaluation pipeline</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>テスト回数</strong></td>
+          <td>1〜2回</td>
+          <td>数回 + 個別 corner case</td>
+          <td>多数（評価データセット全件）</td>
+        </tr>
+        <tr>
+          <td><strong>客観性</strong></td>
+          <td>主観のみ</td>
+          <td>主観 + 一部データ</td>
+          <td>objective metrics（数値スコア）</td>
+        </tr>
+        <tr>
+          <td><strong>本番リスク</strong></td>
+          <td>★★★ 高（壊れがち）</td>
+          <td>★★ 中（想定外で崩れる）</td>
+          <td>★ 低（事前に潰せる）</td>
+        </tr>
+        <tr>
+          <td><strong>必要工数</strong></td>
+          <td>少ない</td>
+          <td>普通</td>
+          <td>多い（pipeline 構築）</td>
+        </tr>
+        <tr>
+          <td><strong>適した用途</strong></td>
+          <td>使い捨て・実験スクリプト</td>
+          <td>個人プロジェクト・PoC</td>
+          <td>本番アプリ・信頼性重視</td>
+        </tr>
+        <tr>
+          <td><strong>iterate の根拠</strong></td>
+          <td>勘・気分</td>
+          <td>気付いた問題の都度修正</td>
+          <td>measurable improvements</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="highlight-box warning" style="margin-top:16px;">
+      <strong>本番運用なら必ず Option 3。</strong> Option 1/2 は trap。real users は想定外の入力をしてくる。
+    </div>
+  </div>
+
+  <div class="section" id="glossary">
+    <div class="section-label">④ 用語集（演習で覚える主要キーワード）</div>
+    <div class="glossary-grid">
+      <div class="glossary-item">
+        <div class="glossary-term">prompt engineering</div>
+        <div class="glossary-desc">プロンプトを「より効果的に書く」ための技術群。multishot prompting、XML tags 構造化、Being Specific などの best practices。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">prompt evaluation</div>
+        <div class="glossary-desc">プロンプトの効果を「自動テストで測る」アプローチ。expected answers との比較、版違い対比、エラー発見など。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">evaluation pipeline</div>
+        <div class="glossary-desc">テストデータセット → プロンプト実行 → 採点 → 集計 → iterate を自動化した仕組み。data-driven 改善の基盤。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">multishot prompting</div>
+        <div class="glossary-desc">プロンプトに複数の入出力例（few-shot examples）を含める手法。Claude に期待する形式・品質を学ばせる。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">corner case</div>
+        <div class="glossary-desc">通常の使い方では出ないが、現実には起こる例外的な入力やシナリオ。limited testing では見落とされがち。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">objective metrics</div>
+        <div class="glossary-desc">主観ではなく数値で測れる客観指標（例: 1〜10スコア、成功率、JSON parse 成功率）。比較・改善の根拠になる。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="check">
+    <div class="section-label">⑤ 理解度チェック</div>
+    <div class="qa-list">
+      <div class="qa-item">
+        <div class="qa-q">
+          <div class="q-badge">Q1</div>
+          <div class="q-text">prompt engineering と prompt evaluation の違いを一言で説明してください。</div>
+        </div>
+        <details>
+          <summary>答えを見る</summary>
+          <div class="qa-a"><strong>prompt engineering</strong> = プロンプトの **書き方** の技術（HOW to write）。multishot や XML tags など、Claude が理解しやすくする技法。<br><strong>prompt evaluation</strong> = プロンプトの **効果測定** の仕組み（HOW WELL it works）。自動テストで客観スコアを出す。両者は補完関係で、本番品質には両方必要。</div>
+        </details>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">
+          <div class="q-badge">Q2</div>
+          <div class="q-text">「書いたプロンプトを2〜3回テストしてOKだから本番に出す」アプローチの最大のリスクは？</div>
+        </div>
+        <details>
+          <summary>答えを見る</summary>
+          <div class="qa-a">real users が想定外の入力（corner case / unexpected inputs）を大量に投げてくるため、**limited testing で通った prompt が production で壊れる**。エンジニアは edge case の量を過小評価しがち。Option 1 は最もリスクが高く、Option 2 ですらまだ甘い。</div>
+        </details>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">
+          <div class="q-badge">Q3</div>
+          <div class="q-text">evaluation pipeline を使うと何が得られますか？4つ挙げてください。</div>
+        </div>
+        <details>
+          <summary>答えを見る</summary>
+          <div class="qa-a">
+            ① <strong>Identify weaknesses before they become production issues</strong>（弱点を本番障害になる前に発見）<br>
+            ② <strong>Compare different prompt versions objectively</strong>（プロンプト版違いを客観比較）<br>
+            ③ <strong>Iterate with confidence based on measurable improvements</strong>（測定可能な改善で自信を持って反復）<br>
+            ④ <strong>Build more reliable AI applications</strong>（信頼性の高い AI アプリ構築）
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="memo">
+    <div class="section-label">⑥ 自分メモ（気づき・疑問・次に調べること）</div>
+    <textarea class="memo-area" placeholder="ここに自由にメモを書いてください..."></textarea>
+    <div class="memo-hint">※ このブラウザに自動保存されます</div>
+  </div>
+
+</main>
+
+<footer>
+  <strong>Claude with the Anthropic API — Lecture 22</strong>
+  Generated by <code>/anthropic-academy-html</code>
+</footer>
+
+<script>
+(function() {
+  var key = 'memo_' + location.pathname.split('/').pop();
+  var ta = document.querySelector('.memo-area');
+  var saved = localStorage.getItem(key);
+  if (saved) ta.value = saved;
+  ta.addEventListener('input', function() { localStorage.setItem(key, ta.value); });
+})();
+</script>
+
+</body>
+</html>
