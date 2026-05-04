@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>評価を実行する | Anthropic Academy</title>
+<style>
+  :root {
+    --blue: #0096d6; --blue-dark: #005f8a; --blue-light: #e0f2fe;
+    --orange: #f07800; --orange-light: #fff3e8; --orange-dark: #a85200;
+    --bg: #f5f7fa; --surface: #ffffff; --surface2: #f8fafc;
+    --text: #1a1a2e; --text-sub: #374151; --text-muted: #6b7280;
+    --border: #d1d7dc; --border-light: #e5e7eb;
+    --success: #16a34a; --warning: #f59e0b; --danger: #dc2626;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.06); --shadow: 0 2px 8px rgba(0,0,0,.08); --shadow-lg: 0 8px 24px rgba(0,0,0,.10);
+    --radius: 8px; --radius-lg: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--bg); color: var(--text); line-height: 1.75; -webkit-font-smoothing: antialiased; }
+  header { background: linear-gradient(135deg, #003d5c 0%, var(--blue-dark) 60%, #0077aa 100%); padding: 48px 40px 40px; color: #fff; position: relative; overflow: hidden; border-bottom: 4px solid var(--orange); }
+  header::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 85% 20%, rgba(240,120,0,.20) 0%, transparent 55%), radial-gradient(ellipse at 10% 90%, rgba(255,255,255,.05) 0%, transparent 50%); }
+  header > * { position: relative; max-width: 860px; margin: 0 auto; }
+  .course-label { font-size: 11px; letter-spacing: .15em; opacity: .75; text-transform: uppercase; margin-bottom: 10px; }
+  header h1 { font-size: 1.9rem; font-weight: 800; line-height: 1.35; }
+  .lecture-title-en { font-size: 1rem; opacity: .6; margin-top: 6px; font-weight: 400; letter-spacing: .04em; font-family: "SF Pro Display","Segoe UI",sans-serif; }
+  .header-meta { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 10px; font-size: 13px; }
+  .header-meta span { background: rgba(255,255,255,.14); color: #fff; padding: 5px 14px; border-radius: 4px; border: 1px solid rgba(255,255,255,.2); font-weight: 500; }
+  .source-bar { background: #002a3f; padding: 9px 40px; }
+  .source-bar a { color: #7dd3fc; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+  .source-bar a::before { content: "🔗"; font-size: 12px; }
+  .source-bar a:hover { color: #fff; text-decoration: underline; }
+  .progress-bar { background: var(--surface); padding: 11px 40px; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid var(--border-light); }
+  .badge { padding: 5px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+  .badge-done { background: #dcfce7; color: #15803d; }
+  .badge-todo { background: #f3f4f6; color: #9ca3af; border: 1.5px solid #e5e7eb; }
+  nav { background: var(--surface); padding: 10px 24px; display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--border-light); position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow-sm); }
+  nav a { color: var(--text-sub); text-decoration: none; font-size: 12px; font-weight: 600; padding: 7px 13px; border-radius: 6px; transition: all .15s; white-space: nowrap; }
+  nav a:hover { color: var(--blue-dark); background: var(--blue-light); }
+  main { max-width: 860px; margin: 0 auto; padding: 40px 24px 80px; display: flex; flex-direction: column; gap: 24px; }
+  .section { background: var(--surface); border-radius: var(--radius-lg); padding: 28px 32px; box-shadow: var(--shadow-sm); scroll-margin-top: 80px; }
+  .section-label { font-size: 13px; font-weight: 800; color: var(--blue-dark); margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid var(--orange); letter-spacing: .04em; }
+  .summary-box { background: linear-gradient(135deg, var(--blue-light), #f0fdf4); border-radius: var(--radius); padding: 20px 24px; font-size: 15px; font-weight: 500; line-height: 1.85; color: var(--blue-dark); }
+  .summary-box strong { color: var(--orange-dark); }
+  .kp-list { display: flex; flex-direction: column; gap: 14px; list-style: none; }
+  .kp-item { display: flex; gap: 16px; align-items: flex-start; background: var(--surface2); border-radius: var(--radius); padding: 16px 18px; border-left: 4px solid var(--blue); }
+  .kp-num { min-width: 30px; height: 30px; background: var(--blue-dark); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .kp-heading { font-weight: 700; font-size: 14px; color: var(--blue-dark); margin-bottom: 5px; }
+  .kp-desc { font-size: 13.5px; color: var(--text-sub); line-height: 1.7; }
+  .compare-table { width: 100%; border-collapse: collapse; font-size: 13.5px; border-radius: var(--radius); overflow: hidden; }
+  .compare-table thead tr { border-bottom: 2px solid var(--orange); background: var(--surface2); }
+  .compare-table th { padding: 11px 16px; text-align: left; font-weight: 700; color: var(--blue-dark); font-size: 12px; }
+  .compare-table td { padding: 12px 16px; border-bottom: 1px solid var(--border-light); vertical-align: top; }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr:hover td { background: var(--blue-light); }
+  .glossary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 560px) { .glossary-grid { grid-template-columns: 1fr; } }
+  .glossary-item { background: var(--surface2); border-left: 3px solid var(--blue); border-radius: 0 var(--radius) var(--radius) 0; padding: 13px 15px; }
+  .glossary-term { font-weight: 700; font-size: 14px; color: var(--blue-dark); margin-bottom: 4px; }
+  .glossary-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+  .qa-list { display: flex; flex-direction: column; }
+  .qa-item { padding: 18px 0; border-bottom: 1px solid var(--border-light); }
+  .qa-item:last-child { border-bottom: none; }
+  .qa-q { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 8px; }
+  .q-badge { min-width: 30px; height: 30px; background: var(--orange); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .q-text { font-weight: 600; font-size: 14.5px; padding-top: 4px; }
+  details { margin-left: 44px; }
+  summary { font-size: 13px; color: var(--blue); cursor: pointer; font-weight: 600; padding: 4px 0; user-select: none; }
+  summary:hover { color: var(--blue-dark); }
+  .qa-a { font-size: 13.5px; color: var(--text-sub); padding: 10px 14px; border-left: 3px solid var(--blue); margin-top: 8px; line-height: 1.75; background: var(--blue-light); border-radius: 0 var(--radius) var(--radius) 0; }
+  .memo-area { width: 100%; min-height: 120px; background: #fffbf2; border: 1.5px dashed var(--orange); border-radius: var(--radius); padding: 14px; font-size: 14px; font-family: inherit; line-height: 1.75; resize: vertical; outline: none; color: var(--text); }
+  .memo-area:focus { box-shadow: 0 0 0 3px rgba(240,120,0,.12); border-style: solid; }
+  .memo-area::placeholder { color: #ccc; }
+  .memo-hint { font-size: 12px; color: #bbb; margin-top: 6px; }
+  .code-block { background: #1e1e1e; border-radius: var(--radius); padding: 16px 18px; font-family: "SF Mono","Consolas",monospace; font-size: 13px; color: #d4d4d4; overflow-x: auto; margin: 12px 0; line-height: 1.7; white-space: pre; }
+  .highlight-box { border-left: 4px solid var(--blue); background: var(--blue-light); padding: 14px 18px; border-radius: 0 var(--radius) var(--radius) 0; margin: 12px 0; font-size: 13.5px; color: var(--text-sub); line-height: 1.75; }
+  .highlight-box.warning { border-color: var(--warning); background: #fef3c7; color: #78350f; }
+  .highlight-box.success { border-color: var(--success); background: #dcfce7; color: #14532d; }
+  footer { text-align: center; padding: 36px 24px; color: var(--text-muted); font-size: 12px; background: var(--surface2); border-top: 1px solid var(--border-light); margin-top: 8px; }
+  footer strong { color: var(--text-sub); font-size: 13px; display: block; margin-bottom: 4px; }
+  @media (max-width: 640px) {
+    header { padding: 32px 20px; } header h1 { font-size: 1.4rem; }
+    .source-bar, .progress-bar { padding-left: 20px; padding-right: 20px; }
+    .section { padding: 20px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="course-label">Claude with the Anthropic API — Lecture 25</div>
+  <h1>評価を実行する</h1>
+  <div class="lecture-title-en">Running the Eval</div>
+  <div class="header-meta">
+    <span>📅 2026-05-05</span>
+    <span>⏱ 8 min</span>
+    <span>📌 Lecture 25</span>
+  </div>
+</header>
+
+<div class="source-bar">
+  <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287738" target="_blank" rel="noopener">https://anthropic.skilljar.com/claude-with-the-anthropic-api/287738</a>
+</div>
+
+<div class="progress-bar">
+  <span class="badge badge-done">✅ 視聴済み</span>
+  <span class="badge badge-todo">📝 復習中</span>
+</div>
+
+<nav>
+  <a href="#summary">① まとめ</a>
+  <a href="#keypoints">② キーポイント</a>
+  <a href="#details">③ 3関数詳細</a>
+  <a href="#glossary">④ 用語集</a>
+  <a href="#check">⑤ 理解度チェック</a>
+  <a href="#memo">⑥ メモ</a>
+</nav>
+
+<main>
+
+  <div class="section" id="summary">
+    <div class="section-label">① 一言まとめ</div>
+    <div class="summary-box">
+      評価データセット（dataset.json）の準備が整ったので、コア評価パイプラインを構築する。
+      <strong>3つの関数</strong>（<code>run_prompt</code> / <code>run_test_case</code> / <code>run_eval</code>）で
+      「テストケースを Claude に流す → 結果を集める」基盤が完成。<br>
+      ただし score は <strong>ハードコード10</strong> のまま。次レクチャーで <strong>grader</strong> を実装し、
+      ハードコードを本物のスコアに置き換えれば <strong>eval パイプライン完成</strong> となる。
+    </div>
+  </div>
+
+  <div class="section" id="keypoints">
+    <div class="section-label">② キーポイント</div>
+    <ul class="kp-list">
+      <li class="kp-item">
+        <div class="kp-num">1</div>
+        <div>
+          <div class="kp-heading">Eval Pipeline = 3つの関数で構成</div>
+          <div class="kp-desc">
+            <strong>run_prompt</strong>（1テストケースの Claude 送信）+
+            <strong>run_test_case</strong>（オーケストレーション + 採点）+
+            <strong>run_eval</strong>（データセット全体ループ）。
+            責務分離により改善ポイントが明確になる。
+          </div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">2</div>
+        <div>
+          <div class="kp-heading">run_prompt = テストケース ⇄ プロンプトテンプレートをマージ</div>
+          <div class="kp-desc">
+            プロンプトに <code>test_case["task"]</code> を差し込んで Claude に送信、出力を返す。
+            あえてシンプル（フォーマット指示なし）→ 後段で改良する余地を残す。
+          </div>
+          <div class="code-block">def run_prompt(test_case):
+    """Merges the prompt and test case input,
+       then returns the result"""
+    prompt = f"""
+Please solve the following task:
+
+{test_case["task"]}
+"""
+    messages = []
+    add_user_message(messages, prompt)
+    output = chat(messages)
+    return output</div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">3</div>
+        <div>
+          <div class="kp-heading">run_test_case = 1ケース処理 + 採点（プレースホルダー）</div>
+          <div class="kp-desc">
+            run_prompt の結果を取得し、現時点では <strong>score=10 ハードコード</strong> で返す。
+            「TODO - Grading」コメントを残し、次レクチャーで grader 実装の入口にする。
+            返り値は <strong>output / test_case / score</strong> の3点セット。
+          </div>
+          <div class="code-block">def run_test_case(test_case):
+    """Calls run_prompt, then grades the result"""
+    output = run_prompt(test_case)
+
+    # TODO - Grading
+    score = 10
+
+    return {
+        "output": output,
+        "test_case": test_case,
+        "score": score,
+    }</div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">4</div>
+        <div>
+          <div class="kp-heading">run_eval = データセット全体ループ</div>
+          <div class="kp-desc">
+            dataset の各 test_case を run_test_case に通して results に蓄積。
+            データセット規模が大きくなれば <strong>並列化（concurrency）</strong> の余地あり。
+          </div>
+          <div class="code-block">def run_eval(dataset):
+    """Loads the dataset and calls run_test_case
+       with each case"""
+    results = []
+
+    for test_case in dataset:
+        result = run_test_case(test_case)
+        results.append(result)
+
+    return results</div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">5</div>
+        <div>
+          <div class="kp-heading">実行 = dataset.json をロード → run_eval()</div>
+          <div class="kp-desc">
+            JSON ファイルから dataset を読み込み、run_eval を呼び出す。
+            <strong>Claude Haiku で約30秒</strong> のランタイム（フルデータセット）。
+          </div>
+          <div class="code-block">with open("dataset.json", "r") as f:
+    dataset = json.load(f)
+
+results = run_eval(dataset)</div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">6</div>
+        <div>
+          <div class="kp-heading">結果 = output / test_case / score の構造化 JSON 配列</div>
+          <div class="kp-desc">
+            各 result に3キー保存。<strong>output は冗長</strong>になりがち（フォーマット指示なしのため）。
+            これこそ後段でプロンプト改良 + grader 実装で解消する課題。
+          </div>
+          <div class="highlight-box warning">
+            <strong>現時点の限界</strong>: ① プロンプトにフォーマット指示なし → 冗長な出力 / ② score=10 ハードコード → 本物の評価値ではない
+          </div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">7</div>
+        <div>
+          <div class="kp-heading">不足ピース = Grader System</div>
+          <div class="kp-desc">
+            <strong>Feed Through a Grader</strong> ステップが未実装。
+            Grader（採点者）= 出力を客観スコアに変換する仕組み。これがあって初めて「v1 vs v2」のプロンプト比較が可能。
+          </div>
+          <div class="highlight-box success">
+            ここまでで <strong>eval パイプラインの大部分の基盤</strong> が完成。次レクチャーで grader を実装してハードコード10を本物のスコアに置き換える。
+          </div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="section" id="details">
+    <div class="section-label">③ 3関数詳細</div>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>関数</th>
+          <th>責務</th>
+          <th>入力</th>
+          <th>出力</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>run_prompt</strong></td>
+          <td>1テストケースをプロンプトとマージ → Claude 送信</td>
+          <td>test_case (dict)</td>
+          <td>Claude の output (str)</td>
+        </tr>
+        <tr>
+          <td><strong>run_test_case</strong></td>
+          <td>run_prompt 呼び出し + 採点（現状ハードコード10）</td>
+          <td>test_case (dict)</td>
+          <td>{output, test_case, score}</td>
+        </tr>
+        <tr>
+          <td><strong>run_eval</strong></td>
+          <td>データセット全体ループ → 結果配列を返す</td>
+          <td>dataset (list)</td>
+          <td>results (list of dict)</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="highlight-box" style="margin-top:16px;">
+      <strong>責務分離のメリット</strong>: 関数を分けることで「プロンプト改善は run_prompt」「採点改善は run_test_case」「並列化は run_eval」と <strong>改良ポイントが明確</strong>になる。
+    </div>
+  </div>
+
+  <div class="section" id="glossary">
+    <div class="section-label">④ 用語集</div>
+    <div class="glossary-grid">
+      <div class="glossary-item">
+        <div class="glossary-term">run_prompt</div>
+        <div class="glossary-desc">1テストケースとプロンプトテンプレートをマージし、Claude に送信して output を返す関数。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">run_test_case</div>
+        <div class="glossary-desc">run_prompt を呼び出し、結果を採点して構造化辞書（output / test_case / score）を返す関数。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">run_eval</div>
+        <div class="glossary-desc">データセット全体をループし、各 test_case を run_test_case に通して結果配列を蓄積する関数。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">hardcoded score</div>
+        <div class="glossary-desc">本物の採点ロジックを実装する前のプレースホルダー値（=10）。次レクチャーで grader に置換予定。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">grader</div>
+        <div class="glossary-desc">Claude の出力を客観スコアに変換する採点システム。Code grader / Model grader / Human grader の3種類がある。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">Claude Haiku</div>
+        <div class="glossary-desc">Anthropic の高速・低コストモデル。eval 実行で使用すると約30秒でフルデータセット処理可能。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="check">
+    <div class="section-label">⑤ 理解度チェック</div>
+    <div class="qa-list">
+      <div class="qa-item">
+        <div class="qa-q">
+          <div class="q-badge">Q1</div>
+          <div class="q-text">eval pipeline の3関数（run_prompt / run_test_case / run_eval）はそれぞれ何の責務を持っていますか？</div>
+        </div>
+        <details>
+          <summary>答えを見る</summary>
+          <div class="qa-a">
+            <strong>run_prompt</strong> = 1テストケースをプロンプトテンプレートとマージし、Claude に送信して output を返す（実際のAPI呼び出し）<br>
+            <strong>run_test_case</strong> = run_prompt を呼び、結果を採点して { output, test_case, score } の構造化辞書を返す（オーケストレーション + 採点）<br>
+            <strong>run_eval</strong> = データセット全体をループし、各 test_case に run_test_case を適用して results を蓄積する（バッチ実行）<br>
+            責務分離により、改善ポイント（プロンプト改善 / 採点改善 / 並列化）がそれぞれ別関数で対応可能。
+          </div>
+        </details>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">
+          <div class="q-badge">Q2</div>
+          <div class="q-text">なぜ score を <code>10</code> でハードコードしているのですか？このまま放置するとどんな問題がありますか？</div>
+        </div>
+        <details>
+          <summary>答えを見る</summary>
+          <div class="qa-a">
+            <strong>理由</strong>: パイプラインの骨格を先に完成させ、grader 実装を別ステップに分離するため。「TODO - Grading」コメントで次の作業を明示している。<br>
+            <strong>放置すると</strong>: ① 全テストケースで score=10 になる → プロンプト v1 と v2 を <strong>比較できない</strong> / ② 「改善した気がする」という主観判定に戻る / ③ そもそも eval パイプラインの目的（客観スコア）を達成できない。<br>
+            次レクチャーで grader を実装してハードコード10を本物のスコアに置き換えることが必須。
+          </div>
+        </details>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">
+          <div class="q-badge">Q3</div>
+          <div class="q-text">run_prompt のプロンプトはあえてシンプル（フォーマット指示なし）。これによってどんな問題が起き、どう活用できますか？</div>
+        </div>
+        <details>
+          <summary>答えを見る</summary>
+          <div class="qa-a">
+            <strong>起きる問題</strong>: Claude が冗長な説明・前置き・余計な解説を含めて出力する → output が綺麗な構造化データではなくなる。<br>
+            <strong>活用方法</strong>: ① これは「プロンプト改良の出発点」として意図的に粗いまま残す / ② grader 実装後に「v1 (シンプル) vs v2 (フォーマット指示追加)」のスコア差を <strong>客観数値で確認</strong>できる / ③ baseline スコアが「どこから出発したか」を後から振り返れる。<br>
+            シンプルなまま走らせて改善余地を可視化することが、評価ワークフローの本質。
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="memo">
+    <div class="section-label">⑥ 自分メモ（気づき・疑問・次に調べること）</div>
+    <textarea class="memo-area" placeholder="ここに自由にメモを書いてください..."></textarea>
+    <div class="memo-hint">※ このブラウザに自動保存されます</div>
+  </div>
+
+</main>
+
+<footer>
+  <strong>Claude with the Anthropic API — Lecture 25</strong>
+  Generated by <code>/anthropic-academy-html</code>
+</footer>
+
+<script>
+(function() {
+  var key = 'memo_' + location.pathname.split('/').pop();
+  var ta = document.querySelector('.memo-area');
+  var saved = localStorage.getItem(key);
+  if (saved) ta.value = saved;
+  ta.addEventListener('input', function() { localStorage.setItem(key, ta.value); });
+})();
+</script>
+
+</body>
+</html>
