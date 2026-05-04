@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>テストデータセットを生成する | Anthropic Academy</title>
+<style>
+  :root {
+    --blue: #0096d6; --blue-dark: #005f8a; --blue-light: #e0f2fe;
+    --orange: #f07800; --orange-light: #fff3e8; --orange-dark: #a85200;
+    --bg: #f5f7fa; --surface: #ffffff; --surface2: #f8fafc;
+    --text: #1a1a2e; --text-sub: #374151; --text-muted: #6b7280;
+    --border: #d1d7dc; --border-light: #e5e7eb;
+    --success: #16a34a; --warning: #f59e0b; --danger: #dc2626;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.06); --shadow: 0 2px 8px rgba(0,0,0,.08); --shadow-lg: 0 8px 24px rgba(0,0,0,.10);
+    --radius: 8px; --radius-lg: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--bg); color: var(--text); line-height: 1.75; -webkit-font-smoothing: antialiased; }
+  header { background: linear-gradient(135deg, #003d5c 0%, var(--blue-dark) 60%, #0077aa 100%); padding: 48px 40px 40px; color: #fff; position: relative; overflow: hidden; border-bottom: 4px solid var(--orange); }
+  header::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 85% 20%, rgba(240,120,0,.20) 0%, transparent 55%), radial-gradient(ellipse at 10% 90%, rgba(255,255,255,.05) 0%, transparent 50%); }
+  header > * { position: relative; max-width: 860px; margin: 0 auto; }
+  .course-label { font-size: 11px; letter-spacing: .15em; opacity: .75; text-transform: uppercase; margin-bottom: 10px; }
+  header h1 { font-size: 1.9rem; font-weight: 800; line-height: 1.35; }
+  .lecture-title-en { font-size: 1rem; opacity: .6; margin-top: 6px; font-weight: 400; letter-spacing: .04em; font-family: "SF Pro Display","Segoe UI",sans-serif; }
+  .header-meta { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 10px; font-size: 13px; }
+  .header-meta span { background: rgba(255,255,255,.14); color: #fff; padding: 5px 14px; border-radius: 4px; border: 1px solid rgba(255,255,255,.2); font-weight: 500; }
+  .source-bar { background: #002a3f; padding: 9px 40px; }
+  .source-bar a { color: #7dd3fc; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+  .source-bar a::before { content: "🔗"; font-size: 12px; }
+  .source-bar a:hover { color: #fff; text-decoration: underline; }
+  .progress-bar { background: var(--surface); padding: 11px 40px; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid var(--border-light); }
+  .badge { padding: 5px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+  .badge-done { background: #dcfce7; color: #15803d; }
+  .badge-todo { background: #f3f4f6; color: #9ca3af; border: 1.5px solid #e5e7eb; }
+  nav { background: var(--surface); padding: 10px 24px; display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--border-light); position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow-sm); }
+  nav a { color: var(--text-sub); text-decoration: none; font-size: 12px; font-weight: 600; padding: 7px 13px; border-radius: 6px; transition: all .15s; white-space: nowrap; }
+  nav a:hover { color: var(--blue-dark); background: var(--blue-light); }
+  main { max-width: 860px; margin: 0 auto; padding: 40px 24px 80px; display: flex; flex-direction: column; gap: 24px; }
+  .section { background: var(--surface); border-radius: var(--radius-lg); padding: 28px 32px; box-shadow: var(--shadow-sm); scroll-margin-top: 80px; }
+  .section-label { font-size: 13px; font-weight: 800; color: var(--blue-dark); margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid var(--orange); letter-spacing: .04em; }
+  .summary-box { background: linear-gradient(135deg, var(--blue-light), #f0fdf4); border-radius: var(--radius); padding: 20px 24px; font-size: 15px; font-weight: 500; line-height: 1.85; color: var(--blue-dark); }
+  .summary-box strong { color: var(--orange-dark); }
+  .kp-list { display: flex; flex-direction: column; gap: 14px; list-style: none; }
+  .kp-item { display: flex; gap: 16px; align-items: flex-start; background: var(--surface2); border-radius: var(--radius); padding: 16px 18px; border-left: 4px solid var(--blue); }
+  .kp-num { min-width: 30px; height: 30px; background: var(--blue-dark); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .kp-heading { font-weight: 700; font-size: 14px; color: var(--blue-dark); margin-bottom: 5px; }
+  .kp-desc { font-size: 13.5px; color: var(--text-sub); line-height: 1.7; }
+  .compare-table { width: 100%; border-collapse: collapse; font-size: 13.5px; border-radius: var(--radius); overflow: hidden; }
+  .compare-table thead tr { border-bottom: 2px solid var(--orange); background: var(--surface2); }
+  .compare-table th { padding: 11px 16px; text-align: left; font-weight: 700; color: var(--blue-dark); font-size: 12px; }
+  .compare-table td { padding: 12px 16px; border-bottom: 1px solid var(--border-light); vertical-align: top; }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr:hover td { background: var(--blue-light); }
+  .glossary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 560px) { .glossary-grid { grid-template-columns: 1fr; } }
+  .glossary-item { background: var(--surface2); border-left: 3px solid var(--blue); border-radius: 0 var(--radius) var(--radius) 0; padding: 13px 15px; }
+  .glossary-term { font-weight: 700; font-size: 14px; color: var(--blue-dark); margin-bottom: 4px; }
+  .glossary-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+  .qa-list { display: flex; flex-direction: column; }
+  .qa-item { padding: 18px 0; border-bottom: 1px solid var(--border-light); }
+  .qa-item:last-child { border-bottom: none; }
+  .qa-q { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 8px; }
+  .q-badge { min-width: 30px; height: 30px; background: var(--orange); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .q-text { font-weight: 600; font-size: 14.5px; padding-top: 4px; }
+  details { margin-left: 44px; }
+  summary { font-size: 13px; color: var(--blue); cursor: pointer; font-weight: 600; padding: 4px 0; user-select: none; }
+  summary:hover { color: var(--blue-dark); }
+  .qa-a { font-size: 13.5px; color: var(--text-sub); padding: 10px 14px; border-left: 3px solid var(--blue); margin-top: 8px; line-height: 1.75; background: var(--blue-light); border-radius: 0 var(--radius) var(--radius) 0; }
+  .memo-area { width: 100%; min-height: 120px; background: #fffbf2; border: 1.5px dashed var(--orange); border-radius: var(--radius); padding: 14px; font-size: 14px; font-family: inherit; line-height: 1.75; resize: vertical; outline: none; color: var(--text); }
+  .memo-area:focus { box-shadow: 0 0 0 3px rgba(240,120,0,.12); border-style: solid; }
+  .memo-area::placeholder { color: #ccc; }
+  .memo-hint { font-size: 12px; color: #bbb; margin-top: 6px; }
+  .code-block { background: #1e1e1e; border-radius: var(--radius); padding: 16px 18px; font-family: "SF Mono","Consolas",monospace; font-size: 13px; color: #d4d4d4; overflow-x: auto; margin: 12px 0; line-height: 1.7; white-space: pre; }
+  .highlight-box { border-left: 4px solid var(--blue); background: var(--blue-light); padding: 14px 18px; border-radius: 0 var(--radius) var(--radius) 0; margin: 12px 0; font-size: 13.5px; color: var(--text-sub); line-height: 1.75; }
+  .highlight-box.warning { border-color: var(--warning); background: #fef3c7; color: #78350f; }
+  .highlight-box.success { border-color: var(--success); background: #dcfce7; color: #14532d; }
+  footer { text-align: center; padding: 36px 24px; color: var(--text-muted); font-size: 12px; background: var(--surface2); border-top: 1px solid var(--border-light); margin-top: 8px; }
+  footer strong { color: var(--text-sub); font-size: 13px; display: block; margin-bottom: 4px; }
+  @media (max-width: 640px) {
+    header { padding: 32px 20px; } header h1 { font-size: 1.4rem; }
+    .source-bar, .progress-bar { padding-left: 20px; padding-right: 20px; }
+    .section { padding: 20px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="course-label">Claude with the Anthropic API — Lecture 24</div>
+  <h1>テストデータセットを生成する</h1>
+  <div class="lecture-title-en">Generating Test Datasets</div>
+  <div class="header-meta">
+    <span>📅 2026-05-04</span>
+    <span>⏱ 8 min</span>
+    <span>📌 Lecture 24</span>
+  </div>
+</header>
+
+<div class="source-bar">
+  <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287737" target="_blank" rel="noopener">https://anthropic.skilljar.com/claude-with-the-anthropic-api/287737</a>
+</div>
+
+<div class="progress-bar">
+  <span class="badge badge-done">✅ 視聴済み</span>
+  <span class="badge badge-todo">📝 復習中</span>
+</div>
+
+<nav>
+  <a href="#summary">① まとめ</a>
+  <a href="#keypoints">② キーポイント</a>
+  <a href="#details">③ 5ステップ詳細</a>
+  <a href="#glossary">④ 用語集</a>
+  <a href="#check">⑤ 理解度チェック</a>
+  <a href="#memo">⑥ メモ</a>
+</nav>
+
+<main>
+
+  <div class="section" id="summary">
+    <div class="section-label">① 一言まとめ</div>
+    <div class="summary-box">
+      AWS関連コードを <strong>3形式（Python / JSON / regex）でクリーンに返す</strong> プロンプトを評価するため、<strong>Claudeで自動的にテストデータセットを生成</strong> → <code>dataset.json</code> に保存する流れ。<br>
+      ① Goal設定 → ② Eval Dataset構造定義 → ③ Helper関数 + <code>generate_dataset()</code> 実装 → ④ 実行テスト → ⑤ <code>dataset.json</code> 保存。これでプロンプト評価パイプラインの「入口」が完成する。
+    </div>
+  </div>
+
+  <div class="section" id="keypoints">
+    <div class="section-label">② キーポイント</div>
+    <ul class="kp-list">
+      <li class="kp-item">
+        <div class="kp-num">1</div>
+        <div>
+          <div class="kp-heading">Step 1: Setting Up the Goal（ゴールを設定する）</div>
+          <div class="kp-desc">評価の出発点 = <strong>「何を達成すれば成功か」を定量化できる状態</strong>。今回のプロンプトの要件は「3形式（Python / JSON / regex）のクリーンな出力のみ。説明・ヘッダー・前置きNG」。</div>
+          <div class="code-block">prompt = """
+Please write a script in the following languages:
+...
+"""</div>
+          <div class="highlight-box success">
+            <strong>Key requirement:</strong> Clean output in one of three formats - <strong>NO explanations / headers / extra text</strong>.
+          </div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">2</div>
+        <div>
+          <div class="kp-heading">Step 2: Creating an Evaluation Dataset（評価データセットを作る）</div>
+          <div class="kp-desc">プロンプトに流し込む <strong>入力（タスク）の集合</strong>。データ構造は <strong>JSONオブジェクトの配列</strong>、各オブジェクトに <code>"task"</code> プロパティ。手作業 or Claude 自動生成の2択（このレクチャーは自動生成）。</div>
+          <div class="code-block">[
+  { "task": "Write a Python function that..." },
+  { "task": "Generate a JSON config for..." },
+  { "task": "Build a regex that matches..." }
+]</div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">3</div>
+        <div>
+          <div class="kp-heading">Step 3: Generating Test Data with Code（コードで生成する）</div>
+          <div class="kp-desc">まず Claude を扱う <strong>3つのヘルパー関数</strong> を準備 → その上に <code>generate_dataset()</code> を実装。プロンプト内で「3形式すべてカバー / JSON配列で返す / AWS文脈」を明示する。</div>
+          <div class="code-block">def add_user_message(messages, text):
+    messages.append({"role": "user", "content": text})
+
+def add_assistant_message(messages, text):
+    messages.append({"role": "assistant", "content": text})
+
+def chat(messages, system="", temperature=1.0,
+         stop_sequences=[]):
+    response = client.messages.create(
+        model=MODEL_NAME,
+        max_tokens=MAX_TOKENS,
+        system=system,
+        temperature=temperature,
+        stop_sequences=stop_sequences,
+        messages=messages,
+    )
+    return response.content[0].text</div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">4</div>
+        <div>
+          <div class="kp-heading">Step 4: Testing the Dataset Generation（生成をテストする）</div>
+          <div class="kp-desc">関数を実行して、3形式（Python / JSON / regex）すべてをカバーする <strong>3つの異なるテストケース</strong> が返るか確認。AWS関連コーディングタスクに偏りがないかチェック。</div>
+          <div class="code-block">dataset = generate_dataset()
+print(dataset)
+# → 3 different test cases:
+#   - Python function (AWS Lambda 等)
+#   - JSON config (CloudFormation / IAM 等)
+#   - Regex (CloudWatch logs 等)</div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">5</div>
+        <div>
+          <div class="kp-heading">Step 5: Saving the Dataset（保存する）</div>
+          <div class="kp-desc">後段の評価フェーズで再利用できるよう <code>dataset.json</code> としてファイル保存。git にコミットすれば <strong>再現性</strong> も担保される。</div>
+          <div class="code-block">with open("dataset.json", "w") as f:
+    json.dump(dataset, f, indent=2)</div>
+          <div class="highlight-box success">
+            <strong>これでプロンプト評価パイプラインの「入口」が完成。</strong>後段（grader / scoring / iterate）に進める状態。
+          </div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">6</div>
+        <div>
+          <div class="kp-heading">自動生成の3つの注意点</div>
+          <div class="kp-desc">
+            ① <strong>API課金</strong>が発生（Claude呼び出し）<br>
+            ② <code>temperature=1.0</code> で <strong>多様性</strong>を確保<br>
+            ③ 自動生成データは <strong>人間の品質チェック</strong>を別途通すと安全
+          </div>
+          <div class="highlight-box warning">「Auto生成 = 完成」ではない。生成 → 目視レビュー → 必要なら手作業で補強、が実運用フロー。</div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="section" id="details">
+    <div class="section-label">③ 5ステップ詳細</div>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Step</th>
+          <th>名称</th>
+          <th>やること</th>
+          <th>アウトプット</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>1</strong></td>
+          <td>Setting Up the Goal</td>
+          <td>プロンプトの要件を定量測定できる状態にする</td>
+          <td>Goal定義（3形式・説明なし）</td>
+        </tr>
+        <tr>
+          <td><strong>2</strong></td>
+          <td>Creating an Evaluation Dataset</td>
+          <td>JSON配列構造を定義（各objに <code>task</code>）</td>
+          <td>Eval Dataset スキーマ</td>
+        </tr>
+        <tr>
+          <td><strong>3</strong></td>
+          <td>Generating Test Data with Code</td>
+          <td>Helper関数 + <code>generate_dataset()</code> 実装</td>
+          <td>関数定義（コード）</td>
+        </tr>
+        <tr>
+          <td><strong>4</strong></td>
+          <td>Testing the Dataset Generation</td>
+          <td>関数を実行 → 3形式カバー確認</td>
+          <td>3つのテストケース（メモリ上）</td>
+        </tr>
+        <tr>
+          <td><strong>5</strong></td>
+          <td>Saving the Dataset</td>
+          <td><code>json.dump()</code> でファイル化</td>
+          <td><code>dataset.json</code></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="highlight-box" style="margin-top:16px;">
+      <strong>このレクチャーで「テストデータ生成」フェーズが完成。</strong>次のレクチャーから「評価実行（grader / scoring）」フェーズに進む。
+    </div>
+  </div>
+
+  <div class="section" id="glossary">
+    <div class="section-label">④ 用語集</div>
+    <div class="glossary-grid">
+      <div class="glossary-item">
+        <div class="glossary-term">Eval Dataset</div>
+        <div class="glossary-desc">プロンプト評価で使う入力（タスク）の集合。JSON配列構造、各オブジェクトに <code>"task"</code> プロパティ。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">generate_dataset()</div>
+        <div class="glossary-desc">Claudeを呼び出してテストデータを自動生成する関数。プロンプト内で「3形式 / JSON出力 / AWS文脈」を指示。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">Helper Functions</div>
+        <div class="glossary-desc"><code>add_user_message</code> / <code>add_assistant_message</code> / <code>chat</code> の3点セット。Claude API呼び出しを抽象化する。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">temperature=1.0</div>
+        <div class="glossary-desc">生成の多様性を最大化する設定。同じタスクが繰り返されず、3形式すべてがカバーされやすくなる。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">dataset.json</div>
+        <div class="glossary-desc">生成したテストデータを保存するファイル。後段の評価フェーズで再利用、git管理で再現性を担保。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">AWS-specific code</div>
+        <div class="glossary-desc">このレッスンの題材ドメイン。Python関数（Lambda）/ JSON設定（CloudFormation）/ 正規表現（CloudWatch logs等）。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="check">
+    <div class="section-label">⑤ 理解度チェック</div>
+    <div class="qa-list">
+      <div class="qa-item">
+        <div class="qa-q">
+          <div class="q-badge">Q1</div>
+          <div class="q-text">eval dataset の構造はどうなっていて、各オブジェクトにはどんなプロパティが入りますか？</div>
+        </div>
+        <details>
+          <summary>答えを見る</summary>
+          <div class="qa-a">
+            構造: <strong>JSONオブジェクトの配列</strong>。各オブジェクトには <code>"task"</code> プロパティが入り、その値は「Claudeに何を達成してほしいか」を記述した文字列。
+            <div class="code-block">[
+  { "task": "Write a Python function that..." },
+  { "task": "Generate a JSON config for..." }
+]</div>
+          </div>
+        </details>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">
+          <div class="q-badge">Q2</div>
+          <div class="q-text"><code>generate_dataset()</code> のプロンプトで「必ず指示すべき3点」は？</div>
+        </div>
+        <details>
+          <summary>答えを見る</summary>
+          <div class="qa-a">
+            ① <strong>3形式（Python / JSON / regex）すべてカバー</strong> するよう明示<br>
+            ② 出力フォーマットを <strong>JSON配列</strong> で返すよう指定<br>
+            ③ <strong>AWS-specific</strong> というドメイン文脈を入れる<br>
+            この3点が抜けると、生成データが偏ったり、後段でパースできなかったりする。
+          </div>
+        </details>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">
+          <div class="q-badge">Q3</div>
+          <div class="q-text">なぜ <code>temperature=1.0</code> でデータを生成し、なぜ <code>dataset.json</code> としてファイル保存するのですか？</div>
+        </div>
+        <details>
+          <summary>答えを見る</summary>
+          <div class="qa-a">
+            <strong>temperature=1.0</strong> = 多様性最大化。同じタスクが繰り返されると評価データセットとして偏りが出るため、温度を上げて3形式すべてがカバーされやすくする。<br>
+            <strong>dataset.json保存</strong> = 後段の評価フェーズ（grader / scoring）で再利用 + git管理で<strong>再現性</strong>を担保。プロンプトv1とv2を <strong>同じデータセット</strong> で比較できることが評価ワークフローの前提。
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="memo">
+    <div class="section-label">⑥ 自分メモ（気づき・疑問・次に調べること）</div>
+    <textarea class="memo-area" placeholder="ここに自由にメモを書いてください..."></textarea>
+    <div class="memo-hint">※ このブラウザに自動保存されます</div>
+  </div>
+
+</main>
+
+<footer>
+  <strong>Claude with the Anthropic API — Lecture 24</strong>
+  Generated by <code>/anthropic-academy-html</code>
+</footer>
+
+<script>
+(function() {
+  var key = 'memo_' + location.pathname.split('/').pop();
+  var ta = document.querySelector('.memo-area');
+  var saved = localStorage.getItem(key);
+  if (saved) ta.value = saved;
+  ta.addEventListener('input', function() { localStorage.setItem(key, ta.value); });
+})();
+</script>
+
+</body>
+</html>
