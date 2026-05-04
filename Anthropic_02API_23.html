@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>典型的な評価ワークフロー | Anthropic Academy</title>
+<style>
+  :root {
+    --blue: #0096d6; --blue-dark: #005f8a; --blue-light: #e0f2fe;
+    --orange: #f07800; --orange-light: #fff3e8; --orange-dark: #a85200;
+    --bg: #f5f7fa; --surface: #ffffff; --surface2: #f8fafc;
+    --text: #1a1a2e; --text-sub: #374151; --text-muted: #6b7280;
+    --border: #d1d7dc; --border-light: #e5e7eb;
+    --success: #16a34a; --warning: #f59e0b; --danger: #dc2626;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.06); --shadow: 0 2px 8px rgba(0,0,0,.08); --shadow-lg: 0 8px 24px rgba(0,0,0,.10);
+    --radius: 8px; --radius-lg: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--bg); color: var(--text); line-height: 1.75; -webkit-font-smoothing: antialiased; }
+  header { background: linear-gradient(135deg, #003d5c 0%, var(--blue-dark) 60%, #0077aa 100%); padding: 48px 40px 40px; color: #fff; position: relative; overflow: hidden; border-bottom: 4px solid var(--orange); }
+  header::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 85% 20%, rgba(240,120,0,.20) 0%, transparent 55%), radial-gradient(ellipse at 10% 90%, rgba(255,255,255,.05) 0%, transparent 50%); }
+  header > * { position: relative; max-width: 860px; margin: 0 auto; }
+  .course-label { font-size: 11px; letter-spacing: .15em; opacity: .75; text-transform: uppercase; margin-bottom: 10px; }
+  header h1 { font-size: 1.9rem; font-weight: 800; line-height: 1.35; }
+  .lecture-title-en { font-size: 1rem; opacity: .6; margin-top: 6px; font-weight: 400; letter-spacing: .04em; font-family: "SF Pro Display","Segoe UI",sans-serif; }
+  .header-meta { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 10px; font-size: 13px; }
+  .header-meta span { background: rgba(255,255,255,.14); color: #fff; padding: 5px 14px; border-radius: 4px; border: 1px solid rgba(255,255,255,.2); font-weight: 500; }
+  .source-bar { background: #002a3f; padding: 9px 40px; }
+  .source-bar a { color: #7dd3fc; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+  .source-bar a::before { content: "🔗"; font-size: 12px; }
+  .source-bar a:hover { color: #fff; text-decoration: underline; }
+  .progress-bar { background: var(--surface); padding: 11px 40px; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid var(--border-light); }
+  .badge { padding: 5px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+  .badge-done { background: #dcfce7; color: #15803d; }
+  .badge-todo { background: #f3f4f6; color: #9ca3af; border: 1.5px solid #e5e7eb; }
+  nav { background: var(--surface); padding: 10px 24px; display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--border-light); position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow-sm); }
+  nav a { color: var(--text-sub); text-decoration: none; font-size: 12px; font-weight: 600; padding: 7px 13px; border-radius: 6px; transition: all .15s; white-space: nowrap; }
+  nav a:hover { color: var(--blue-dark); background: var(--blue-light); }
+  main { max-width: 860px; margin: 0 auto; padding: 40px 24px 80px; display: flex; flex-direction: column; gap: 24px; }
+  .section { background: var(--surface); border-radius: var(--radius-lg); padding: 28px 32px; box-shadow: var(--shadow-sm); scroll-margin-top: 80px; }
+  .section-label { font-size: 13px; font-weight: 800; color: var(--blue-dark); margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid var(--orange); letter-spacing: .04em; }
+  .summary-box { background: linear-gradient(135deg, var(--blue-light), #f0fdf4); border-radius: var(--radius); padding: 20px 24px; font-size: 15px; font-weight: 500; line-height: 1.85; color: var(--blue-dark); }
+  .summary-box strong { color: var(--orange-dark); }
+  .kp-list { display: flex; flex-direction: column; gap: 14px; list-style: none; }
+  .kp-item { display: flex; gap: 16px; align-items: flex-start; background: var(--surface2); border-radius: var(--radius); padding: 16px 18px; border-left: 4px solid var(--blue); }
+  .kp-num { min-width: 30px; height: 30px; background: var(--blue-dark); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .kp-heading { font-weight: 700; font-size: 14px; color: var(--blue-dark); margin-bottom: 5px; }
+  .kp-desc { font-size: 13.5px; color: var(--text-sub); line-height: 1.7; }
+  .compare-table { width: 100%; border-collapse: collapse; font-size: 13.5px; border-radius: var(--radius); overflow: hidden; }
+  .compare-table thead tr { border-bottom: 2px solid var(--orange); background: var(--surface2); }
+  .compare-table th { padding: 11px 16px; text-align: left; font-weight: 700; color: var(--blue-dark); font-size: 12px; }
+  .compare-table td { padding: 12px 16px; border-bottom: 1px solid var(--border-light); vertical-align: top; }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr:hover td { background: var(--blue-light); }
+  .glossary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 560px) { .glossary-grid { grid-template-columns: 1fr; } }
+  .glossary-item { background: var(--surface2); border-left: 3px solid var(--blue); border-radius: 0 var(--radius) var(--radius) 0; padding: 13px 15px; }
+  .glossary-term { font-weight: 700; font-size: 14px; color: var(--blue-dark); margin-bottom: 4px; }
+  .glossary-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+  .qa-list { display: flex; flex-direction: column; }
+  .qa-item { padding: 18px 0; border-bottom: 1px solid var(--border-light); }
+  .qa-item:last-child { border-bottom: none; }
+  .qa-q { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 8px; }
+  .q-badge { min-width: 30px; height: 30px; background: var(--orange); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .q-text { font-weight: 600; font-size: 14.5px; padding-top: 4px; }
+  details { margin-left: 44px; }
+  summary { font-size: 13px; color: var(--blue); cursor: pointer; font-weight: 600; padding: 4px 0; user-select: none; }
+  summary:hover { color: var(--blue-dark); }
+  .qa-a { font-size: 13.5px; color: var(--text-sub); padding: 10px 14px; border-left: 3px solid var(--blue); margin-top: 8px; line-height: 1.75; background: var(--blue-light); border-radius: 0 var(--radius) var(--radius) 0; }
+  .memo-area { width: 100%; min-height: 120px; background: #fffbf2; border: 1.5px dashed var(--orange); border-radius: var(--radius); padding: 14px; font-size: 14px; font-family: inherit; line-height: 1.75; resize: vertical; outline: none; color: var(--text); }
+  .memo-area:focus { box-shadow: 0 0 0 3px rgba(240,120,0,.12); border-style: solid; }
+  .memo-area::placeholder { color: #ccc; }
+  .memo-hint { font-size: 12px; color: #bbb; margin-top: 6px; }
+  .code-block { background: #1e1e1e; border-radius: var(--radius); padding: 16px 18px; font-family: "SF Mono","Consolas",monospace; font-size: 13px; color: #d4d4d4; overflow-x: auto; margin: 12px 0; line-height: 1.7; white-space: pre; }
+  .highlight-box { border-left: 4px solid var(--blue); background: var(--blue-light); padding: 14px 18px; border-radius: 0 var(--radius) var(--radius) 0; margin: 12px 0; font-size: 13.5px; color: var(--text-sub); line-height: 1.75; }
+  .highlight-box.warning { border-color: var(--warning); background: #fef3c7; color: #78350f; }
+  .highlight-box.success { border-color: var(--success); background: #dcfce7; color: #14532d; }
+  footer { text-align: center; padding: 36px 24px; color: var(--text-muted); font-size: 12px; background: var(--surface2); border-top: 1px solid var(--border-light); margin-top: 8px; }
+  footer strong { color: var(--text-sub); font-size: 13px; display: block; margin-bottom: 4px; }
+  @media (max-width: 640px) {
+    header { padding: 32px 20px; } header h1 { font-size: 1.4rem; }
+    .source-bar, .progress-bar { padding-left: 20px; padding-right: 20px; }
+    .section { padding: 20px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="course-label">Claude with the Anthropic API — Lecture 23</div>
+  <h1>典型的な評価ワークフロー</h1>
+  <div class="lecture-title-en">A typical eval workflow</div>
+  <div class="header-meta">
+    <span>📅 2026-05-04</span>
+    <span>⏱ 6 min</span>
+    <span>📌 Lecture 23</span>
+  </div>
+</header>
+
+<div class="source-bar">
+  <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287736" target="_blank" rel="noopener">https://anthropic.skilljar.com/claude-with-the-anthropic-api/287736</a>
+</div>
+
+<div class="progress-bar">
+  <span class="badge badge-done">✅ 視聴済み</span>
+  <span class="badge badge-todo">📝 復習中</span>
+</div>
+
+<nav>
+  <a href="#summary">① まとめ</a>
+  <a href="#keypoints">② キーポイント</a>
+  <a href="#details">③ 5ステップ詳細</a>
+  <a href="#glossary">④ 用語集</a>
+  <a href="#check">⑤ 理解度チェック</a>
+  <a href="#memo">⑥ メモ</a>
+</nav>
+
+<main>
+
+  <div class="section" id="summary">
+    <div class="section-label">① 一言まとめ</div>
+    <div class="summary-box">
+      プロンプトを <strong>客観的な数値スコア</strong> で改善するための <strong>5ステップ評価ワークフロー</strong>。「① プロンプト草案 → ② eval dataset 作成 → ③ Claude に流す → ④ grader で採点 → ⑤ プロンプト変更してリピート」。スコアが上がれば本物の改善、下がればただの変更。エンジニアリングの推測作業を排除する。
+    </div>
+  </div>
+
+  <div class="section" id="keypoints">
+    <div class="section-label">② キーポイント</div>
+    <ul class="kp-list">
+      <li class="kp-item">
+        <div class="kp-num">1</div>
+        <div>
+          <div class="kp-heading">Step 1: Draft a Prompt（プロンプト草案を作る）</div>
+          <div class="kp-desc">改善したい元のプロンプトをまず作成。シンプルなテンプレートから始めてOK。これがテストと改善の <strong>基準点（baseline）</strong> となる。</div>
+          <div class="code-block">prompt = f"""
+Please answer the user's question:
+{question}
+"""</div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">2</div>
+        <div>
+          <div class="kp-heading">Step 2: Create an Eval Dataset（評価データセットを作る）</div>
+          <div class="kp-desc">本番環境でプロンプトが処理する質問・リクエストの種類を表す <strong>サンプル入力集</strong>。3例〜数千例まで規模自由。手作業 or Claude で生成可。</div>
+          <div class="highlight-box">
+            例（3問）: <code>"2+2は？"</code> / <code>"オートミールはどうやって作るの？"</code> / <code>"月はどのくらい遠い？"</code>
+          </div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">3</div>
+        <div>
+          <div class="kp-heading">Step 3: Feed Through Claude（Claude に流す）</div>
+          <div class="kp-desc">データセットの各質問を <strong>プロンプトテンプレートに interpolate（差し込み）</strong> → 完成したプロンプトを Claude に投げて回答を取得。</div>
+          <div class="code-block">Please answer the user's question:
+What's 2+2?</div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">4</div>
+        <div>
+          <div class="kp-heading">Step 4: Feed Through a Grader（grader で採点）</div>
+          <div class="kp-desc">各回答を質と正しさで <strong>1〜10 のスコア</strong> で採点。10 = 完璧、低スコア = 改善余地あり。grader は code grader / model grader / human grader のいずれか。</div>
+          <div class="highlight-box success">
+            例: 数学 → <strong>10</strong>（正解）/ オートミール → <strong>4</strong>（改善余地）/ 月 → <strong>9</strong>（良い）<br>
+            平均: (10 + 4 + 9) ÷ 3 = <strong>7.66</strong>
+          </div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">5</div>
+        <div>
+          <div class="kp-heading">Step 5: Change Prompt and Repeat（変更して繰り返す）</div>
+          <div class="kp-desc">基準スコア（v1=7.66）を持っているので、プロンプトを変更 → 同じ評価プロセス → 新しいスコア（v2=8.7）を比較。<strong>客観的に改善が確認できる</strong>。</div>
+          <div class="code-block">prompt = f"""
+Please answer the user's question:
+{question}
+Answer the question with ample detail
+"""</div>
+          <div class="highlight-box success">
+            v1 (7.66) → v2 (8.7) = <strong>追加指示が効いた</strong>と確証
+          </div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">6</div>
+        <div>
+          <div class="kp-heading">Prompt Scoring の3つの利点</div>
+          <div class="kp-desc">
+            ① 異なるプロンプトバージョンを <strong>数値で比較</strong>できる<br>
+            ② 最高スコア版を採用、または iterate を続けられる<br>
+            ③ 「変更が改善か単なる変更か」が <strong>客観的に判別</strong>できる
+          </div>
+          <div class="highlight-box warning">推測作業ベースの prompt engineering からの卒業 → data-driven 改善へ</div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="section" id="details">
+    <div class="section-label">③ 5ステップ詳細</div>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Step</th>
+          <th>名称</th>
+          <th>やること</th>
+          <th>アウトプット</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>1</strong></td>
+          <td>Draft a Prompt</td>
+          <td>改善したい元プロンプトを書く</td>
+          <td>baseline prompt</td>
+        </tr>
+        <tr>
+          <td><strong>2</strong></td>
+          <td>Create an Eval Dataset</td>
+          <td>本番想定の入力集を集める or Claude で生成</td>
+          <td>JSONリスト形式のテストデータ</td>
+        </tr>
+        <tr>
+          <td><strong>3</strong></td>
+          <td>Feed Through Claude</td>
+          <td>各データをテンプレに差し込み → API 呼び出し</td>
+          <td>各テストの Claude 回答</td>
+        </tr>
+        <tr>
+          <td><strong>4</strong></td>
+          <td>Feed Through a Grader</td>
+          <td>1〜10 スコア採点 → 平均値算出</td>
+          <td>baseline スコア（例: 7.66）</td>
+        </tr>
+        <tr>
+          <td><strong>5</strong></td>
+          <td>Change Prompt and Repeat</td>
+          <td>プロンプト改良 → Step 3〜4 をループ</td>
+          <td>改善版スコア（例: 8.7）</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="highlight-box" style="margin-top:16px;">
+      <strong>Many different ways to assemble a workflow.</strong> Many different open source and paid options exist. 小規模から始めて必要に応じて規模拡大できる。
+    </div>
+  </div>
+
+  <div class="section" id="glossary">
+    <div class="section-label">④ 用語集</div>
+    <div class="glossary-grid">
+      <div class="glossary-item">
+        <div class="glossary-term">eval workflow</div>
+        <div class="glossary-desc">プロンプト評価の一連の流れ。書く → データセット → Claude 実行 → 採点 → 改良 のサイクル。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">eval dataset</div>
+        <div class="glossary-desc">プロンプトに差し込む質問やリクエストの集まり。3〜数千例まで規模自由。手作業 or Claude 生成。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">prompt draft / baseline</div>
+        <div class="glossary-desc">改善前のシンプルなプロンプト。スコア比較の出発点。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">grader</div>
+        <div class="glossary-desc">Claude の回答を1〜10で採点するシステム。Code grader / Model grader / Human grader の3種類。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">iterate</div>
+        <div class="glossary-desc">プロンプトを修正して評価プロセスをループする行為。スコアの推移で改善の有無を判定。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">prompt scoring</div>
+        <div class="glossary-desc">各プロンプト版に客観的な数値（平均スコア）を付ける仕組み。A/B 比較の根拠になる。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="check">
+    <div class="section-label">⑤ 理解度チェック</div>
+    <div class="qa-list">
+      <div class="qa-item">
+        <div class="qa-q">
+          <div class="q-badge">Q1</div>
+          <div class="q-text">eval workflow の5つのステップを順番に挙げてください。</div>
+        </div>
+        <details>
+          <summary>答えを見る</summary>
+          <div class="qa-a">
+            ① <strong>Draft a Prompt</strong>（プロンプト草案）<br>
+            ② <strong>Create an Eval Dataset</strong>（評価データセット作成）<br>
+            ③ <strong>Feed Through Claude</strong>（Claude に流す）<br>
+            ④ <strong>Feed Through a Grader</strong>（grader で採点）<br>
+            ⑤ <strong>Change Prompt and Repeat</strong>（変更して繰り返す）
+          </div>
+        </details>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">
+          <div class="q-badge">Q2</div>
+          <div class="q-text">数学=10、オートミール=4、月=9 のスコアでプロンプト v1 の平均はいくつ？v2で 8.7 が出たら何が言える？</div>
+        </div>
+        <details>
+          <summary>答えを見る</summary>
+          <div class="qa-a">v1 平均 = (10 + 4 + 9) ÷ 3 = <strong>7.66</strong>。v2 = 8.7 ということは、追加した指示（"Answer the question with ample detail"）が <strong>客観的に改善をもたらした</strong>と判明。データドリブンに改善を確認できる。</div>
+        </details>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">
+          <div class="q-badge">Q3</div>
+          <div class="q-text">なぜ eval workflow を組むと「推測作業からの卒業」になるのですか？</div>
+        </div>
+        <details>
+          <summary>答えを見る</summary>
+          <div class="qa-a">主観で「これ良くなった気がする」ではなく、<strong>客観的なスコア（数値）</strong>で判断できるから。プロンプトを変更したとき、それが「改善」なのか「単なるバリエーション」なのかが数値で証明される。エンジニアリングにおける勘 → 計測へ転換。</div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="memo">
+    <div class="section-label">⑥ 自分メモ（気づき・疑問・次に調べること）</div>
+    <textarea class="memo-area" placeholder="ここに自由にメモを書いてください..."></textarea>
+    <div class="memo-hint">※ このブラウザに自動保存されます</div>
+  </div>
+
+</main>
+
+<footer>
+  <strong>Claude with the Anthropic API — Lecture 23</strong>
+  Generated by <code>/anthropic-academy-html</code>
+</footer>
+
+<script>
+(function() {
+  var key = 'memo_' + location.pathname.split('/').pop();
+  var ta = document.querySelector('.memo-area');
+  var saved = localStorage.getItem(key);
+  if (saved) ta.value = saved;
+  ta.addEventListener('input', function() { localStorage.setItem(key, ta.value); });
+})();
+</script>
+
+</body>
+</html>
