@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>モデルベース採点 | Anthropic Academy</title>
+<style>
+  :root {
+    --blue: #0096d6; --blue-dark: #005f8a; --blue-light: #e0f2fe;
+    --orange: #f07800; --orange-light: #fff3e8; --orange-dark: #a85200;
+    --bg: #f5f7fa; --surface: #ffffff; --surface2: #f8fafc;
+    --text: #1a1a2e; --text-sub: #374151; --text-muted: #6b7280;
+    --border: #d1d7dc; --border-light: #e5e7eb;
+    --success: #16a34a; --warning: #f59e0b; --danger: #dc2626;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.06); --shadow: 0 2px 8px rgba(0,0,0,.08); --shadow-lg: 0 8px 24px rgba(0,0,0,.10);
+    --radius: 8px; --radius-lg: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--bg); color: var(--text); line-height: 1.75; -webkit-font-smoothing: antialiased; }
+  header { background: linear-gradient(135deg, #003d5c 0%, var(--blue-dark) 60%, #0077aa 100%); padding: 48px 40px 40px; color: #fff; position: relative; overflow: hidden; border-bottom: 4px solid var(--orange); }
+  header::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 85% 20%, rgba(240,120,0,.20) 0%, transparent 55%), radial-gradient(ellipse at 10% 90%, rgba(255,255,255,.05) 0%, transparent 50%); }
+  header > * { position: relative; max-width: 860px; margin: 0 auto; }
+  .course-label { font-size: 11px; letter-spacing: .15em; opacity: .75; text-transform: uppercase; margin-bottom: 10px; }
+  header h1 { font-size: 1.9rem; font-weight: 800; line-height: 1.35; }
+  .lecture-title-en { font-size: 1rem; opacity: .6; margin-top: 6px; font-weight: 400; letter-spacing: .04em; font-family: "SF Pro Display","Segoe UI",sans-serif; }
+  .header-meta { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 10px; font-size: 13px; }
+  .header-meta span { background: rgba(255,255,255,.14); color: #fff; padding: 5px 14px; border-radius: 4px; border: 1px solid rgba(255,255,255,.2); font-weight: 500; }
+  .source-bar { background: #002a3f; padding: 9px 40px; }
+  .source-bar a { color: #7dd3fc; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+  .source-bar a::before { content: "🔗"; font-size: 12px; }
+  .source-bar a:hover { color: #fff; text-decoration: underline; }
+  .progress-bar { background: var(--surface); padding: 11px 40px; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid var(--border-light); }
+  .badge { padding: 5px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+  .badge-done { background: #dcfce7; color: #15803d; }
+  .badge-todo { background: #f3f4f6; color: #9ca3af; border: 1.5px solid #e5e7eb; }
+  nav { background: var(--surface); padding: 10px 24px; display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--border-light); position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow-sm); }
+  nav a { color: var(--text-sub); text-decoration: none; font-size: 12px; font-weight: 600; padding: 7px 13px; border-radius: 6px; transition: all .15s; white-space: nowrap; }
+  nav a:hover { color: var(--blue-dark); background: var(--blue-light); }
+  main { max-width: 860px; margin: 0 auto; padding: 40px 24px 80px; display: flex; flex-direction: column; gap: 24px; }
+  .section { background: var(--surface); border-radius: var(--radius-lg); padding: 28px 32px; box-shadow: var(--shadow-sm); scroll-margin-top: 80px; }
+  .section-label { font-size: 13px; font-weight: 800; color: var(--blue-dark); margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid var(--orange); letter-spacing: .04em; }
+  .summary-box { background: linear-gradient(135deg, var(--blue-light), #f0fdf4); border-radius: var(--radius); padding: 20px 24px; font-size: 15px; font-weight: 500; line-height: 1.85; color: var(--blue-dark); }
+  .summary-box strong { color: var(--orange-dark); }
+  .kp-list { display: flex; flex-direction: column; gap: 14px; list-style: none; }
+  .kp-item { display: flex; gap: 16px; align-items: flex-start; background: var(--surface2); border-radius: var(--radius); padding: 16px 18px; border-left: 4px solid var(--blue); }
+  .kp-num { min-width: 30px; height: 30px; background: var(--blue-dark); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .kp-heading { font-weight: 700; font-size: 14px; color: var(--blue-dark); margin-bottom: 5px; }
+  .kp-desc { font-size: 13.5px; color: var(--text-sub); line-height: 1.7; }
+  .compare-table { width: 100%; border-collapse: collapse; font-size: 13.5px; border-radius: var(--radius); overflow: hidden; }
+  .compare-table thead tr { border-bottom: 2px solid var(--orange); background: var(--surface2); }
+  .compare-table th { padding: 11px 16px; text-align: left; font-weight: 700; color: var(--blue-dark); font-size: 12px; }
+  .compare-table td { padding: 12px 16px; border-bottom: 1px solid var(--border-light); vertical-align: top; }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr:hover td { background: var(--blue-light); }
+  .glossary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 560px) { .glossary-grid { grid-template-columns: 1fr; } }
+  .glossary-item { background: var(--surface2); border-left: 3px solid var(--blue); border-radius: 0 var(--radius) var(--radius) 0; padding: 13px 15px; }
+  .glossary-term { font-weight: 700; font-size: 14px; color: var(--blue-dark); margin-bottom: 4px; }
+  .glossary-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+  .qa-list { display: flex; flex-direction: column; }
+  .qa-item { padding: 18px 0; border-bottom: 1px solid var(--border-light); }
+  .qa-item:last-child { border-bottom: none; }
+  .qa-q { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 8px; }
+  .q-badge { min-width: 30px; height: 30px; background: var(--orange); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .q-text { font-weight: 600; font-size: 14.5px; padding-top: 4px; }
+  details { margin-left: 44px; }
+  summary { font-size: 13px; color: var(--blue); cursor: pointer; font-weight: 600; padding: 4px 0; user-select: none; }
+  summary:hover { color: var(--blue-dark); }
+  .qa-a { font-size: 13.5px; color: var(--text-sub); padding: 10px 14px; border-left: 3px solid var(--blue); margin-top: 8px; line-height: 1.75; background: var(--blue-light); border-radius: 0 var(--radius) var(--radius) 0; }
+  .memo-area { width: 100%; min-height: 120px; background: #fffbf2; border: 1.5px dashed var(--orange); border-radius: var(--radius); padding: 14px; font-size: 14px; font-family: inherit; line-height: 1.75; resize: vertical; outline: none; color: var(--text); }
+  .memo-area:focus { box-shadow: 0 0 0 3px rgba(240,120,0,.12); border-style: solid; }
+  .memo-area::placeholder { color: #ccc; }
+  .memo-hint { font-size: 12px; color: #bbb; margin-top: 6px; }
+  .code-block { background: #1e1e1e; border-radius: var(--radius); padding: 16px 18px; font-family: "SF Mono","Consolas",monospace; font-size: 13px; color: #d4d4d4; overflow-x: auto; margin: 12px 0; line-height: 1.7; white-space: pre; }
+  .highlight-box { border-left: 4px solid var(--blue); background: var(--blue-light); padding: 14px 18px; border-radius: 0 var(--radius) var(--radius) 0; margin: 12px 0; font-size: 13.5px; color: var(--text-sub); line-height: 1.75; }
+  .highlight-box.warning { border-color: var(--warning); background: #fef3c7; color: #78350f; }
+  .highlight-box.success { border-color: var(--success); background: #dcfce7; color: #14532d; }
+  footer { text-align: center; padding: 36px 24px; color: var(--text-muted); font-size: 12px; background: var(--surface2); border-top: 1px solid var(--border-light); margin-top: 8px; }
+  footer strong { color: var(--text-sub); font-size: 13px; display: block; margin-bottom: 4px; }
+  @media (max-width: 640px) {
+    header { padding: 32px 20px; } header h1 { font-size: 1.4rem; }
+    .source-bar, .progress-bar { padding-left: 20px; padding-right: 20px; }
+    .section { padding: 20px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="course-label">Claude with the Anthropic API — Lecture 26</div>
+  <h1>モデルベース採点</h1>
+  <div class="lecture-title-en">Model Based Grading</div>
+  <div class="header-meta">
+    <span>📅 2026-05-05</span>
+    <span>⏱ 9 min</span>
+    <span>📌 Lecture 26</span>
+  </div>
+</header>
+
+<div class="source-bar">
+  <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287739" target="_blank" rel="noopener">https://anthropic.skilljar.com/claude-with-the-anthropic-api/287739</a>
+</div>
+
+<div class="progress-bar">
+  <span class="badge badge-done">✅ 視聴済み</span>
+  <span class="badge badge-todo">📝 復習中</span>
+</div>
+
+<nav>
+  <a href="#summary">① まとめ</a>
+  <a href="#keypoints">② キーポイント</a>
+  <a href="#graders">③ 採点者3種比較</a>
+  <a href="#criteria">④ 評価基準</a>
+  <a href="#glossary">⑤ 用語集</a>
+  <a href="#check">⑥ 理解度チェック</a>
+  <a href="#memo">⑦ メモ</a>
+</nav>
+
+<main>
+
+  <div class="section" id="summary">
+    <div class="section-label">① 一言まとめ</div>
+    <div class="summary-box">
+      レクチャー25 でハードコードしていた <code>score=10</code> を、本物の <strong>Grader（採点者）</strong> に置き換える。
+      Code / Model / Human の <strong>3種類</strong> から選び、今回は <strong>Model Based Grading</strong>（モデル採点）を実装。<br>
+      ポイントは「スコアだけ要求せず <strong>strengths / weaknesses / reasoning / score</strong> の4点セット」で書かせること。
+      これでスコアが <strong>middling な値（5や6）</strong> に偏るのを防ぎ、v1 と v2 のプロンプトを <strong>客観数値で比較</strong> できる baseline が完成する。
+    </div>
+  </div>
+
+  <div class="section" id="keypoints">
+    <div class="section-label">② キーポイント</div>
+    <ul class="kp-list">
+      <li class="kp-item">
+        <div class="kp-num">1</div>
+        <div>
+          <div class="kp-heading">Grader = 客観スコア（1〜10）を返す仕組み</div>
+          <div class="kp-desc">
+            出力品質を測る客観的なシグナル（数値）を返すことが必須要件。
+            10 = 高品質 / 1 = 低品質。これがないと eval パイプラインは比較に使えない。
+          </div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">2</div>
+        <div>
+          <div class="kp-heading">3種類の採点者: Code / Model / Human</div>
+          <div class="kp-desc">
+            <strong>Code Grader</strong>: プログラム的チェック（長さ・キーワード・syntax validation・readability）。<strong>速・決定論</strong>。<br>
+            <strong>Model Grader</strong>: 別の API コールで品質を評価。<strong>柔軟だが不安定</strong>。<br>
+            <strong>Human Grader</strong>: 人間がレビュー。<strong>最強だが遅い・高コスト</strong>。
+          </div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">3</div>
+        <div>
+          <div class="kp-heading">Model Grader 実装の鉄則 = 4点セット</div>
+          <div class="kp-desc">
+            プロンプトに以下4点を必ず書かせる:<br>
+            ① <strong>strengths</strong>（強み）/ ② <strong>weaknesses</strong>（弱み）/
+            ③ <strong>reasoning</strong>（採点理由）/ ④ <strong>score</strong>（1〜10）<br>
+            score だけ要求すると Claude は「無難な値（5/6）」に偏る。
+            reasoning を先に書かせる = <strong>Chain of Thought</strong> 的に「考えてから採点」させる流れ。
+          </div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">4</div>
+        <div>
+          <div class="kp-heading">JSON 出力 = pre-fill + stop sequence で確保</div>
+          <div class="kp-desc">
+            assistant message に <code>```json</code> を pre-fill / stop sequence に <code>```</code> を指定。
+            これで余計な説明なしのクリーンな JSON が返る → <code>json.loads()</code> で安全にパース可能。
+          </div>
+          <div class="code-block">def grade_by_model(test_case, output):
+    eval_prompt = f"""..."""
+    messages = []
+    add_user_message(messages, eval_prompt)
+    add_assistant_message(messages, "```json")
+    eval_text = chat(messages, stop_sequences=["```"])
+    return json.loads(eval_text)</div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">5</div>
+        <div>
+          <div class="kp-heading">run_test_case を更新 = ハードコード10を撤去</div>
+          <div class="kp-desc">
+            レクチャー25 の <code>score = 10</code> を削除し、
+            <code>grade_by_model()</code> の戻り値から <strong>score / reasoning</strong> を抽出して結果に含める。
+          </div>
+          <div class="code-block">def run_test_case(test_case):
+    output = run_prompt(test_case)
+
+    # Grade the output
+    model_grade = grade_by_model(test_case, output)
+    score = model_grade["score"]
+    reasoning = model_grade["reasoning"]
+
+    return {
+        "output": output,
+        "test_case": test_case,
+        "score": score,
+        "reasoning": reasoning,
+    }</div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">6</div>
+        <div>
+          <div class="kp-heading">Average Score = プロンプト version の指標</div>
+          <div class="kp-desc">
+            全テストケースの平均スコアが「プロンプト v1 のパフォーマンス指標」。
+            プロンプトを変更して再 eval → v2 平均スコアと比較すれば <strong>客観的な改善判定</strong> が可能。
+          </div>
+          <div class="code-block">from statistics import mean
+
+def run_eval(dataset):
+    results = []
+    for test_case in dataset:
+        result = run_test_case(test_case)
+        results.append(result)
+
+    average_score = mean([result["score"] for result in results])
+    print(f"Average score: {average_score}")
+    return results</div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">7</div>
+        <div>
+          <div class="kp-heading">Trade-offs = 不安定だが柔軟、baseline には十分</div>
+          <div class="kp-desc">
+            Model Grader は <strong>同じ入力で別スコアを返す</strong>ことがある（capricious）。
+            ただし baseline 計測の objective signal としては機能する。<br>
+            重要判断は Human Grader 併用 / 高速チェックは Code Grader（次レクチャー）で補完するのが実運用パターン。
+          </div>
+          <div class="highlight-box warning">
+            <strong>重要</strong>: Model Grader はコスト発生（テストケース数 × 2 = prompt実行 + grader評価）。実装時は API 課金を見積もる。
+          </div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="section" id="graders">
+    <div class="section-label">③ 採点者3種比較</div>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>種類</th>
+          <th>方式</th>
+          <th>得意</th>
+          <th>苦手</th>
+          <th>使う場面</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Code</strong></td>
+          <td>プログラム的チェック</td>
+          <td>長さ・syntax・キーワード有無</td>
+          <td>「品質」「ニュアンス」</td>
+          <td>形式 / 構文の機械検証</td>
+        </tr>
+        <tr>
+          <td><strong>Model</strong></td>
+          <td>別 API コールで Claude が採点</td>
+          <td>応答品質 / 指示追従 / 完全性</td>
+          <td>不安定（同入力で別スコア）</td>
+          <td>柔軟な品質判定（baseline）</td>
+        </tr>
+        <tr>
+          <td><strong>Human</strong></td>
+          <td>人がレビュー</td>
+          <td>全体的応答の質 / 深さ / 関連性</td>
+          <td>遅い・人件費・大量処理不可</td>
+          <td>重要判断の最終確認</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="highlight-box success" style="margin-top:16px;">
+      <strong>実運用パターン</strong>: Code（速・形式チェック）+ Model（baseline）+ Human（重要判断）の <strong>3層運用</strong>。次レクチャーで Code Grader（プログラム検証）を学んでハイブリッド採点へ進化。
+    </div>
+  </div>
+
+  <div class="section" id="criteria">
+    <div class="section-label">④ 評価基準の定義（3軸）</div>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>基準</th>
+          <th>内容</th>
+          <th>担当する Grader</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Format</strong></td>
+          <td>形式的な制約。例: Python / JSON / regex のみ返し、説明なし</td>
+          <td>Code Grader</td>
+        </tr>
+        <tr>
+          <td><strong>Valid Syntax</strong></td>
+          <td>有効な構文。Python パース・JSON パース・regex compile が成功するか</td>
+          <td>Code Grader</td>
+        </tr>
+        <tr>
+          <td><strong>Task Following</strong></td>
+          <td>タスクの意図に沿っているか / 正確で実用的か</td>
+          <td>Model Grader</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="highlight-box" style="margin-top:16px;">
+      <strong>役割分担</strong>:「コードでチェックできるもの（Format / Valid Syntax）は Code で安価高速に」「柔軟性が必要なもの（Task Following）は Model で」。<br>
+      これがハイブリッド採点の設計原則。今回は Model Grader 実装が中心、次レクチャーで Code Grader と組み合わせる。
+    </div>
+  </div>
+
+  <div class="section" id="glossary">
+    <div class="section-label">⑤ 用語集</div>
+    <div class="glossary-grid">
+      <div class="glossary-item">
+        <div class="glossary-term">Grader</div>
+        <div class="glossary-desc">モデル出力を客観スコア（通常1〜10）に変換する採点システム。Code / Model / Human の3種類。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">Model Based Grading</div>
+        <div class="glossary-desc">追加のAPIコールで Claude に採点させる方式。柔軟だが不安定。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">strengths / weaknesses / reasoning / score</div>
+        <div class="glossary-desc">Model Grader プロンプトに必須の4点セット。これで「無難な値」を避けて差別化されたスコアを得る。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">Format / Valid Syntax / Task Following</div>
+        <div class="glossary-desc">評価基準の3軸。前2つは Code Grader、最後は Model Grader が担当するのが定石。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">grade_by_model()</div>
+        <div class="glossary-desc">Model Grader 関数。task と output を受け取り、JSON パースして score / reasoning を返す。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">average score / baseline</div>
+        <div class="glossary-desc">全テストケースのスコア平均値 = プロンプト version のパフォーマンス指標。v1 vs v2 比較の基準。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="check">
+    <div class="section-label">⑥ 理解度チェック</div>
+    <div class="qa-list">
+      <div class="qa-item">
+        <div class="qa-q">
+          <div class="q-badge">Q1</div>
+          <div class="q-text">Model Grader プロンプトに「score だけ書いて」と要求すると、なぜダメなのですか？対処法は？</div>
+        </div>
+        <details>
+          <summary>答えを見る</summary>
+          <div class="qa-a">
+            <strong>ダメな理由</strong>: Claude は深く考えずに「無難な中間値（5や6）」に偏る。極端な値（1や10）を避ける傾向があるため、v1 と v2 のスコア差が出ず評価が機能しない。<br>
+            <strong>対処法</strong>: <code>strengths / weaknesses / reasoning / score</code> の <strong>4点セット</strong> を書かせる。reasoning を先に書く順序にすると、Claude が出力を真剣に分析してから採点する流れになり、差別化されたスコアが出る。<strong>Chain of Thought</strong> プロンプトテクニックの応用。
+          </div>
+        </details>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">
+          <div class="q-badge">Q2</div>
+          <div class="q-text">3つの評価基準（Format / Valid Syntax / Task Following）はそれぞれどの Grader が担当すべき？理由は？</div>
+        </div>
+        <details>
+          <summary>答えを見る</summary>
+          <div class="qa-a">
+            <strong>Format / Valid Syntax → Code Grader</strong>: 「Python / JSON / regex 形式である」「パースが通る」は <strong>プログラムで決定論的に判定可能</strong>。Code Grader なら速・安・確実。<br>
+            <strong>Task Following → Model Grader</strong>: 「タスクの意図に合っているか」「実用的か」はコードでは判定不能。<strong>柔軟な品質評価</strong>には Model Grader が必要。<br>
+            <strong>役割分担の原則</strong>: 「コードで判定可能なものはコードで」「柔軟性が必要なものはモデルで」。次レクチャーで両者を組み合わせるハイブリッド採点に進化。
+          </div>
+        </details>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">
+          <div class="q-badge">Q3</div>
+          <div class="q-text">Model Grader のクリーンな JSON 出力を確保するためのテクニックは？</div>
+        </div>
+        <details>
+          <summary>答えを見る</summary>
+          <div class="qa-a">
+            <strong>pre-fill + stop sequence</strong> の組み合わせ。<br>
+            ① assistant message に <code>```json</code> を <strong>pre-fill</strong>（Claude は「すでに開始した」と認識）<br>
+            ② stop sequence に <code>```</code> を指定（Claude が閉じバッククォートを出した瞬間に停止）<br>
+            結果: 余計な説明や前置きなしの <strong>純粋な JSON 文字列</strong> が返る → <code>json.loads()</code> で安全にパース可能。<br>
+            これは <strong>Structured Data 生成</strong>（レクチャー20-21）と同じテクニックの応用。
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="memo">
+    <div class="section-label">⑦ 自分メモ（気づき・疑問・次に調べること）</div>
+    <textarea class="memo-area" placeholder="ここに自由にメモを書いてください..."></textarea>
+    <div class="memo-hint">※ このブラウザに自動保存されます</div>
+  </div>
+
+</main>
+
+<footer>
+  <strong>Claude with the Anthropic API — Lecture 26</strong>
+  Generated by <code>/anthropic-academy-html</code>
+</footer>
+
+<script>
+(function() {
+  var key = 'memo_' + location.pathname.split('/').pop();
+  var ta = document.querySelector('.memo-area');
+  var saved = localStorage.getItem(key);
+  if (saved) ta.value = saved;
+  ta.addEventListener('input', function() { localStorage.setItem(key, ta.value); });
+})();
+</script>
+
+</body>
+</html>
