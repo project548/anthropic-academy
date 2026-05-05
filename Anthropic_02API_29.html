@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>明確かつ直接的に | Anthropic Academy</title>
+<style>
+  :root {
+    --blue: #0096d6; --blue-dark: #005f8a; --blue-light: #e0f2fe;
+    --orange: #f07800; --orange-light: #fff3e8; --orange-dark: #a85200;
+    --bg: #f5f7fa; --surface: #ffffff; --surface2: #f8fafc;
+    --text: #1a1a2e; --text-sub: #374151; --text-muted: #6b7280;
+    --border: #d1d7dc; --border-light: #e5e7eb;
+    --success: #16a34a; --warning: #f59e0b; --danger: #dc2626;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.06); --shadow: 0 2px 8px rgba(0,0,0,.08); --shadow-lg: 0 8px 24px rgba(0,0,0,.10);
+    --radius: 8px; --radius-lg: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--bg); color: var(--text); line-height: 1.75; -webkit-font-smoothing: antialiased; }
+  header { background: linear-gradient(135deg, #003d5c 0%, var(--blue-dark) 60%, #0077aa 100%); padding: 48px 40px 40px; color: #fff; position: relative; overflow: hidden; border-bottom: 4px solid var(--orange); }
+  header::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 85% 20%, rgba(240,120,0,.20) 0%, transparent 55%), radial-gradient(ellipse at 10% 90%, rgba(255,255,255,.05) 0%, transparent 50%); }
+  header > * { position: relative; max-width: 860px; margin: 0 auto; }
+  .course-label { font-size: 11px; letter-spacing: .15em; opacity: .75; text-transform: uppercase; margin-bottom: 10px; }
+  header h1 { font-size: 1.9rem; font-weight: 800; line-height: 1.35; }
+  .lecture-title-en { font-size: 1rem; opacity: .6; margin-top: 6px; font-weight: 400; letter-spacing: .04em; font-family: "SF Pro Display","Segoe UI",sans-serif; }
+  .header-meta { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 10px; font-size: 13px; }
+  .header-meta span { background: rgba(255,255,255,.14); color: #fff; padding: 5px 14px; border-radius: 4px; border: 1px solid rgba(255,255,255,.2); font-weight: 500; }
+  .source-bar { background: #002a3f; padding: 9px 40px; }
+  .source-bar a { color: #7dd3fc; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+  .source-bar a::before { content: "🔗"; font-size: 12px; }
+  .source-bar a:hover { color: #fff; text-decoration: underline; }
+  .progress-bar { background: var(--surface); padding: 11px 40px; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid var(--border-light); }
+  .badge { padding: 5px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+  .badge-done { background: #dcfce7; color: #15803d; }
+  .badge-todo { background: #f3f4f6; color: #9ca3af; border: 1.5px solid #e5e7eb; }
+  nav { background: var(--surface); padding: 10px 24px; display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--border-light); position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow-sm); }
+  nav a { color: var(--text-sub); text-decoration: none; font-size: 12px; font-weight: 600; padding: 7px 13px; border-radius: 6px; transition: all .15s; white-space: nowrap; }
+  nav a:hover { color: var(--blue-dark); background: var(--blue-light); }
+  main { max-width: 860px; margin: 0 auto; padding: 40px 24px 80px; display: flex; flex-direction: column; gap: 24px; }
+  .section { background: var(--surface); border-radius: var(--radius-lg); padding: 28px 32px; box-shadow: var(--shadow-sm); scroll-margin-top: 80px; }
+  .section-label { font-size: 13px; font-weight: 800; color: var(--blue-dark); margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid var(--orange); letter-spacing: .04em; }
+  .summary-box { background: linear-gradient(135deg, var(--blue-light), #f0fdf4); border-radius: var(--radius); padding: 20px 24px; font-size: 15px; font-weight: 500; line-height: 1.85; color: var(--blue-dark); }
+  .summary-box strong { color: var(--orange-dark); }
+  .kp-list { display: flex; flex-direction: column; gap: 14px; list-style: none; }
+  .kp-item { display: flex; gap: 16px; align-items: flex-start; background: var(--surface2); border-radius: var(--radius); padding: 16px 18px; border-left: 4px solid var(--blue); }
+  .kp-num { min-width: 30px; height: 30px; background: var(--blue-dark); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .kp-heading { font-weight: 700; font-size: 14px; color: var(--blue-dark); margin-bottom: 5px; }
+  .kp-desc { font-size: 13.5px; color: var(--text-sub); line-height: 1.7; }
+  .compare-table { width: 100%; border-collapse: collapse; font-size: 13.5px; border-radius: var(--radius); overflow: hidden; }
+  .compare-table thead tr { border-bottom: 2px solid var(--orange); background: var(--surface2); }
+  .compare-table th { padding: 11px 16px; text-align: left; font-weight: 700; color: var(--blue-dark); font-size: 12px; }
+  .compare-table td { padding: 12px 16px; border-bottom: 1px solid var(--border-light); vertical-align: top; }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr:hover td { background: var(--blue-light); }
+  .glossary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 560px) { .glossary-grid { grid-template-columns: 1fr; } }
+  .glossary-item { background: var(--surface2); border-left: 3px solid var(--blue); border-radius: 0 var(--radius) var(--radius) 0; padding: 13px 15px; }
+  .glossary-term { font-weight: 700; font-size: 14px; color: var(--blue-dark); margin-bottom: 4px; }
+  .glossary-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+  .qa-list { display: flex; flex-direction: column; }
+  .qa-item { padding: 18px 0; border-bottom: 1px solid var(--border-light); }
+  .qa-item:last-child { border-bottom: none; }
+  .qa-q { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 8px; }
+  .q-badge { min-width: 30px; height: 30px; background: var(--orange); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .q-text { font-weight: 600; font-size: 14.5px; padding-top: 4px; }
+  details { margin-left: 44px; }
+  summary { font-size: 13px; color: var(--blue); cursor: pointer; font-weight: 600; padding: 4px 0; user-select: none; }
+  summary:hover { color: var(--blue-dark); }
+  .qa-a { font-size: 13.5px; color: var(--text-sub); padding: 10px 14px; border-left: 3px solid var(--blue); margin-top: 8px; line-height: 1.75; background: var(--blue-light); border-radius: 0 var(--radius) var(--radius) 0; }
+  .memo-area { width: 100%; min-height: 120px; background: #fffbf2; border: 1.5px dashed var(--orange); border-radius: var(--radius); padding: 14px; font-size: 14px; font-family: inherit; line-height: 1.75; resize: vertical; outline: none; color: var(--text); }
+  .memo-area:focus { box-shadow: 0 0 0 3px rgba(240,120,0,.12); border-style: solid; }
+  .memo-area::placeholder { color: #ccc; }
+  .memo-hint { font-size: 12px; color: #bbb; margin-top: 6px; }
+  .code-block { background: #1e1e1e; border-radius: var(--radius); padding: 16px 18px; font-family: "SF Mono","Consolas",monospace; font-size: 13px; color: #d4d4d4; overflow-x: auto; margin: 12px 0; line-height: 1.7; white-space: pre; }
+  .highlight-box { border-left: 4px solid var(--blue); background: var(--blue-light); padding: 14px 18px; border-radius: 0 var(--radius) var(--radius) 0; margin: 12px 0; font-size: 13.5px; color: var(--text-sub); line-height: 1.75; }
+  .highlight-box.warning { border-color: var(--warning); background: #fef3c7; color: #78350f; }
+  .highlight-box.success { border-color: var(--success); background: #dcfce7; color: #14532d; }
+  footer { text-align: center; padding: 36px 24px; color: var(--text-muted); font-size: 12px; background: var(--surface2); border-top: 1px solid var(--border-light); margin-top: 8px; }
+  footer strong { color: var(--text-sub); font-size: 13px; display: block; margin-bottom: 4px; }
+  @media (max-width: 640px) {
+    header { padding: 32px 20px; } header h1 { font-size: 1.4rem; }
+    .source-bar, .progress-bar { padding-left: 20px; padding-right: 20px; }
+    .section { padding: 20px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="course-label">Claude with the Anthropic API — Lecture 29</div>
+  <h1>明確かつ直接的に</h1>
+  <div class="lecture-title-en">Being Clear and Direct</div>
+  <div class="header-meta">
+    <span>📅 2026-05-05</span>
+    <span>⏱ 7 min</span>
+    <span>📌 Lecture 29</span>
+  </div>
+</header>
+
+<div class="source-bar">
+  <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287742" target="_blank" rel="noopener">https://anthropic.skilljar.com/claude-with-the-anthropic-api/287742</a>
+</div>
+
+<div class="progress-bar">
+  <span class="badge badge-done">✅ 視聴済み</span>
+  <span class="badge badge-todo">📝 復習中</span>
+</div>
+
+<nav>
+  <a href="#summary">① まとめ</a>
+  <a href="#keypoints">② キーポイント</a>
+  <a href="#structure">③ 1行構造</a>
+  <a href="#examples">④ 良い例・悪い例</a>
+  <a href="#glossary">⑤ 用語集</a>
+  <a href="#check">⑥ 理解度チェック</a>
+  <a href="#memo">⑦ メモ</a>
+</nav>
+
+<main>
+
+  <div class="section" id="summary">
+    <div class="section-label">① 一言まとめ</div>
+    <div class="summary-box">
+      Prompt Engineering の <strong>最初の技法</strong>。プロンプトの <strong>最初の1行</strong> に「<strong>アクション動詞 + 直接的なタスク + 期待する出力仕様</strong>」を入れるだけで、平均スコアが <code>2.32 → 3.92</code>（+1.6 = 4割アップ）。<br>
+      "Help me with..." "Could you possibly..." といった<strong>弱い動詞・前置き</strong>を捨て、"Generate / Write / Identify" といった命令形動詞でズバッと始めるのが鉄則。<br>
+      LLM の位置バイアス（最初のトークンに最も注意を払う）を味方につける、最もコスパの高い技法。
+    </div>
+  </div>
+
+  <div class="section" id="keypoints">
+    <div class="section-label">② キーポイント</div>
+    <ul class="kp-list">
+      <li class="kp-item">
+        <div class="kp-num">1</div>
+        <div>
+          <div class="kp-heading">最初の1行が成果の50%以上を決める</div>
+          <div class="kp-desc">
+            LLM は文章の <strong>最初の数十トークン</strong> に最も注意を払う（位置バイアス）。最初の1行が曖昧だと、後続の細かい指示で全体方向性を上書きできない。<br>
+            逆に最初の1行で正確なタスクを宣言すれば、後続の指示が「補強」として効く。
+          </div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">2</div>
+        <div>
+          <div class="kp-heading">構造 = アクション動詞 + タスク + アウトプット仕様</div>
+          <div class="kp-desc">
+            ① <strong>Action verb at start</strong>（命令形動詞を冒頭）<br>
+            ② <strong>Direct task statement</strong>（一文でタスク明示）<br>
+            ③ <strong>Expected output details</strong>（量・形式・スコープを具体化）
+          </div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">3</div>
+        <div>
+          <div class="kp-heading">良いアクション動詞の例</div>
+          <div class="kp-desc">
+            "<strong>Write</strong>" / "<strong>Generate</strong>" / "<strong>Identify</strong>" / "<strong>Create</strong>" / "<strong>Analyze</strong>" / "<strong>List</strong>" / "<strong>Summarize</strong>"<br>
+            これらは LLM の内部で「これは命令である」と即判別され、タスク完了モードで生成が始まる。
+          </div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">4</div>
+        <div>
+          <div class="kp-heading">弱い動詞・避けるパターン</div>
+          <div class="kp-desc">
+            "<strong>Help me with</strong>" / "<strong>Could you possibly</strong>" / "<strong>I was wondering if you could</strong>" / "<strong>Maybe</strong>"<br>
+            → LLM が「応答モード」「質問解釈モード」に入ってしまい、タスク完了が遠のく。雑談・補足説明が増える原因。
+          </div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">5</div>
+        <div>
+          <div class="kp-heading">アスリート食事プラン題材での結果</div>
+          <div class="kp-desc">
+            v1: <code>"Generate a meal plan for an athlete."</code> → スコア <strong>2.32</strong><br>
+            v2: <code>"Generate a one day meal plan for an athlete that meets their dietary restrictions and supports their physical goal."</code> → スコア <strong>3.92</strong>（+1.6）
+          </div>
+          <div class="highlight-box success">
+            最初の1行を整えるだけで <strong>4割アップ</strong>。コスパ最高。
+          </div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">6</div>
+        <div>
+          <div class="kp-heading">なぜ効くか（位置バイアス + Attention 集中）</div>
+          <div class="kp-desc">
+            ・Action verb で「命令である」と即判別<br>
+            ・Direct task で attention が「何をすべきか」に集中<br>
+            ・Output details で出力フォーマットを早期決定<br>
+            → 雑談・前置き処理にトークンを浪費しない
+          </div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">7</div>
+        <div>
+          <div class="kp-heading">適用チェックリスト</div>
+          <div class="kp-desc">
+            ☐ 最初の1行はアクション動詞で始まっているか？<br>
+            ☐ 動詞は明確か？（"help" "wondering" 等の弱動詞ではないか）<br>
+            ☐ タスクが一文で読み取れるか？<br>
+            ☐ 量・形式・スコープが具体的か？<br>
+            ☐ 余計な丁寧表現・前置きを削れないか？<br>
+            このチェックを通すだけで、ほぼ全プロンプトのスコアが+1〜+2 上がる。
+          </div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="section" id="structure">
+    <div class="section-label">③ 1行構造（3要素）</div>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>要素</th>
+          <th>役割</th>
+          <th>例</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Action verb</strong></td>
+          <td>「これは命令である」と LLM に伝える起点。タスク完了モードに入れる。</td>
+          <td>Write / Generate / Identify / Create / Analyze</td>
+        </tr>
+        <tr>
+          <td><strong>Direct task</strong></td>
+          <td>「何を作るか」を一文で明示。修飾を最小化。</td>
+          <td>"three paragraphs about solar panels" / "a one day meal plan"</td>
+        </tr>
+        <tr>
+          <td><strong>Output details</strong></td>
+          <td>量・形式・スコープを具体化。LLM が早期に出力構造を決定できる。</td>
+          <td>"three paragraphs" / "with stats" / "in JSON format"</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="highlight-box" style="margin-top:16px;">
+      この3要素を最初の1行に詰め込めば「2.32 → 3.92」レベルの改善が出る。すべてのプロンプトに適用できる基本技法。
+    </div>
+  </div>
+
+  <div class="section" id="examples">
+    <div class="section-label">④ 良い例・悪い例</div>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>判定</th>
+          <th>例</th>
+          <th>理由</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>✅ 良い</td>
+          <td>"<strong>Write three paragraphs</strong> about how solar panels work"</td>
+          <td>動詞 Write / 量 three paragraphs / トピック明確</td>
+        </tr>
+        <tr>
+          <td>✅ 良い</td>
+          <td>"<strong>Identify three countries</strong> that use geothermal energy and for each include generation stats"</td>
+          <td>動詞 Identify / 量 three countries / 追加要件明示</td>
+        </tr>
+        <tr>
+          <td>✅ 良い</td>
+          <td>"<strong>Generate a one day meal plan</strong> for an athlete that meets their dietary restrictions"</td>
+          <td>動詞 Generate / スコープ one day / 制約 dietary restrictions</td>
+        </tr>
+        <tr>
+          <td>❌ 悪い</td>
+          <td>"<strong>Could you possibly help me</strong> with some kind of meal plan?"</td>
+          <td>弱動詞 help / 量・形式不明 / 余計な丁寧表現</td>
+        </tr>
+        <tr>
+          <td>❌ 悪い</td>
+          <td>"<strong>I was wondering if</strong> you could write something about solar panels."</td>
+          <td>"wondering" は実行コマンドではない / "something" が曖昧</td>
+        </tr>
+        <tr>
+          <td>❌ 悪い</td>
+          <td>"<strong>Hi Claude!</strong> Hope you're doing well. <strong>Maybe</strong> write something..."</td>
+          <td>雑談から入る / 選択肢を投げる / LLM が応答モードで返す</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="highlight-box warning" style="margin-top:16px;">
+      <strong>悪い例の共通点</strong>: ① 弱動詞 ② 量・形式不明 ③ 余計な前置き。これだけで LLM のタスク認識精度が大幅に下がる。
+    </div>
+  </div>
+
+  <div class="section" id="glossary">
+    <div class="section-label">⑤ 用語集</div>
+    <div class="glossary-grid">
+      <div class="glossary-item">
+        <div class="glossary-term">Being Clear and Direct</div>
+        <div class="glossary-desc">プロンプト最初の1行で明確かつ直接的にタスクを指定する Prompt Engineering の基本技法。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">Action verb</div>
+        <div class="glossary-desc">命令形動詞。Write / Generate / Identify / Create 等。LLM に「これは命令」と伝える起点。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">First line importance</div>
+        <div class="glossary-desc">プロンプトの最初の1行が成果の50%以上を決める原理。LLM の位置バイアスに基づく。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">Direct task statement</div>
+        <div class="glossary-desc">タスクを一文で直接記述する書き方。修飾・前置きを最小化。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">Expected output details</div>
+        <div class="glossary-desc">期待アウトプットの量・形式・スコープを具体化する記述（"3 paragraphs" "with stats" 等）。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">位置バイアス（position bias）</div>
+        <div class="glossary-desc">LLM が文章の最初のトークンに最も注意を払う性質。最初の1行が成果を大きく左右する根拠。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="check">
+    <div class="section-label">⑥ 理解度チェック</div>
+    <div class="qa-list">
+      <div class="qa-item">
+        <div class="qa-q">
+          <div class="q-badge">Q1</div>
+          <div class="q-text">なぜ「最初の1行」が他の部分より重要なのですか？</div>
+        </div>
+        <details>
+          <summary>答えを見る</summary>
+          <div class="qa-a">
+            LLM は <strong>位置バイアス</strong>（最初の数十トークンに最も注意を払う性質）を持つ。最初の1行が曖昧だと、後続の細かい指示が <strong>全体方向性を上書きできない</strong>。<br>
+            逆に最初の1行で正確なタスクを宣言すれば、後続の詳細指示が「補強」として効く。<br>
+            つまり「最初の1行が成果の50%以上を決める」と言っても過言ではない。
+          </div>
+        </details>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">
+          <div class="q-badge">Q2</div>
+          <div class="q-text">良いアクション動詞 vs 弱い動詞を3つずつ挙げてください。</div>
+        </div>
+        <details>
+          <summary>答えを見る</summary>
+          <div class="qa-a">
+            <strong>✅ 良いアクション動詞</strong>: <code>Write</code> / <code>Generate</code> / <code>Identify</code> / <code>Create</code> / <code>Analyze</code> → LLM が「命令」と判別、タスク完了モードに入る。<br>
+            <strong>❌ 弱い動詞</strong>: <code>Help me with</code> / <code>Could you possibly</code> / <code>I was wondering</code> → LLM が「応答モード」「質問解釈モード」に入る。雑談・補足説明が増える。
+          </div>
+        </details>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">
+          <div class="q-badge">Q3</div>
+          <div class="q-text">この技法だけで 2.32 → 3.92 まで改善するが、まだ十分ではない理由は？</div>
+        </div>
+        <details>
+          <summary>答えを見る</summary>
+          <div class="qa-a">
+            Being Clear and Direct は <strong>「タスクを正確に伝える」</strong> 技法で、<strong>「出力品質をどう上げるか」</strong> までは制御できない。<br>
+            例えば食事プランで「カロリー計算が雑」「マクロ栄養素が抜ける」「制限違反が残る」等の問題は残る。<br>
+            これを解決するのが次の技法 <strong>Being Specific</strong>（具体的なガイドライン・ステップを追加 → 3.92 から 7.86 へ）。
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="memo">
+    <div class="section-label">⑦ 自分メモ（気づき・疑問・次に調べること）</div>
+    <textarea class="memo-area" placeholder="ここに自由にメモを書いてください..."></textarea>
+    <div class="memo-hint">※ このブラウザに自動保存されます</div>
+  </div>
+
+</main>
+
+<footer>
+  <strong>Claude with the Anthropic API — Lecture 29</strong>
+  Generated by <code>/anthropic-academy-html</code>
+</footer>
+
+<script>
+(function() {
+  var key = 'memo_' + location.pathname.split('/').pop();
+  var ta = document.querySelector('.memo-area');
+  var saved = localStorage.getItem(key);
+  if (saved) ta.value = saved;
+  ta.addEventListener('input', function() { localStorage.setItem(key, ta.value); });
+})();
+</script>
+
+</body>
+</html>

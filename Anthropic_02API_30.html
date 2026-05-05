@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>具体的に | Anthropic Academy</title>
+<style>
+  :root {
+    --blue: #0096d6; --blue-dark: #005f8a; --blue-light: #e0f2fe;
+    --orange: #f07800; --orange-light: #fff3e8; --orange-dark: #a85200;
+    --bg: #f5f7fa; --surface: #ffffff; --surface2: #f8fafc;
+    --text: #1a1a2e; --text-sub: #374151; --text-muted: #6b7280;
+    --border: #d1d7dc; --border-light: #e5e7eb;
+    --success: #16a34a; --warning: #f59e0b; --danger: #dc2626;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.06); --shadow: 0 2px 8px rgba(0,0,0,.08); --shadow-lg: 0 8px 24px rgba(0,0,0,.10);
+    --radius: 8px; --radius-lg: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--bg); color: var(--text); line-height: 1.75; -webkit-font-smoothing: antialiased; }
+  header { background: linear-gradient(135deg, #003d5c 0%, var(--blue-dark) 60%, #0077aa 100%); padding: 48px 40px 40px; color: #fff; position: relative; overflow: hidden; border-bottom: 4px solid var(--orange); }
+  header::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 85% 20%, rgba(240,120,0,.20) 0%, transparent 55%), radial-gradient(ellipse at 10% 90%, rgba(255,255,255,.05) 0%, transparent 50%); }
+  header > * { position: relative; max-width: 860px; margin: 0 auto; }
+  .course-label { font-size: 11px; letter-spacing: .15em; opacity: .75; text-transform: uppercase; margin-bottom: 10px; }
+  header h1 { font-size: 1.9rem; font-weight: 800; line-height: 1.35; }
+  .lecture-title-en { font-size: 1rem; opacity: .6; margin-top: 6px; font-weight: 400; letter-spacing: .04em; font-family: "SF Pro Display","Segoe UI",sans-serif; }
+  .header-meta { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 10px; font-size: 13px; }
+  .header-meta span { background: rgba(255,255,255,.14); color: #fff; padding: 5px 14px; border-radius: 4px; border: 1px solid rgba(255,255,255,.2); font-weight: 500; }
+  .source-bar { background: #002a3f; padding: 9px 40px; }
+  .source-bar a { color: #7dd3fc; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+  .source-bar a::before { content: "🔗"; font-size: 12px; }
+  .source-bar a:hover { color: #fff; text-decoration: underline; }
+  .progress-bar { background: var(--surface); padding: 11px 40px; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid var(--border-light); }
+  .badge { padding: 5px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+  .badge-done { background: #dcfce7; color: #15803d; }
+  .badge-todo { background: #f3f4f6; color: #9ca3af; border: 1.5px solid #e5e7eb; }
+  nav { background: var(--surface); padding: 10px 24px; display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--border-light); position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow-sm); }
+  nav a { color: var(--text-sub); text-decoration: none; font-size: 12px; font-weight: 600; padding: 7px 13px; border-radius: 6px; transition: all .15s; white-space: nowrap; }
+  nav a:hover { color: var(--blue-dark); background: var(--blue-light); }
+  main { max-width: 860px; margin: 0 auto; padding: 40px 24px 80px; display: flex; flex-direction: column; gap: 24px; }
+  .section { background: var(--surface); border-radius: var(--radius-lg); padding: 28px 32px; box-shadow: var(--shadow-sm); scroll-margin-top: 80px; }
+  .section-label { font-size: 13px; font-weight: 800; color: var(--blue-dark); margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid var(--orange); letter-spacing: .04em; }
+  .summary-box { background: linear-gradient(135deg, var(--blue-light), #f0fdf4); border-radius: var(--radius); padding: 20px 24px; font-size: 15px; font-weight: 500; line-height: 1.85; color: var(--blue-dark); }
+  .summary-box strong { color: var(--orange-dark); }
+  .kp-list { display: flex; flex-direction: column; gap: 14px; list-style: none; }
+  .kp-item { display: flex; gap: 16px; align-items: flex-start; background: var(--surface2); border-radius: var(--radius); padding: 16px 18px; border-left: 4px solid var(--blue); }
+  .kp-num { min-width: 30px; height: 30px; background: var(--blue-dark); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .kp-heading { font-weight: 700; font-size: 14px; color: var(--blue-dark); margin-bottom: 5px; }
+  .kp-desc { font-size: 13.5px; color: var(--text-sub); line-height: 1.7; }
+  .compare-table { width: 100%; border-collapse: collapse; font-size: 13.5px; border-radius: var(--radius); overflow: hidden; }
+  .compare-table thead tr { border-bottom: 2px solid var(--orange); background: var(--surface2); }
+  .compare-table th { padding: 11px 16px; text-align: left; font-weight: 700; color: var(--blue-dark); font-size: 12px; }
+  .compare-table td { padding: 12px 16px; border-bottom: 1px solid var(--border-light); vertical-align: top; }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr:hover td { background: var(--blue-light); }
+  .glossary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 560px) { .glossary-grid { grid-template-columns: 1fr; } }
+  .glossary-item { background: var(--surface2); border-left: 3px solid var(--blue); border-radius: 0 var(--radius) var(--radius) 0; padding: 13px 15px; }
+  .glossary-term { font-weight: 700; font-size: 14px; color: var(--blue-dark); margin-bottom: 4px; }
+  .glossary-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+  .qa-list { display: flex; flex-direction: column; }
+  .qa-item { padding: 18px 0; border-bottom: 1px solid var(--border-light); }
+  .qa-item:last-child { border-bottom: none; }
+  .qa-q { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 8px; }
+  .q-badge { min-width: 30px; height: 30px; background: var(--orange); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .q-text { font-weight: 600; font-size: 14.5px; padding-top: 4px; }
+  details { margin-left: 44px; }
+  summary { font-size: 13px; color: var(--blue); cursor: pointer; font-weight: 600; padding: 4px 0; user-select: none; }
+  summary:hover { color: var(--blue-dark); }
+  .qa-a { font-size: 13.5px; color: var(--text-sub); padding: 10px 14px; border-left: 3px solid var(--blue); margin-top: 8px; line-height: 1.75; background: var(--blue-light); border-radius: 0 var(--radius) var(--radius) 0; }
+  .memo-area { width: 100%; min-height: 120px; background: #fffbf2; border: 1.5px dashed var(--orange); border-radius: var(--radius); padding: 14px; font-size: 14px; font-family: inherit; line-height: 1.75; resize: vertical; outline: none; color: var(--text); }
+  .memo-area:focus { box-shadow: 0 0 0 3px rgba(240,120,0,.12); border-style: solid; }
+  .memo-area::placeholder { color: #ccc; }
+  .memo-hint { font-size: 12px; color: #bbb; margin-top: 6px; }
+  .code-block { background: #1e1e1e; border-radius: var(--radius); padding: 16px 18px; font-family: "SF Mono","Consolas",monospace; font-size: 13px; color: #d4d4d4; overflow-x: auto; margin: 12px 0; line-height: 1.7; white-space: pre; }
+  .highlight-box { border-left: 4px solid var(--blue); background: var(--blue-light); padding: 14px 18px; border-radius: 0 var(--radius) var(--radius) 0; margin: 12px 0; font-size: 13.5px; color: var(--text-sub); line-height: 1.75; }
+  .highlight-box.warning { border-color: var(--warning); background: #fef3c7; color: #78350f; }
+  .highlight-box.success { border-color: var(--success); background: #dcfce7; color: #14532d; }
+  footer { text-align: center; padding: 36px 24px; color: var(--text-muted); font-size: 12px; background: var(--surface2); border-top: 1px solid var(--border-light); margin-top: 8px; }
+  footer strong { color: var(--text-sub); font-size: 13px; display: block; margin-bottom: 4px; }
+  @media (max-width: 640px) {
+    header { padding: 32px 20px; } header h1 { font-size: 1.4rem; }
+    .source-bar, .progress-bar { padding-left: 20px; padding-right: 20px; }
+    .section { padding: 20px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="course-label">Claude with the Anthropic API — Lecture 30</div>
+  <h1>具体的に</h1>
+  <div class="lecture-title-en">Being Specific</div>
+  <div class="header-meta">
+    <span>📅 2026-05-05</span>
+    <span>⏱ 9 min</span>
+    <span>📌 Lecture 30</span>
+  </div>
+</header>
+
+<div class="source-bar">
+  <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287743" target="_blank" rel="noopener">https://anthropic.skilljar.com/claude-with-the-anthropic-api/287743</a>
+</div>
+
+<div class="progress-bar">
+  <span class="badge badge-done">✅ 視聴済み</span>
+  <span class="badge badge-todo">📝 復習中</span>
+</div>
+
+<nav>
+  <a href="#summary">① まとめ</a>
+  <a href="#keypoints">② キーポイント</a>
+  <a href="#typeAB">③ Type A vs Type B</a>
+  <a href="#combine">④ 組み合わせ例</a>
+  <a href="#glossary">⑤ 用語集</a>
+  <a href="#check">⑥ 理解度チェック</a>
+  <a href="#memo">⑦ メモ</a>
+</nav>
+
+<main>
+
+  <div class="section" id="summary">
+    <div class="section-label">① 一言まとめ</div>
+    <div class="summary-box">
+      Prompt Engineering の <strong>2大技法</strong>。プロンプトに <strong>ガイドライン（guidelines）</strong> や <strong>ステップ（steps）</strong> を追加し、モデル出力を特定の方向に誘導する。<br>
+      <strong>Type A（Attributes）</strong> = 出力の属性（What）を指定 / <strong>Type B（Steps）</strong> = 推論プロセス（How）を指定。両者の組み合わせがプロフェッショナルなプロンプトの定石。<br>
+      アスリート食事プラン題材: <code>3.92 → 7.86</code>（+3.94 = ほぼ <strong>倍増</strong>）。Being Clear and Direct より遥かに大きい改善幅。ここで初めて「実用レベル」のプロンプトに到達。
+    </div>
+  </div>
+
+  <div class="section" id="keypoints">
+    <div class="section-label">② キーポイント</div>
+    <ul class="kp-list">
+      <li class="kp-item">
+        <div class="kp-num">1</div>
+        <div>
+          <div class="kp-heading">Being Specific = 2つのタイプに分かれる</div>
+          <div class="kp-desc">
+            <strong>Type A（Attributes）</strong> = 出力に欲しい品質・属性をリスト（What）<br>
+            <strong>Type B（Steps）</strong> = モデルに推論プロセスのステップを提供（How）<br>
+            Type A は「特性」、Type B は「思考順序」を制御。
+          </div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">2</div>
+        <div>
+          <div class="kp-heading">Type A: Attributes（属性ガイドライン）</div>
+          <div class="kp-desc">
+            出力の <strong>長さ / 構造 / フォーマット / トーン / 含めるべき要素 / 制約</strong> をリスト化。<br>
+            例: 「朝食/昼食/夕食/おやつ の4区分で構成」「カロリー kcal で明示」「マクロ栄養素 g 単位」「食事制限を厳守」
+          </div>
+          <div class="highlight-box success">
+            <strong>ほぼすべてのプロンプト</strong>で推奨される基本技法。フォーマット統一が必要な業務プロンプトで特に有効。
+          </div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">3</div>
+        <div>
+          <div class="kp-heading">Type B: Steps（ステップガイドライン）</div>
+          <div class="kp-desc">
+            モデルが <strong>「どう考えるか」</strong> の順序付き手順を提供。<br>
+            例: ① 総カロリー目標を算出 → ② マクロ比率で配分 → ③ 食事制限に違反しない食材選択 → ④ 4区分に配分 → ⑤ 構造化出力
+          </div>
+          <div class="highlight-box">
+            <strong>複雑な問題</strong>で、モデルに広い視野で考えてほしい時 / 自然には考慮しない視点を強制したい時に決定打。
+          </div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">4</div>
+        <div>
+          <div class="kp-heading">両者の組み合わせがプロフェッショナル</div>
+          <div class="kp-desc">
+            プロのプロンプトでは <strong>Type A + Type B</strong> を併用するのが標準。<br>
+            Type B（思考順序）→ Type A（出力仕様）の順で書くと、推論プロセスから出力品質まで両方制御できる。
+          </div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">5</div>
+        <div>
+          <div class="kp-heading">スコア改善: 3.92 → 7.86（ほぼ倍増）</div>
+          <div class="kp-desc">
+            Being Clear and Direct 適用後（v2: 3.92）→ Being Specific 適用後（v3: <strong>7.86</strong>）。<br>
+            <strong>+3.94 = ほぼ倍増</strong>。Being Clear and Direct（+1.6）より遥かに効く。ここで初めて「実用レベル」に到達。
+          </div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">6</div>
+        <div>
+          <div class="kp-heading">なぜ Type B が劇的に効くか = Chain-of-Thought 原理</div>
+          <div class="kp-desc">
+            LLM は逐次トークン生成（前のトークンが次に影響）。「いきなり最終答えを出せ」だと構造化されない。<br>
+            「①→②→③ の順で考えろ」と指示すると <strong>各ステップで思考が整理</strong> され、論理的整合性が向上。これが Chain-of-Thought（CoT）プロンプティングの原理。
+          </div>
+        </div>
+      </li>
+      <li class="kp-item">
+        <div class="kp-num">7</div>
+        <div>
+          <div class="kp-heading">落とし穴（Pitfalls）</div>
+          <div class="kp-desc">
+            ❌ ステップが多すぎる（10超は逆効果。<strong>4-6 が最適</strong>）<br>
+            ❌ 矛盾するガイドライン（"短く" + "詳しく分析" 等）<br>
+            ❌ 抽象的すぎるステップ（「よく考えて」「丁寧に」は無効）<br>
+            ✅ 動詞 + 具体的な対象 で書く
+          </div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="section" id="typeAB">
+    <div class="section-label">③ Type A vs Type B（判断基準）</div>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>軸</th>
+          <th>Type A（Attributes）</th>
+          <th>Type B（Steps）</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>制御対象</strong></td>
+          <td>What（何を含めるか）</td>
+          <td>How（どう考えるか）</td>
+        </tr>
+        <tr>
+          <td><strong>形式</strong></td>
+          <td>箇条書き（bullet list）</td>
+          <td>番号付きリスト（1, 2, 3...）</td>
+        </tr>
+        <tr>
+          <td><strong>典型例</strong></td>
+          <td>"must include kcal" "use clear headers"</td>
+          <td>"First, calculate total calories. Second, distribute macros..."</td>
+        </tr>
+        <tr>
+          <td><strong>使い所</strong></td>
+          <td>ほぼ全プロンプト（必須）</td>
+          <td>複雑な推論・計算が必要な時</td>
+        </tr>
+        <tr>
+          <td><strong>効果</strong></td>
+          <td>フォーマット統一・出力品質安定</td>
+          <td>論理整合性向上・抜け漏れ削減</td>
+        </tr>
+        <tr>
+          <td><strong>リスク</strong></td>
+          <td>ほぼノーリスク</td>
+          <td>多すぎると逆効果（4-6 が最適）</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="highlight-box" style="margin-top:16px;">
+      <strong>判断軸</strong>: シンプルなタスク（要約・分類）なら Type A だけで十分。複雑な推論・計算が絡むなら Type A + Type B 併用が決定打。
+    </div>
+  </div>
+
+  <div class="section" id="combine">
+    <div class="section-label">④ 組み合わせ例（meal plan）</div>
+    <div class="code-block">Generate a one day meal plan for an athlete.
+
+[Type B: Steps]
+1. Calculate total daily calories based on the physical goal.
+2. Distribute calories across macronutrients (protein/carbs/fat) at 30/40/30 ratio.
+3. Build meal combinations that respect dietary restrictions.
+4. Organize into breakfast/lunch/dinner/snack structure.
+
+[Type A: Attributes]
+- Each meal must include kcal and macros (g)
+- Specify nutritional purpose per meal (1 line)
+- Strictly avoid restricted ingredients
+- Use clear section headers</div>
+    <div class="highlight-box success" style="margin-top:16px;">
+      この構造で <strong>思考プロセス（Type B）+ アウトプット仕様（Type A）の両方</strong> を制御。スコア 3.92 → 7.86 に到達した実装パターン。
+    </div>
+
+    <h4 style="margin-top: 24px; margin-bottom: 12px; font-size: 14px; color: var(--blue-dark);">📊 スコア推移（モジュール全体）</h4>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Version</th>
+          <th>適用技法</th>
+          <th>スコア</th>
+          <th>改善幅</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>v1</strong></td>
+          <td>初期（"Generate a meal plan for an athlete."）</td>
+          <td>2.32</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><strong>v2</strong></td>
+          <td>Being Clear and Direct（最初の1行整理）</td>
+          <td>3.92</td>
+          <td>+1.60</td>
+        </tr>
+        <tr>
+          <td><strong>v3</strong></td>
+          <td>Being Specific（Type A + Type B 追加）</td>
+          <td><strong>7.86</strong></td>
+          <td><strong>+3.94 ★</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section" id="glossary">
+    <div class="section-label">⑤ 用語集</div>
+    <div class="glossary-grid">
+      <div class="glossary-item">
+        <div class="glossary-term">Being Specific</div>
+        <div class="glossary-desc">プロンプトにガイドライン/ステップを追加してモデル出力を誘導する Prompt Engineering の中核技法。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">Type A (Attributes)</div>
+        <div class="glossary-desc">出力の品質・属性（長さ/構造/フォーマット/制約）をリスト化するガイドライン。What を制御。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">Type B (Steps)</div>
+        <div class="glossary-desc">モデルに推論プロセスの順序付き手順を提供するガイドライン。How を制御。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">Chain-of-Thought (CoT)</div>
+        <div class="glossary-desc">「考えながら答える」プロンプティング原理。Type B の根拠。中間ステップが論理性向上を生む。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">Reasoning steps</div>
+        <div class="glossary-desc">Type B で提供する推論順序の各ステップ。動詞 + 具体的対象で書くのが原則。</div>
+      </div>
+      <div class="glossary-item">
+        <div class="glossary-term">Output characteristics</div>
+        <div class="glossary-desc">Type A で指定する出力の特性（長さ・構造・フォーマット等）。フォーマット統一の決め手。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="check">
+    <div class="section-label">⑥ 理解度チェック</div>
+    <div class="qa-list">
+      <div class="qa-item">
+        <div class="qa-q">
+          <div class="q-badge">Q1</div>
+          <div class="q-text">Type A と Type B の違いを「制御対象」「形式」「使い所」の3軸で説明してください。</div>
+        </div>
+        <details>
+          <summary>答えを見る</summary>
+          <div class="qa-a">
+            <strong>Type A（Attributes）</strong>:<br>
+            ・制御対象 = <strong>What</strong>（何を含めるか / 出力の特性）<br>
+            ・形式 = 箇条書き（"must include kcal" "use clear headers"）<br>
+            ・使い所 = ほぼ全プロンプト（必須）<br><br>
+            <strong>Type B（Steps）</strong>:<br>
+            ・制御対象 = <strong>How</strong>（どう考えるか / 推論プロセス）<br>
+            ・形式 = 番号付きリスト（"First, calculate. Second, distribute..."）<br>
+            ・使い所 = 複雑な推論・計算が必要な時（4-6 ステップが最適）
+          </div>
+        </details>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">
+          <div class="q-badge">Q2</div>
+          <div class="q-text">なぜ Type B（ステップ追加）が劇的にスコアを上げるのですか？</div>
+        </div>
+        <details>
+          <summary>答えを見る</summary>
+          <div class="qa-a">
+            LLM は <strong>逐次的にトークンを生成</strong>（前のトークンが次のトークンに影響）する仕組み。<br>
+            「いきなり最終答えを出せ」と言うと、構造化されない生成になる。<br>
+            「①→②→③ の順で考えろ」と指示すると、<strong>各ステップで思考が整理</strong> され、中間ステップが後続の推論を補強する。<br>
+            これは <strong>Chain-of-Thought（CoT）</strong> プロンプティングの原理。Type B で抜け漏れ・論理矛盾が大幅に減るため、スコアが劇的に向上する。
+          </div>
+        </details>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">
+          <div class="q-badge">Q3</div>
+          <div class="q-text">Type B のステップを設計する時に避けるべき落とし穴を3つ挙げてください。</div>
+        </div>
+        <details>
+          <summary>答えを見る</summary>
+          <div class="qa-a">
+            ❌ <strong>ステップが多すぎる</strong>: 10ステップ超はモデルが混乱。<strong>4-6 ステップが最適</strong>。<br>
+            ❌ <strong>矛盾するガイドライン</strong>: Type A で「短く」と言いつつ Type B で「詳しく分析」など → 整合性を保つ。<br>
+            ❌ <strong>抽象表現</strong>: 「よく考えて」「丁寧に」は無効。動詞 + 具体的な対象（"calculate calories" "distribute macros"）で書く。<br>
+            これらを守れば Type B の効果を最大化できる。
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="memo">
+    <div class="section-label">⑦ 自分メモ（気づき・疑問・次に調べること）</div>
+    <textarea class="memo-area" placeholder="ここに自由にメモを書いてください..."></textarea>
+    <div class="memo-hint">※ このブラウザに自動保存されます</div>
+  </div>
+
+</main>
+
+<footer>
+  <strong>Claude with the Anthropic API — Lecture 30</strong>
+  Generated by <code>/anthropic-academy-html</code>
+</footer>
+
+<script>
+(function() {
+  var key = 'memo_' + location.pathname.split('/').pop();
+  var ta = document.querySelector('.memo-area');
+  var saved = localStorage.getItem(key);
+  if (saved) ta.value = saved;
+  ta.addEventListener('input', function() { localStorage.setItem(key, ta.value); });
+})();
+</script>
+
+</body>
+</html>
