@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 18: Response streaming — ストリーミングってなに？ | Anthropic Academy 教科書</title>
+<style>
+:root {
+  --paper: #faf6ef;
+  --paper-2: #ffffff;
+  --ink: #2b2b2b;
+  --ink-sub: #5a5a5a;
+  --accent: #d97757;
+  --accent-light: #fdebde;
+  --tag-bg: #ebe3d3;
+  --tag-text: #6b5028;
+  --soft-blue: #cfe7ef;
+  --soft-yellow: #fdf0c8;
+  --soft-mint: #d8ecd6;
+  --border: #dcd3c0;
+  --radius: 12px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  line-height: 1.9;
+  padding: 40px 20px;
+}
+.book { max-width: 760px; margin: 0 auto; }
+
+.chapter-tag {
+  display: inline-block;
+  background: var(--tag-bg);
+  color: var(--tag-text);
+  padding: 8px 28px;
+  border-radius: 0 24px 24px 0;
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  margin-left: -20px;
+  margin-bottom: 14px;
+}
+
+h1.lecture-title {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.35;
+  margin-bottom: 6px;
+}
+h1.lecture-title .ja-sub {
+  display: block;
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--ink-sub);
+  margin-top: 6px;
+}
+.subtitle {
+  color: var(--ink-sub);
+  font-size: 14px;
+  margin-bottom: 40px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+section { margin-bottom: 52px; }
+h2 {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 18px;
+  padding-left: 18px;
+  border-left: 6px solid var(--accent);
+}
+h3 {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 22px 0 10px;
+  color: var(--accent);
+}
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+
+.card {
+  background: var(--paper-2);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow);
+  margin: 16px 0;
+}
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.yellow { background: var(--soft-yellow); border-left: 4px solid #d9a431; }
+
+table.vocab {
+  width: 100%;
+  background: var(--paper-2);
+  border-collapse: collapse;
+  margin: 16px 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+table.vocab th, table.vocab td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 15px;
+}
+table.vocab th {
+  background: var(--tag-bg);
+  color: var(--tag-text);
+  font-weight: 700;
+}
+table.vocab td.code {
+  font-family: "Consolas","Menlo",monospace;
+  color: var(--accent);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+pre {
+  background: #f4eedb;
+  border-radius: 8px;
+  padding: 16px 18px;
+  overflow-x: auto;
+  font-family: "Consolas","Menlo",monospace;
+  font-size: 14px;
+  line-height: 1.7;
+  margin: 12px 0;
+  border: 1px solid var(--border);
+}
+code.inline {
+  background: #f4eedb;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: "Consolas","Menlo",monospace;
+  font-size: 0.92em;
+  color: #a85200;
+}
+
+details {
+  background: var(--paper-2);
+  border-radius: var(--radius);
+  padding: 14px 22px;
+  margin: 10px 0;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--tag-bg);
+}
+details summary {
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 15px;
+  outline: none;
+}
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+
+.illustration {
+  text-align: center;
+  margin: 24px 0;
+}
+.illustration svg { max-width: 100%; height: auto; }
+.caption {
+  font-size: 13px;
+  color: var(--ink-sub);
+  margin-top: 8px;
+  text-align: center;
+}
+
+.memo-area {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  min-height: 120px;
+  background: var(--paper-2);
+  color: #b0a589;
+  font-size: 14px;
+  font-style: italic;
+}
+
+footer {
+  margin-top: 60px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--ink-sub);
+  text-align: center;
+  line-height: 1.7;
+}
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+
+@media (max-width: 600px) {
+  body { padding: 20px 14px; }
+  h1.lecture-title { font-size: 24px; }
+  h2 { font-size: 19px; }
+  p, ol li, ul li { font-size: 15px; }
+}
+</style>
+</head>
+<body>
+<main class="book">
+
+  <span class="chapter-tag">Module 6 ・ Lecture 18</span>
+  <h1 class="lecture-title">
+    Response streaming
+    <span class="ja-sub">— ストリーミング・答えを少しずつ受け取るしくみ</span>
+  </h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① ストリーミングってなに？</h2>
+
+    <p>AIに質問すると、答えが画面に出るまで <strong>10〜30秒</strong> 待たされることがあります。その間、ぐるぐる回るマークだけ見せられて、ユーザーは「動いてるのかな？」と不安になります。</p>
+
+    <p>そこで使うのが <strong>ストリーミング（streaming）</strong> という技術。AIが答えを作りながら、できた部分から少しずつ送って画面に出す方法です。</p>
+
+    <div class="illustration">
+      <svg width="640" height="280" viewBox="0 0 640 280" xmlns="http://www.w3.org/2000/svg">
+        <!-- 左: 普通の応答 -->
+        <rect x="20" y="20" width="280" height="240" rx="12" fill="#fff" stroke="#d97757" stroke-width="2"/>
+        <text x="160" y="50" text-anchor="middle" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#a85200">普通の応答</text>
+
+        <!-- 画面 -->
+        <rect x="60" y="70" width="200" height="100" rx="8" fill="#fcf6e8" stroke="#dcd3c0"/>
+        <circle cx="160" cy="118" r="22" fill="none" stroke="#d97757" stroke-width="3" stroke-dasharray="25 12" transform="rotate(-30 160 118)"/>
+        <text x="160" y="155" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#888">読み込み中...</text>
+
+        <!-- 困った人 -->
+        <circle cx="100" cy="210" r="22" fill="#fdf0c8" stroke="#a85200" stroke-width="2"/>
+        <circle cx="92" cy="207" r="2" fill="#2b2b2b"/>
+        <circle cx="108" cy="207" r="2" fill="#2b2b2b"/>
+        <path d="M 92 220 Q 100 215 108 220" stroke="#2b2b2b" stroke-width="2" fill="none"/>
+        <text x="100" y="252" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#a85200">イライラ</text>
+
+        <!-- ?? 吹き出し -->
+        <ellipse cx="195" cy="205" rx="40" ry="22" fill="#fff" stroke="#d97757" stroke-width="2"/>
+        <text x="195" y="212" text-anchor="middle" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#d97757">?? まだ？</text>
+
+        <!-- 右: ストリーミング -->
+        <rect x="340" y="20" width="280" height="240" rx="12" fill="#fff" stroke="#5a8aa0" stroke-width="2"/>
+        <text x="480" y="50" text-anchor="middle" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#2b6577">ストリーミング</text>
+
+        <!-- 画面 -->
+        <rect x="380" y="70" width="200" height="100" rx="8" fill="#fcf6e8" stroke="#dcd3c0"/>
+        <text x="390" y="92" font-family="Consolas" font-size="12" fill="#888">A</text>
+        <text x="390" y="110" font-family="Consolas" font-size="12" fill="#666">An s</text>
+        <text x="390" y="128" font-family="Consolas" font-size="12" fill="#444">An ans</text>
+        <text x="390" y="146" font-family="Consolas" font-size="12" fill="#2b2b2b">An answer</text>
+        <text x="390" y="164" font-family="Consolas" font-size="12" fill="#2b2b2b" font-weight="700">An answer is...</text>
+
+        <!-- 嬉しい人 -->
+        <circle cx="420" cy="210" r="22" fill="#d8ecd6" stroke="#67a061" stroke-width="2"/>
+        <path d="M 412 205 Q 416 200 420 205" stroke="#2b2b2b" stroke-width="2" fill="none"/>
+        <path d="M 420 205 Q 424 200 428 205" stroke="#2b2b2b" stroke-width="2" fill="none"/>
+        <path d="M 412 217 Q 420 226 428 217" stroke="#2b2b2b" stroke-width="2" fill="none"/>
+        <text x="420" y="252" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#2b6577">読み始める</text>
+
+        <!-- 吹き出し -->
+        <ellipse cx="525" cy="205" rx="42" ry="22" fill="#fff" stroke="#5a8aa0" stroke-width="2"/>
+        <text x="525" y="212" text-anchor="middle" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#2b6577">来てる！</text>
+      </svg>
+      <p class="caption">図① 普通の応答（左：待ちでイライラ）とストリーミング（右：すぐ読み始める）</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>② どんなしくみ？</h2>
+
+    <ol>
+      <li>サーバーが「ストリーミング有効」でAIにメッセージを送る</li>
+      <li>AIはまず「受け取りました」だけ返事する（本文はまだない）</li>
+      <li>そのあと、テキストの<strong>かけら（チャンク）</strong>を連続して送ってくる</li>
+      <li>サーバーは受け取り次第クライアントに転送、画面に語句が積み上がる</li>
+    </ol>
+
+    <div class="card accent">
+      <strong>大事なポイント:</strong> これらは <em>すべて1回のリクエスト</em> の中で起きること。何度もAPIを呼んでいるわけではない。
+    </div>
+  </section>
+
+  <section>
+    <h2>③ ストリームのイベント6種</h2>
+
+    <p>ストリーミングを有効にすると、AIから次の6種類のイベントが流れてきます。</p>
+
+    <table class="vocab">
+      <thead>
+        <tr><th style="width: 38%;">英語名</th><th>意味</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="code">MessageStart</td><td>新しいメッセージの送出が始まる</td></tr>
+        <tr><td class="code">ContentBlockStart</td><td>テキスト・ツール使用などの新ブロック開始</td></tr>
+        <tr><td class="code">ContentBlockDelta</td><td>★本命★ 実際のテキストの断片が入っている</td></tr>
+        <tr><td class="code">ContentBlockStop</td><td>現在のコンテンツブロック完了</td></tr>
+        <tr><td class="code">MessageDelta</td><td>現在のメッセージの状態更新</td></tr>
+        <tr><td class="code">MessageStop</td><td>メッセージ送出完了</td></tr>
+      </tbody>
+    </table>
+
+    <div class="card yellow">
+      <strong>覚え方:</strong> 画面に表示したい文字は <code class="inline">ContentBlockDelta</code> の中にある。これだけ拾えば十分なケースが多い。
+    </div>
+
+    <div class="illustration">
+      <svg width="640" height="120" viewBox="0 0 640 120" xmlns="http://www.w3.org/2000/svg">
+        <line x1="40" y1="60" x2="600" y2="60" stroke="#dcd3c0" stroke-width="2"/>
+        <g font-family="Consolas" font-size="11" fill="#a85200">
+          <circle cx="50" cy="60" r="12" fill="#fdf0c8" stroke="#d9a431" stroke-width="2"/>
+          <text x="50" y="40" text-anchor="middle">Start</text>
+          <text x="50" y="88" text-anchor="middle" fill="#5a5a5a" font-size="10">Message</text>
+
+          <circle cx="160" cy="60" r="12" fill="#fdf0c8" stroke="#d9a431" stroke-width="2"/>
+          <text x="160" y="40" text-anchor="middle">Block</text>
+          <text x="160" y="88" text-anchor="middle" fill="#5a5a5a" font-size="10">Start</text>
+
+          <circle cx="290" cy="60" r="14" fill="#d97757" stroke="#a85200" stroke-width="2"/>
+          <text x="290" y="40" text-anchor="middle" fill="#a85200" font-weight="700">Delta★</text>
+          <text x="290" y="88" text-anchor="middle" fill="#5a5a5a" font-size="10">本命のテキスト</text>
+
+          <circle cx="400" cy="60" r="12" fill="#fdf0c8" stroke="#d9a431" stroke-width="2"/>
+          <text x="400" y="40" text-anchor="middle">Block</text>
+          <text x="400" y="88" text-anchor="middle" fill="#5a5a5a" font-size="10">Stop</text>
+
+          <circle cx="510" cy="60" r="12" fill="#fdf0c8" stroke="#d9a431" stroke-width="2"/>
+          <text x="510" y="40" text-anchor="middle">Msg</text>
+          <text x="510" y="88" text-anchor="middle" fill="#5a5a5a" font-size="10">Delta</text>
+
+          <circle cx="600" cy="60" r="12" fill="#fdf0c8" stroke="#d9a431" stroke-width="2"/>
+          <text x="600" y="40" text-anchor="middle">Stop</text>
+          <text x="600" y="88" text-anchor="middle" fill="#5a5a5a" font-size="10">Message</text>
+        </g>
+      </svg>
+      <p class="caption">図② イベントの流れ（★本命= ContentBlockDelta）</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>④ コードで書いてみよう</h2>
+
+    <h3>パターン1: 基本のストリーミング</h3>
+    <p><code class="inline">stream=True</code> を加えると、戻り値が「イベントの繰り返し」になります。</p>
+
+<pre><code>stream = client.messages.create(
+    model=model,
+    max_tokens=1000,
+    messages=messages,
+    stream=True
+)
+for event in stream:
+    print(event)</code></pre>
+
+    <h3>パターン2: テキストだけ取り出す（簡略版）</h3>
+    <p>「ノイズは要らない、テキストだけほしい」ときは <code class="inline">messages.stream()</code> の <code class="inline">text_stream</code> を使います。</p>
+
+<pre><code>with client.messages.stream(
+    model=model,
+    max_tokens=1000,
+    messages=messages
+) as stream:
+    for text in stream.text_stream:
+        print(text, end="")</code></pre>
+
+    <h3>パターン3: 最終メッセージも一緒に取る</h3>
+    <p>ユーザー画面には少しずつ表示、最後に <em>完全な1メッセージ</em> も欲しい場合（DB保存など）。</p>
+
+<pre><code>with client.messages.stream(
+    model=model,
+    max_tokens=1000,
+    messages=messages
+) as stream:
+    for text in stream.text_stream:
+        # ここで各チャンクをクライアントに転送
+        pass
+
+    final_message = stream.get_final_message()</code></pre>
+
+    <p><code class="inline">get_final_message()</code> がストリーム終了後にすべての断片を組み立て直した <strong>完成版メッセージ</strong> を返します。</p>
+  </section>
+
+  <section>
+    <h2>⑤ 食卓の例えで覚える</h2>
+
+    <div class="illustration">
+      <svg width="640" height="200" viewBox="0 0 640 200" xmlns="http://www.w3.org/2000/svg">
+        <rect x="40" y="135" width="560" height="14" rx="4" fill="#d97757"/>
+        <rect x="40" y="149" width="560" height="6" rx="2" fill="#a85200"/>
+        <g>
+          <ellipse cx="120" cy="125" rx="28" ry="7" fill="#a85200"/>
+          <ellipse cx="120" cy="120" rx="28" ry="7" fill="#fdf0c8" stroke="#d9a431" stroke-width="1"/>
+          <text x="120" y="125" text-anchor="middle" font-size="18">🍣</text>
+        </g>
+        <g>
+          <ellipse cx="220" cy="125" rx="28" ry="7" fill="#a85200"/>
+          <ellipse cx="220" cy="120" rx="28" ry="7" fill="#fdf0c8" stroke="#d9a431" stroke-width="1"/>
+          <text x="220" y="125" text-anchor="middle" font-size="18">🍙</text>
+        </g>
+        <g>
+          <ellipse cx="320" cy="125" rx="28" ry="7" fill="#a85200"/>
+          <ellipse cx="320" cy="120" rx="28" ry="7" fill="#fdf0c8" stroke="#d9a431" stroke-width="1"/>
+          <text x="320" y="125" text-anchor="middle" font-size="18">🍵</text>
+        </g>
+        <g>
+          <ellipse cx="420" cy="125" rx="28" ry="7" fill="#a85200"/>
+          <ellipse cx="420" cy="120" rx="28" ry="7" fill="#fdf0c8" stroke="#d9a431" stroke-width="1"/>
+          <text x="420" y="125" text-anchor="middle" font-size="18">🍡</text>
+        </g>
+        <g>
+          <ellipse cx="520" cy="125" rx="28" ry="7" fill="#a85200"/>
+          <ellipse cx="520" cy="120" rx="28" ry="7" fill="#fdf0c8" stroke="#d9a431" stroke-width="1"/>
+          <text x="520" y="125" text-anchor="middle" font-size="18">🍓</text>
+        </g>
+        <text x="320" y="55" text-anchor="middle" font-family="Hiragino Sans" font-size="15" font-weight="700" fill="#a85200">料理が一品ずつ運ばれてくる</text>
+        <line x1="100" y1="75" x2="540" y2="75" stroke="#d97757" stroke-width="2" stroke-dasharray="6 4"/>
+        <polygon points="540,75 532,71 532,79" fill="#d97757"/>
+        <text x="320" y="100" text-anchor="middle" font-family="Hiragino Sans" font-size="13" fill="#5a5a5a">= ストリーミング</text>
+        <text x="320" y="190" text-anchor="middle" font-family="Hiragino Sans" font-size="12" fill="#888">食べ始めが早い・お皿が積み重なる</text>
+      </svg>
+    </div>
+
+    <table class="vocab">
+      <thead>
+        <tr><th style="width: 50%;">食卓の例え</th><th>ストリーミング</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>料理を全部作り終えてから一皿で出す</td><td>普通の応答（待ち時間が長い）</td></tr>
+        <tr><td>できた料理から1品ずつ運ぶ</td><td>ストリーミング</td></tr>
+        <tr><td>運ばれてくる料理ひとつひとつ</td><td><code class="inline">ContentBlockDelta</code></td></tr>
+        <tr><td>「いただきます」「ごちそうさま」の合図</td><td><code class="inline">MessageStart</code> / <code class="inline">MessageStop</code></td></tr>
+        <tr><td>食後に1枚のメニュー表をもらう</td><td><code class="inline">get_final_message()</code></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑥ キーワード一覧</h2>
+
+    <table class="vocab">
+      <thead>
+        <tr><th style="width: 30%;">英語</th><th style="width: 25%;">読み方</th><th>意味</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="code">streaming</td><td>ストリーミング</td><td>少しずつ流す技法</td></tr>
+        <tr><td class="code">stream=True</td><td>ストリーム・トゥルー</td><td>「ストリーミング有効」のスイッチ</td></tr>
+        <tr><td class="code">chunk</td><td>チャンク</td><td>テキストの「かけら」</td></tr>
+        <tr><td class="code">event</td><td>イベント</td><td>「○○が起きた」という通知</td></tr>
+        <tr><td class="code">text_stream</td><td>テキスト・ストリーム</td><td>テキストだけの流れ（簡略版）</td></tr>
+        <tr><td class="code">get_final_message()</td><td>ゲット・ファイナル・メッセージ</td><td>完成版メッセージを取り出す</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑦ 理解度チェック</h2>
+
+    <details>
+      <summary>Q1. ストリーミングを使うと、ユーザーは何が嬉しい？</summary>
+      <p>10〜30秒待たされず、文字が少しずつ出始めるので「動いている」と分かる。読み始めも早く、体験が軽くなる。</p>
+    </details>
+
+    <details>
+      <summary>Q2. 6種類のイベントのうち、画面に文字を出すために一番大事なのは？</summary>
+      <p><code class="inline">ContentBlockDelta</code>。実際のテキストの断片がここに入っている。</p>
+    </details>
+
+    <details>
+      <summary>Q3. ストリーミングしつつ、最後に完全なメッセージをDBに保存したい。どう書く？</summary>
+      <p><code class="inline">messages.stream()</code> でループしてから、<code class="inline">stream.get_final_message()</code> を呼ぶ。両方が1回のリクエスト内で取れる。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑧ 自分メモ</h2>
+    <div class="memo-area">自分が学んだことや疑問を書き込もう…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 18: Response streaming<br>
+    元レクチャー: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287734">SkillJar — Response streaming</a><br>
+    学習版HTML: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_18.html">Anthropic_02API_18.html</a>
+  </footer>
+
+</main>
+</body>
+</html>
