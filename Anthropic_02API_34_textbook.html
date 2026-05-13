@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 34: Providing examples — one-shot/multi-shot プロンプティング | Anthropic Academy 教科書</title>
+<style>
+:root {
+  --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a;
+  --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028;
+  --soft-blue: #cfe7ef; --soft-yellow: #fdf0c8; --soft-mint: #d8ecd6; --soft-pink: #f6dcdc;
+  --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+table.vocab td.code { font-family: "Consolas","Menlo",monospace; color: var(--accent); font-weight: 700; white-space: nowrap; }
+pre { background: #f4eedb; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: "Consolas","Menlo",monospace; font-size: 14px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--border); }
+code.inline { background: #f4eedb; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Menlo",monospace; font-size: 0.92em; color: #a85200; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+.illustration { text-align: center; margin: 24px 0; }
+.illustration svg { max-width: 100%; height: auto; }
+.caption { font-size: 13px; color: var(--ink-sub); margin-top: 8px; text-align: center; }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 600px) { body { padding: 20px 14px; } h1.lecture-title { font-size: 24px; } h2 { font-size: 19px; } p, ol li, ul li { font-size: 15px; } }
+</style>
+</head>
+<body>
+<main class="book">
+
+  <span class="chapter-tag">Module 8 ・ Lecture 34</span>
+  <h1 class="lecture-title">Providing examples<span class="ja-sub">— 例を見せて Claude を導く(one-shot / multi-shot)</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① show, not tell — 例で見せる力</h2>
+    <p>「言葉で説明する」より「<strong>実例で見せる</strong>」方が、Claude が要件を理解しやすい。プロンプト内に input/output ペアを入れて応答を導くのが <strong>one-shot / multi-shot プロンプティング</strong>。</p>
+    <div class="card accent"><strong>原則:</strong> show, not tell (語るな、見せろ)。説明では伝わらない「望ましい出力の特徴」が、例なら一発で伝わる。</div>
+  </section>
+
+  <section>
+    <h2>② 具体例: サーカズム検出</h2>
+    <p>ツイートが positive か negative か判定したい。説明だけだと <strong>サーカズム(皮肉)</strong> が判定できない。</p>
+
+    <div class="illustration">
+      <svg width="640" height="260" viewBox="0 0 640 260" xmlns="http://www.w3.org/2000/svg">
+        <rect x="20" y="30" width="290" height="210" rx="12" fill="#f6dcdc" stroke="#c66b6b" stroke-width="2"/>
+        <text x="165" y="60" text-anchor="middle" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#a04040">例なし</text>
+        <rect x="40" y="80" width="250" height="60" rx="6" fill="#fcf6e8" stroke="#dcd3c0"/>
+        <text x="50" y="100" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">入力: "最高の試合だった!"</text>
+        <text x="50" y="118" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">(実は皮肉)</text>
+        <rect x="40" y="150" width="250" height="50" rx="6" fill="#fff" stroke="#c66b6b"/>
+        <text x="165" y="175" text-anchor="middle" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#a04040">Positive ❌</text>
+        <text x="165" y="225" text-anchor="middle" font-size="20">😱</text>
+
+        <rect x="330" y="30" width="290" height="210" rx="12" fill="#d8ecd6" stroke="#67a061" stroke-width="2"/>
+        <text x="475" y="60" text-anchor="middle" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#2b6e2e">例ありプロンプト</text>
+        <rect x="350" y="80" width="250" height="60" rx="6" fill="#fcf6e8" stroke="#dcd3c0"/>
+        <text x="360" y="100" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">"皮肉な賛辞" → Negative</text>
+        <text x="360" y="118" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">"素直な称賛" → Positive</text>
+        <rect x="350" y="150" width="250" height="50" rx="6" fill="#fff" stroke="#67a061"/>
+        <text x="475" y="175" text-anchor="middle" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#2b6e2e">Negative ✅</text>
+        <text x="475" y="225" text-anchor="middle" font-size="20">🎯</text>
+      </svg>
+      <p class="caption">図① 例なし(左：皮肉を見抜けず誤判定) vs 例あり(右：正しく Negative)</p>
+    </div>
+
+<pre><code>&lt;sample_input&gt;
+"Great game tonight!"
+&lt;/sample_input&gt;
+&lt;ideal_output&gt;
+Positive
+&lt;/ideal_output&gt;
+
+&lt;sample_input&gt;
+"Oh yeah, I really needed a flight delay tonight! Excellent!"
+&lt;/sample_input&gt;
+&lt;ideal_output&gt;
+Negative
+&lt;/ideal_output&gt;</code></pre>
+
+    <p>XML タグで <code class="inline">&lt;sample_input&gt;</code> / <code class="inline">&lt;ideal_output&gt;</code> を分離(#33 の応用)。「サーカズムは慎重に」という文脈もセットで添える。</p>
+  </section>
+
+  <section>
+    <h2>③ 例を使うべき場面</h2>
+    <ul>
+      <li><strong>コーナーケース対応</strong> (サーカズム / 二重否定 / 文化依存表現)</li>
+      <li><strong>複雑な出力フォーマット</strong> (特定の JSON 構造・テーブル形式)</li>
+      <li><strong>スタイル・トーン</strong> の提示</li>
+      <li><strong>曖昧な入力</strong> の扱い方を実演</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>④ One-shot vs Multi-shot</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 25%;">種類</th><th style="width: 20%;">例の数</th><th>向く場面</th></tr></thead>
+      <tbody>
+        <tr><td>One-shot</td><td>1つ</td><td>基本パターン確立だけで十分なとき</td></tr>
+        <tr><td>Multi-shot</td><td>複数</td><td>様々なエッジケース・バリエーションをカバーしたいとき</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑤ Eval から良い例を見つける</h2>
+    <p>プロンプト評価(#22-#28)で <strong>最高スコアの出力</strong> を例として再利用するのが効率的。</p>
+    <div class="card mint">「score 10 の応答」を <code class="inline">&lt;ideal_output&gt;</code> に入れれば、Claude に「完璧な出力ってこういうもの」と直接示せる。<em>評価パイプライン + 例提供</em> が綺麗につながる。</div>
+  </section>
+
+  <section>
+    <h2>⑥ 「なぜ ideal か」を添えて強化</h2>
+<pre><code>&lt;ideal_output&gt;
+[例の出力]
+&lt;/ideal_output&gt;
+
+This example is well-structured, provides detailed information
+on food choices and quantities, and aligns with the athlete's
+goals and restrictions.</code></pre>
+    <p>「なぜこの出力が良いか」を説明文で添えると、Claude は「形式」だけでなく「<strong>良さの理由</strong>」まで学べる。</p>
+  </section>
+
+  <section>
+    <h2>⑦ 答案見本の例えで覚える</h2>
+
+    <div class="illustration">
+      <svg width="640" height="240" viewBox="0 0 640 240" xmlns="http://www.w3.org/2000/svg">
+        <text x="160" y="30" text-anchor="middle" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#a04040">説明だけ</text>
+        <rect x="40" y="50" width="240" height="160" rx="6" fill="#fcf6e8" stroke="#c66b6b" stroke-width="2"/>
+        <text x="160" y="100" text-anchor="middle" font-family="Hiragino Sans" font-size="13" fill="#5a5a5a">「上手な答案を</text>
+        <text x="160" y="120" text-anchor="middle" font-family="Hiragino Sans" font-size="13" fill="#5a5a5a">書きなさい」</text>
+        <text x="160" y="170" text-anchor="middle" font-size="28">🤔</text>
+        <text x="160" y="200" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#5a5a5a">どう書けば良いか不明</text>
+
+        <text x="480" y="30" text-anchor="middle" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#2b6e2e">100点見本+理由付き</text>
+        <rect x="360" y="50" width="240" height="160" rx="6" fill="#fcf6e8" stroke="#67a061" stroke-width="2"/>
+        <text x="480" y="75" text-anchor="middle" font-family="Hiragino Sans" font-size="12" font-weight="700" fill="#2b6e2e">「これが100点答案」</text>
+        <rect x="375" y="85" width="210" height="55" rx="4" fill="#fff" stroke="#dcd3c0"/>
+        <text x="380" y="105" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">序論: ...</text>
+        <text x="380" y="120" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">本論: ...</text>
+        <text x="380" y="135" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">結論: ...</text>
+        <text x="480" y="160" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#a85200">なぜ良い?</text>
+        <text x="480" y="178" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#5a5a5a">→ 構成・例・結論</text>
+        <text x="480" y="196" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#5a5a5a">の3点が揃ってる</text>
+      </svg>
+      <p class="caption">図② 説明だけ(左) vs 100点見本+理由(右)</p>
+    </div>
+
+    <table class="vocab">
+      <thead><tr><th style="width: 50%;">学校の例え</th><th>プロンプト技法</th></tr></thead>
+      <tbody>
+        <tr><td>「上手な答案を書きなさい」と説明だけ</td><td>例なしのプロンプト</td></tr>
+        <tr><td>「これが100点の答案だよ」と1枚見せる</td><td>One-shot プロンプティング</td></tr>
+        <tr><td>「これは100点」「これは80点」と複数見せる</td><td>Multi-shot プロンプティング</td></tr>
+        <tr><td>「この答案は3点が揃ってる」と理由解説</td><td>例 + 「なぜ ideal か」付き</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑧ キーワード一覧</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 30%;">英語</th><th style="width: 25%;">読み方</th><th>意味</th></tr></thead>
+      <tbody>
+        <tr><td class="code">one-shot</td><td>ワンショット</td><td>1例だけ提供</td></tr>
+        <tr><td class="code">multi-shot</td><td>マルチショット</td><td>複数例を提供</td></tr>
+        <tr><td class="code">&lt;sample_input&gt;</td><td>サンプル・インプット</td><td>例の入力タグ</td></tr>
+        <tr><td class="code">&lt;ideal_output&gt;</td><td>アイディアル・アウトプット</td><td>例の理想出力タグ</td></tr>
+        <tr><td class="code">sarcasm</td><td>サーカズム</td><td>皮肉(検出が難しい)</td></tr>
+        <tr><td class="code">corner case</td><td>コーナーケース</td><td>想定外の入力</td></tr>
+        <tr><td class="code">show, not tell</td><td>ショー・ノット・テル</td><td>語るな、見せろ(原則)</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑨ 理解度チェック</h2>
+    <details>
+      <summary>Q1. なぜ「説明だけ」より「例」の方が効くの?</summary>
+      <p>「望ましい出力の特徴」は言葉で説明しきれないことが多い。サーカズムや微妙なトーンは、実例で見せると一発で伝わる。「show, not tell」が原則。</p>
+    </details>
+    <details>
+      <summary>Q2. One-shot と Multi-shot の使い分けは?</summary>
+      <p>シンプルなパターン確立なら One-shot で十分。様々なエッジケース・バリエーションをカバーしたい時は Multi-shot で複数例を提供する。</p>
+    </details>
+    <details>
+      <summary>Q3. 例を作るコツは?</summary>
+      <p>プロンプト評価(#22-#28)で <strong>最高スコアの応答</strong> を例として再利用する。score 10 の出力を <code class="inline">&lt;ideal_output&gt;</code> に入れれば、「完璧な出力ってこういうもの」と直接示せる。</p>
+    </details>
+    <details>
+      <summary>Q4. 例 + 「なぜ ideal か」を組み合わせる効果は?</summary>
+      <p>形式だけでなく「良さの理由」まで Claude が学べる。「この答案は構成・具体例・結論の3点が揃ってる」と理由を解説する → 表面だけでなく本質を学べる。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑩ 自分メモ</h2>
+    <div class="memo-area">自分が学んだことや疑問を書き込もう…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 34: Providing examples<br>
+    元レクチャー: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287746">SkillJar — Providing examples</a><br>
+    前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_33_textbook.html">Lecture 33</a> ・ 次章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_35_textbook.html">Lecture 35</a>
+  </footer>
+
+</main>
+</body>
+</html>
