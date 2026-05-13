@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 33: Structure with XML tags — XMLタグで構造化 | Anthropic Academy 教科書</title>
+<style>
+:root {
+  --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a;
+  --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028;
+  --soft-blue: #cfe7ef; --soft-yellow: #fdf0c8; --soft-mint: #d8ecd6; --soft-pink: #f6dcdc;
+  --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+h3 { font-size: 17px; font-weight: 700; margin: 22px 0 10px; color: var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.yellow { background: var(--soft-yellow); border-left: 4px solid #d9a431; }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+.card.pink { background: #f6dcdc; border-left: 4px solid #c66b6b; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+table.vocab td.code { font-family: "Consolas","Menlo",monospace; color: var(--accent); font-weight: 700; white-space: nowrap; }
+pre { background: #f4eedb; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: "Consolas","Menlo",monospace; font-size: 14px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--border); }
+code.inline { background: #f4eedb; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Menlo",monospace; font-size: 0.92em; color: #a85200; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+.illustration { text-align: center; margin: 24px 0; }
+.illustration svg { max-width: 100%; height: auto; }
+.caption { font-size: 13px; color: var(--ink-sub); margin-top: 8px; text-align: center; }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 600px) { body { padding: 20px 14px; } h1.lecture-title { font-size: 24px; } h2 { font-size: 19px; } p, ol li, ul li { font-size: 15px; } }
+</style>
+</head>
+<body>
+<main class="book">
+
+  <span class="chapter-tag">Module 8 ・ Lecture 33</span>
+  <h1 class="lecture-title">Structure with XML tags<span class="ja-sub">— XMLタグでプロンプトを整理する</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① なぜ構造が大事か</h2>
+
+    <p>プロンプトに大量のデータを混ぜると、Claude が「どこからどこまでが指示で、どこからがデータか」を判別しづらくなる。</p>
+
+    <div class="illustration">
+      <svg width="640" height="260" viewBox="0 0 640 260" xmlns="http://www.w3.org/2000/svg">
+        <rect x="20" y="30" width="290" height="210" rx="12" fill="#f6dcdc" stroke="#c66b6b" stroke-width="2"/>
+        <text x="165" y="60" text-anchor="middle" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#a04040">タグなし(ごちゃ混ぜ)</text>
+
+        <rect x="40" y="80" width="250" height="140" rx="6" fill="#fcf6e8" stroke="#dcd3c0"/>
+        <text x="55" y="100" font-family="Consolas" font-size="11" fill="#2b2b2b">売上記録を分析して</text>
+        <text x="55" y="118" font-family="Consolas" font-size="11" fill="#888">2024-01: 売上 ¥120,000</text>
+        <text x="55" y="135" font-family="Consolas" font-size="11" fill="#888">2024-02: 売上 ¥98,000</text>
+        <text x="55" y="153" font-family="Consolas" font-size="11" fill="#888">20ページ分...</text>
+        <text x="55" y="180" font-family="Consolas" font-size="11" fill="#2b2b2b">傾向を教えて</text>
+        <text x="165" y="210" text-anchor="middle" font-size="20">😕</text>
+        <text x="165" y="230" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#a04040">境界が曖昧で混乱</text>
+
+        <rect x="330" y="30" width="290" height="210" rx="12" fill="#d8ecd6" stroke="#67a061" stroke-width="2"/>
+        <text x="475" y="60" text-anchor="middle" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#2b6e2e">XMLタグで構造化</text>
+
+        <rect x="350" y="80" width="250" height="140" rx="6" fill="#fcf6e8" stroke="#dcd3c0"/>
+        <text x="365" y="100" font-family="Consolas" font-size="11" fill="#2b2b2b">売上記録を分析して</text>
+        <text x="365" y="120" font-family="Consolas" font-size="11" fill="#a85200">&lt;sales_records&gt;</text>
+        <text x="375" y="138" font-family="Consolas" font-size="11" fill="#888">2024-01: ¥120,000</text>
+        <text x="375" y="155" font-family="Consolas" font-size="11" fill="#888">2024-02: ¥98,000</text>
+        <text x="365" y="173" font-family="Consolas" font-size="11" fill="#a85200">&lt;/sales_records&gt;</text>
+        <text x="365" y="195" font-family="Consolas" font-size="11" fill="#2b2b2b">傾向を教えて</text>
+        <text x="475" y="225" text-anchor="middle" font-size="20">✨</text>
+      </svg>
+      <p class="caption">図① タグなし(左：混乱) vs XMLタグで構造化(右：明確)</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>② 強力な例: コード + ドキュメント</h2>
+
+    <p>「このコードをこのドキュメント参考にデバッグして」というプロンプトで、混在状態を分離する。</p>
+
+<pre><code>&lt;my_code&gt;
+def hello():
+    print("hi")
+&lt;/my_code&gt;
+
+&lt;docs&gt;
+The print() function outputs to stdout.
+&lt;/docs&gt;</code></pre>
+
+    <div class="card mint">
+      <strong>効果:</strong> Claude は「<code class="inline">&lt;my_code&gt;</code> 側がデバッグ対象」「<code class="inline">&lt;docs&gt;</code> 側が参考情報」と即座に区別できる。
+    </div>
+  </section>
+
+  <section>
+    <h2>③ カスタムタグ名のコツ</h2>
+
+    <p>XML 公式仕様に従う必要はない。<strong>内容を物語る名前</strong> を使うのがコツ。</p>
+
+    <table class="vocab">
+      <thead>
+        <tr><th style="width: 50%;">良いタグ名</th><th>イマイチなタグ名</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="code">&lt;sales_records&gt;</td><td>&lt;data&gt;</td></tr>
+        <tr><td class="code">&lt;athlete_information&gt;</td><td>&lt;info&gt;</td></tr>
+        <tr><td class="code">&lt;my_code&gt;</td><td>&lt;text&gt;</td></tr>
+        <tr><td class="code">&lt;docs&gt;</td><td>&lt;content&gt;</td></tr>
+      </tbody>
+    </table>
+
+    <div class="card accent">
+      <strong>原則:</strong> タグ名が具体的なほど、Claude は「このセクションの目的」を理解しやすい。
+    </div>
+  </section>
+
+  <section>
+    <h2>④ XMLタグを使うべき場面</h2>
+
+    <ul>
+      <li><strong>大量のコンテキストやデータ</strong> を含めるとき</li>
+      <li><strong>異なる種類のコンテンツ</strong>(コード/ドキュメント/データ)を混ぜるとき</li>
+      <li>コンテンツ境界を <strong>特に明確にしたい</strong> とき</li>
+      <li><strong>複数の変数を挿入する複雑なプロンプト</strong></li>
+    </ul>
+
+    <div class="card yellow">
+      短いコンテンツでも、区切り文字としての役割で構造を明確にできる。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑤ 実例: 運動家のメニュー提案</h2>
+
+<pre><code>&lt;athlete_information&gt;
+- Height: 6'2"
+- Weight: 180 lbs
+- Goal: Build muscle
+- Dietary restrictions: Vegetarian
+&lt;/athlete_information&gt;
+
+Generate a meal plan based on the athlete information above.</code></pre>
+
+    <p>→ Claude は「身長・体重・目標・制限の4つは関連する運動家データ」と即座に把握、それを総合的に考慮してメニューを作る。</p>
+  </section>
+
+  <section>
+    <h2>⑥ ノートの例えで覚える</h2>
+
+    <div class="illustration">
+      <svg width="640" height="240" viewBox="0 0 640 240" xmlns="http://www.w3.org/2000/svg">
+        <text x="160" y="30" text-anchor="middle" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#a04040">ごちゃ混ぜノート</text>
+
+        <rect x="40" y="50" width="240" height="160" rx="6" fill="#fcf6e8" stroke="#c66b6b" stroke-width="2"/>
+        <text x="55" y="75" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">先生への質問あって</text>
+        <text x="55" y="93" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">参考の資料も書いて</text>
+        <text x="55" y="111" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">あと感想もメモして</text>
+        <text x="55" y="129" font-family="Hiragino Sans" font-size="11" fill="#888">2024-04-15...</text>
+        <text x="55" y="147" font-family="Hiragino Sans" font-size="11" fill="#888">あれは何だっけ</text>
+        <text x="55" y="180" text-anchor="start" font-size="20">😵</text>
+
+        <text x="480" y="30" text-anchor="middle" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#2b6e2e">見出しあるレポート</text>
+
+        <rect x="360" y="50" width="240" height="160" rx="6" fill="#fcf6e8" stroke="#67a061" stroke-width="2"/>
+        <rect x="375" y="65" width="80" height="20" rx="4" fill="#67a061"/>
+        <text x="415" y="79" text-anchor="middle" font-family="Hiragino Sans" font-size="11" font-weight="700" fill="#fff">【質問】</text>
+        <text x="375" y="103" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">先生、これ教えて...</text>
+
+        <rect x="375" y="115" width="80" height="20" rx="4" fill="#67a061"/>
+        <text x="415" y="129" text-anchor="middle" font-family="Hiragino Sans" font-size="11" font-weight="700" fill="#fff">【参考資料】</text>
+        <text x="375" y="153" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">教科書 P.45...</text>
+
+        <rect x="375" y="165" width="80" height="20" rx="4" fill="#67a061"/>
+        <text x="415" y="179" text-anchor="middle" font-family="Hiragino Sans" font-size="11" font-weight="700" fill="#fff">【感想】</text>
+
+        <text x="580" y="200" text-anchor="end" font-size="20">📖</text>
+      </svg>
+      <p class="caption">図② ごちゃ混ぜノート(左) vs 見出しレポート(右)</p>
+    </div>
+
+    <table class="vocab">
+      <thead>
+        <tr><th style="width: 50%;">ノートの例え</th><th>API テクニック</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>ノートにごちゃ混ぜで書いた感想文</td><td>タグなしプロンプト</td></tr>
+        <tr><td>見出しで区切ったレポート</td><td>XMLタグでセクション化</td></tr>
+        <tr><td>「【データ】」より「【売上記録2024年4月分】」が分かる</td><td>具体的なタグ名</td></tr>
+        <tr><td>「ここからは仮の話だけど」と前置きする</td><td>短いコンテンツも athlete_information タグで包む</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑦ キーワード一覧</h2>
+
+    <table class="vocab">
+      <thead>
+        <tr><th style="width: 30%;">英語</th><th style="width: 25%;">読み方</th><th>意味</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="code">XML tags</td><td>エックスエムエル・タグ</td><td>&lt;name&gt;...&lt;/name&gt; 形式の区切り</td></tr>
+        <tr><td class="code">delimiter</td><td>デリミタ</td><td>区切り文字</td></tr>
+        <tr><td class="code">interpolate</td><td>インタポレート</td><td>変数を埋め込む</td></tr>
+        <tr><td class="code">structure</td><td>ストラクチャー</td><td>構造</td></tr>
+        <tr><td class="code">boundary</td><td>バウンダリ</td><td>境界</td></tr>
+        <tr><td class="code">descriptive</td><td>ディスクリプティブ</td><td>説明的・具体的</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑧ 理解度チェック</h2>
+
+    <details>
+      <summary>Q1. XML タグを使うと何が良くなる?</summary>
+      <p>Claude が「指示/データ/参考資料」の境界を即座に判別できる。大量のコンテンツを挿入する複雑なプロンプトで特に効果が大きい。</p>
+    </details>
+
+    <details>
+      <summary>Q2. タグ名は &lt;data&gt; でいいの?</summary>
+      <p>NG ではないが、<strong>具体的な名前</strong> の方が遥かに効果的。<code class="inline">&lt;sales_records&gt;</code> や <code class="inline">&lt;athlete_information&gt;</code> のように、内容が一目で分かる名前を使う。</p>
+    </details>
+
+    <details>
+      <summary>Q3. 短いプロンプトでも XML タグを使うべき?</summary>
+      <p>劇的な効果は出にくいが、区切り文字として「これは外部入力データだ」と明示できるので使って損はない。プロンプトが複雑化したときに、最初から構造化しておくのが楽。</p>
+    </details>
+
+    <details>
+      <summary>Q4. コードとドキュメントを混ぜる時の使い方は?</summary>
+      <p><code class="inline">&lt;my_code&gt;...&lt;/my_code&gt;</code> と <code class="inline">&lt;docs&gt;...&lt;/docs&gt;</code> で明示的に分離する。これで Claude は「どっちがデバッグ対象で、どっちが参考か」を即座に区別できる。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑨ 自分メモ</h2>
+    <div class="memo-area">自分が学んだことや疑問を書き込もう…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 33: Structure with XML tags<br>
+    元レクチャー: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287741">SkillJar — Structure with XML tags</a><br>
+    前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_32.html">Lecture 32 (Being specific)</a> ・ 次章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_34_textbook.html">Lecture 34: Providing examples</a>
+  </footer>
+
+</main>
+</body>
+</html>
