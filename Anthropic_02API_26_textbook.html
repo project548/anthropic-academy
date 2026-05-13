@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 26: Model based grading — LLMで採点する | Anthropic Academy 教科書</title>
+<style>
+:root {
+  --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a;
+  --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028;
+  --soft-blue: #cfe7ef; --soft-yellow: #fdf0c8; --soft-mint: #d8ecd6; --soft-pink: #f6dcdc;
+  --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+h3 { font-size: 17px; font-weight: 700; margin: 22px 0 10px; color: var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.yellow { background: var(--soft-yellow); border-left: 4px solid #d9a431; }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+.card.pink { background: #f6dcdc; border-left: 4px solid #c66b6b; }
+.step-card { background: var(--paper-2); border-radius: var(--radius); padding: 20px; margin: 16px 0; box-shadow: var(--shadow); border-left: 6px solid var(--accent); }
+.step-card h4 { display: flex; align-items: center; gap: 12px; font-size: 17px; margin-bottom: 12px; color: var(--accent); }
+.step-num { display: inline-block; background: var(--accent); color: white; width: 32px; height: 32px; border-radius: 50%; text-align: center; line-height: 32px; font-weight: 800; font-size: 15px; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+table.vocab td.code { font-family: "Consolas","Menlo",monospace; color: var(--accent); font-weight: 700; white-space: nowrap; }
+pre { background: #f4eedb; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: "Consolas","Menlo",monospace; font-size: 14px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--border); }
+code.inline { background: #f4eedb; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Menlo",monospace; font-size: 0.92em; color: #a85200; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+.illustration { text-align: center; margin: 24px 0; }
+.illustration svg { max-width: 100%; height: auto; }
+.caption { font-size: 13px; color: var(--ink-sub); margin-top: 8px; text-align: center; }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 600px) { body { padding: 20px 14px; } h1.lecture-title { font-size: 24px; } h2 { font-size: 19px; } p, ol li, ul li { font-size: 15px; } }
+</style>
+</head>
+<body>
+<main class="book">
+
+  <span class="chapter-tag">Module 7 ・ Lecture 26</span>
+  <h1 class="lecture-title">Model based grading<span class="ja-sub">— もう1人の Claude に採点させる</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① グレーダー(採点機)は3種類</h2>
+
+    <div class="illustration">
+      <svg width="640" height="220" viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg">
+        <rect x="20" y="30" width="190" height="170" rx="12" fill="#fdf0c8" stroke="#d9a431" stroke-width="2"/>
+        <text x="115" y="55" text-anchor="middle" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#6b5028">コードグレーダー</text>
+        <text x="115" y="95" text-anchor="middle" font-size="36">⚙️</text>
+        <text x="115" y="130" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#5a5a5a">プログラムで</text>
+        <text x="115" y="148" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#5a5a5a">チェック</text>
+        <text x="115" y="180" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#888">高速・低コスト</text>
+
+        <rect x="225" y="30" width="190" height="170" rx="12" fill="#fdebde" stroke="#d97757" stroke-width="2"/>
+        <text x="320" y="55" text-anchor="middle" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#a85200">モデルグレーダー</text>
+        <text x="320" y="95" text-anchor="middle" font-size="36">🤖</text>
+        <text x="320" y="130" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#5a5a5a">別のClaudeに</text>
+        <text x="320" y="148" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#5a5a5a">評価させる</text>
+        <text x="320" y="180" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#888">柔軟・少しブレあり</text>
+
+        <rect x="430" y="30" width="190" height="170" rx="12" fill="#d8ecd6" stroke="#67a061" stroke-width="2"/>
+        <text x="525" y="55" text-anchor="middle" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#2b6e2e">人間グレーダー</text>
+        <text x="525" y="95" text-anchor="middle" font-size="36">👤</text>
+        <text x="525" y="130" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#5a5a5a">人が読んで</text>
+        <text x="525" y="148" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#5a5a5a">採点</text>
+        <text x="525" y="180" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#888">最高品質・遅い</text>
+      </svg>
+      <p class="caption">図① 採点機3種類の特徴</p>
+    </div>
+
+    <table class="vocab">
+      <thead>
+        <tr><th style="width: 22%;">グレーダー</th><th>強み</th><th>弱み</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>コード</td><td>高速・低コスト・100%再現性</td><td>「内容の質」を見るのは苦手</td></tr>
+        <tr><td>モデル(LLM)</td><td>内容の質を評価できる・柔軟</td><td>スコアにブレあり・API コストかかる</td></tr>
+        <tr><td>人間</td><td>究極の柔軟性</td><td>時間がかかる・スケールしない</td></tr>
+      </tbody>
+    </table>
+
+    <p>この章は <strong>モデルグレーダー</strong> を実装する。柔軟性が高く、文章品質の評価に向いている。</p>
+  </section>
+
+  <section>
+    <h2>② ★ コツ: 点数だけ求めると中庸スコアに偏る</h2>
+
+    <div class="card pink">
+      <strong>あるあるの罠:</strong> 「この応答を10点満点で採点して」とだけ頼むと、Claude は <em>「とりあえず6点くらい」</em> と中庸に逃げる傾向がある。これでは v1 と v2 を比較できない。
+    </div>
+
+    <div class="card mint">
+      <strong>解決法:</strong> 評価結果として <strong>strengths(良い点)・weaknesses(改善点)・reasoning(理由)・score(点数)</strong> の4点セットを求める。理由を先に考えさせると、Claude は真面目に採点してくれる。
+    </div>
+  </section>
+
+  <section>
+    <h2>③ 実装の3ステップ</h2>
+
+    <div class="step-card">
+      <h4><span class="step-num">1</span>grade_by_model 関数を書く</h4>
+      <p>評価プロンプトに「4点セット」を要求して、JSON で返してもらう。プレフィル+ストップで raw JSON 取得。</p>
+<pre><code>def grade_by_model(test_case, output):
+    eval_prompt = f"""
+    Evaluate the following solution...
+
+    Task: {test_case['task']}
+    Solution: {output}
+
+    Provide your evaluation as a structured JSON object with:
+    - "strengths": An array of 1-3 key strengths
+    - "weaknesses": An array of 1-3 key areas for improvement
+    - "reasoning": A concise explanation
+    - "score": A number between 1-10
+    """
+
+    messages = []
+    add_user_message(messages, eval_prompt)
+    add_assistant_message(messages, "```json")
+    eval_text = chat(messages, stop_sequences=["```"])
+    return json.loads(eval_text)</code></pre>
+    </div>
+
+    <div class="step-card">
+      <h4><span class="step-num">2</span>run_test_case に組み込む</h4>
+      <p>ハードコード10をモデルグレーダー呼び出しに置き換える。</p>
+<pre><code>def run_test_case(test_case):
+    output = run_prompt(test_case)
+
+    model_grade = grade_by_model(test_case, output)
+    score = model_grade["score"]
+    reasoning = model_grade["reasoning"]
+
+    return {
+        "output": output,
+        "test_case": test_case,
+        "score": score,
+        "reasoning": reasoning
+    }</code></pre>
+    </div>
+
+    <div class="step-card">
+      <h4><span class="step-num">3</span>run_eval で平均スコアを計算</h4>
+      <p>プロンプト全体の最終メトリックを出す。</p>
+<pre><code>from statistics import mean
+
+def run_eval(dataset):
+    results = []
+    for test_case in dataset:
+        result = run_test_case(test_case)
+        results.append(result)
+
+    average_score = mean([r["score"] for r in results])
+    print(f"Average score: {average_score}")
+
+    return results</code></pre>
+      <p>これで「プロンプト v1 = 平均 6.3」「v2 = 平均 8.1」のような <strong>客観メトリック</strong> が手に入る。</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>④ モデルグレーダーの注意点</h2>
+
+    <div class="card yellow">
+      <strong>注意1: やや気まぐれ</strong> — 同じ応答でも、評価のたびにスコアが少しブレる。完璧な再現性は期待できない。
+    </div>
+
+    <div class="card yellow">
+      <strong>注意2: コスト2倍</strong> — 評価のたびにもう1回 API 呼び出しが走る。生成 + 採点 で API コストは倍。Haiku 等の安いモデルを使うと節約できる。
+    </div>
+
+    <div class="card mint">
+      <strong>許容範囲:</strong> 「だいたい同じ条件で比較できる」一貫性は確保できる。<em>絶対精度よりも、相対比較</em> のために使う。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑤ 学校の例えで覚える</h2>
+
+    <table class="vocab">
+      <thead>
+        <tr><th style="width: 35%;">学校の例え</th><th>API 実装</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>解答欄に何か書いてるか機械でチェック</td><td>コードグレーダー</td></tr>
+        <tr><td>別の先生に「採点してね」と頼む</td><td>モデルグレーダー</td></tr>
+        <tr><td>自分が時間かけて全問題を採点</td><td>人間グレーダー</td></tr>
+        <tr><td>「点数だけ書いて」と頼むと適当に6点と書く</td><td>score 単独だと中庸に偏る</td></tr>
+        <tr><td>「いい所・悪い所・理由も書いて」と頼むと真面目に採点</td><td>4点セット要求のコツ</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑥ キーワード一覧</h2>
+
+    <table class="vocab">
+      <thead>
+        <tr><th style="width: 30%;">英語</th><th style="width: 25%;">読み方</th><th>意味</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="code">grader</td><td>グレーダー</td><td>採点機</td></tr>
+        <tr><td class="code">model based grading</td><td>モデル・ベースド・グレーディング</td><td>LLM で採点する方式</td></tr>
+        <tr><td class="code">strengths</td><td>ストレングス</td><td>良いところ</td></tr>
+        <tr><td class="code">weaknesses</td><td>ウィークネス</td><td>改善点</td></tr>
+        <tr><td class="code">reasoning</td><td>リーズニング</td><td>理由・根拠</td></tr>
+        <tr><td class="code">mean()</td><td>ミーン</td><td>平均(Python statistics)</td></tr>
+        <tr><td class="code">capricious</td><td>カプリシャス</td><td>気まぐれ</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑦ 理解度チェック</h2>
+
+    <details>
+      <summary>Q1. なぜ score だけを求めないの?</summary>
+      <p>「点数だけ書いて」と頼むと Claude は中庸スコア(6点くらい)に逃げる傾向がある。<code class="inline">strengths/weaknesses/reasoning/score</code> の4点セットを求めることで、Claude が真面目に考えてから点数を出す状態を作る。</p>
+    </details>
+
+    <details>
+      <summary>Q2. モデルグレーダーの欠点は?</summary>
+      <p>① 同じ応答でもスコアが少しブレる(気まぐれ)、② 評価のたびにもう1回 API 呼ぶのでコスト2倍、③ 絶対精度よりも相対比較に向いている。</p>
+    </details>
+
+    <details>
+      <summary>Q3. 全テストケースのスコアを統合する方法は?</summary>
+      <p><code class="inline">statistics.mean()</code> で平均を取る。プロンプト全体の最終メトリックとして使い、v1 と v2 を数値で比較できる。</p>
+    </details>
+
+    <details>
+      <summary>Q4. コードグレーダーとモデルグレーダー、どう使い分ける?</summary>
+      <p>フォーマット検証や有無チェック(JSON valid か等)はコード、文章品質や指示追従度はモデル。両方を組み合わせるのもアリ。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑧ 自分メモ</h2>
+    <div class="memo-area">自分が学んだことや疑問を書き込もう…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 26: Model based grading<br>
+    元レクチャー: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287742">SkillJar — Model based grading</a><br>
+    前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_25_textbook.html">Lecture 25</a> ・ 次章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_27_textbook.html">Lecture 27: Code based grading</a>
+  </footer>
+
+</main>
+</body>
+</html>
