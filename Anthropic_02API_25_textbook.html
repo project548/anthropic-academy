@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 25: Running the eval — 評価パイプラインを動かす | Anthropic Academy 教科書</title>
+<style>
+:root {
+  --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a;
+  --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028;
+  --soft-blue: #cfe7ef; --soft-yellow: #fdf0c8; --soft-mint: #d8ecd6; --soft-pink: #f6dcdc;
+  --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+h3 { font-size: 17px; font-weight: 700; margin: 22px 0 10px; color: var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.yellow { background: var(--soft-yellow); border-left: 4px solid #d9a431; }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+.card.pink { background: #f6dcdc; border-left: 4px solid #c66b6b; }
+.step-card { background: var(--paper-2); border-radius: var(--radius); padding: 20px; margin: 16px 0; box-shadow: var(--shadow); border-left: 6px solid var(--accent); }
+.step-card h4 { display: flex; align-items: center; gap: 12px; font-size: 17px; margin-bottom: 12px; color: var(--accent); }
+.fn-badge { display: inline-block; background: var(--accent); color: white; padding: 4px 12px; border-radius: 12px; font-family: "Consolas","Menlo",monospace; font-size: 13px; font-weight: 800; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+table.vocab td.code { font-family: "Consolas","Menlo",monospace; color: var(--accent); font-weight: 700; white-space: nowrap; }
+pre { background: #f4eedb; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: "Consolas","Menlo",monospace; font-size: 14px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--border); }
+code.inline { background: #f4eedb; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Menlo",monospace; font-size: 0.92em; color: #a85200; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+.illustration { text-align: center; margin: 24px 0; }
+.illustration svg { max-width: 100%; height: auto; }
+.caption { font-size: 13px; color: var(--ink-sub); margin-top: 8px; text-align: center; }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 600px) { body { padding: 20px 14px; } h1.lecture-title { font-size: 24px; } h2 { font-size: 19px; } p, ol li, ul li { font-size: 15px; } }
+</style>
+</head>
+<body>
+<main class="book">
+
+  <span class="chapter-tag">Module 7 ・ Lecture 25</span>
+  <h1 class="lecture-title">Running the eval<span class="ja-sub">— 3つの関数で評価パイプラインを動かす</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① 3つの関数で評価パイプラインを組み立てる</h2>
+
+    <div class="illustration">
+      <svg width="640" height="280" viewBox="0 0 640 280" xmlns="http://www.w3.org/2000/svg">
+        <rect x="40" y="30" width="560" height="60" rx="10" fill="#fdf0c8" stroke="#d9a431" stroke-width="2"/>
+        <text x="320" y="55" text-anchor="middle" font-family="Consolas" font-size="15" font-weight="700" fill="#6b5028">run_eval(dataset)</text>
+        <text x="320" y="76" text-anchor="middle" font-family="Hiragino Sans" font-size="12" fill="#5a5a5a">データセット全件をループ</text>
+
+        <line x1="320" y1="90" x2="320" y2="110" stroke="#d97757" stroke-width="2"/>
+        <polygon points="320,110 315,105 325,105" fill="#d97757"/>
+
+        <rect x="80" y="110" width="480" height="60" rx="10" fill="#fdebde" stroke="#d97757" stroke-width="2"/>
+        <text x="320" y="135" text-anchor="middle" font-family="Consolas" font-size="15" font-weight="700" fill="#a85200">run_test_case(test_case)</text>
+        <text x="320" y="156" text-anchor="middle" font-family="Hiragino Sans" font-size="12" fill="#5a5a5a">1ケース実行＋採点(今はダミー10)</text>
+
+        <line x1="320" y1="170" x2="320" y2="190" stroke="#d97757" stroke-width="2"/>
+        <polygon points="320,190 315,185 325,185" fill="#d97757"/>
+
+        <rect x="120" y="190" width="400" height="60" rx="10" fill="#d8ecd6" stroke="#67a061" stroke-width="2"/>
+        <text x="320" y="215" text-anchor="middle" font-family="Consolas" font-size="15" font-weight="700" fill="#2b6e2e">run_prompt(test_case)</text>
+        <text x="320" y="236" text-anchor="middle" font-family="Hiragino Sans" font-size="12" fill="#5a5a5a">プロンプト合成 → Claude 実行</text>
+      </svg>
+      <p class="caption">図① 3関数の階層構造(外側 run_eval → 内側 run_prompt)</p>
+    </div>
+
+    <p>外側から内側へ、責務を分けて積み重ねる。<strong>「全部を回す」「1ケースを回す」「1問解く」</strong>の3層構造。</p>
+  </section>
+
+  <section>
+    <h2>② 各関数の中身</h2>
+
+    <div class="step-card">
+      <h4><span class="fn-badge">run_prompt</span></h4>
+      <p>テストケースをプロンプトテンプレートに差し込み、Claude に送る。</p>
+<pre><code>def run_prompt(test_case, prompt_template):
+    prompt = prompt_template.format(task=test_case['task'])
+    messages = []
+    add_user_message(messages, prompt)
+    return chat(messages)</code></pre>
+      <p>シンプル。1問解いて答えを返すだけ。</p>
+    </div>
+
+    <div class="step-card">
+      <h4><span class="fn-badge">run_test_case</span></h4>
+      <p>1ケース分の <strong>実行 + 採点 + 結果まとめ</strong>。</p>
+<pre><code>def run_test_case(test_case):
+    output = run_prompt(test_case)
+    score = 10  # ← 今は仮ハードコード(本物の採点は #26 以降)
+    return {
+        "output": output,
+        "test_case": test_case,
+        "score": score
+    }</code></pre>
+      <div class="card yellow">
+        <strong>注意:</strong> 今は <code class="inline">score = 10</code> を固定で返している。「全部満点」のダミー採点。次の章で本物のグレーダーに差し替える。
+      </div>
+    </div>
+
+    <div class="step-card">
+      <h4><span class="fn-badge">run_eval</span></h4>
+      <p>データセットを順番にループし、各ケースの結果をリストにまとめる。</p>
+<pre><code>def run_eval(dataset):
+    results = []
+    for test_case in dataset:
+        result = run_test_case(test_case)
+        results.append(result)
+    return results</code></pre>
+    </div>
+  </section>
+
+  <section>
+    <h2>③ 実行のしかた</h2>
+
+    <p>前章で作った <code class="inline">dataset.json</code> を読み込んで、run_eval に渡すだけ。</p>
+
+<pre><code>with open("dataset.json", "r") as f:
+    dataset = json.load(f)
+
+results = run_eval(dataset)
+print(json.dumps(results, indent=2))</code></pre>
+
+    <div class="card mint">
+      <strong>実行時間:</strong> Haiku モデルで <strong>30秒程度</strong>(全データセット実行)。並列化やキャッシュは後の章で。
+    </div>
+  </section>
+
+  <section>
+    <h2>④ 結果の中身</h2>
+
+    <div class="illustration">
+      <svg width="640" height="220" viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg">
+        <rect x="40" y="30" width="560" height="170" rx="12" fill="#fff" stroke="#dcd3c0" stroke-width="2"/>
+        <text x="320" y="60" text-anchor="middle" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#a85200">1ケース分の結果オブジェクト</text>
+
+        <rect x="70" y="80" width="160" height="100" rx="8" fill="#d8ecd6" stroke="#67a061"/>
+        <text x="150" y="105" text-anchor="middle" font-family="Consolas" font-size="13" font-weight="700" fill="#2b6e2e">output</text>
+        <text x="150" y="130" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#5a5a5a">Claude の応答</text>
+        <text x="150" y="155" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#5a5a5a">(完全なテキスト)</text>
+
+        <rect x="240" y="80" width="160" height="100" rx="8" fill="#fdf0c8" stroke="#d9a431"/>
+        <text x="320" y="105" text-anchor="middle" font-family="Consolas" font-size="13" font-weight="700" fill="#6b5028">test_case</text>
+        <text x="320" y="130" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#5a5a5a">元のテストケース</text>
+        <text x="320" y="155" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#5a5a5a">(task: ...)</text>
+
+        <rect x="410" y="80" width="160" height="100" rx="8" fill="#fdebde" stroke="#d97757"/>
+        <text x="490" y="105" text-anchor="middle" font-family="Consolas" font-size="13" font-weight="700" fill="#a85200">score</text>
+        <text x="490" y="135" text-anchor="middle" font-family="Hiragino Sans" font-size="22" font-weight="800" fill="#a85200">10</text>
+        <text x="490" y="160" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#888">(今はダミー)</text>
+      </svg>
+      <p class="caption">図② 結果オブジェクトの3要素</p>
+    </div>
+
+    <p>実際の応答を見ると、Claude が <strong>冗長</strong> に返してくることが分かる(まだフォーマット指示がないため)。これが「プロンプトを改善する」動機になる。</p>
+  </section>
+
+  <section>
+    <h2>⑤ 現時点で何ができたか</h2>
+
+    <div class="card accent">
+      <strong>達成済み:</strong> データセットを Claude に通し、構造化された結果(output/test_case/score)を集める <em>コア評価パイプライン</em> が完成。
+    </div>
+
+    <div class="card pink">
+      <strong>欠けピース:</strong> <em>グレーダー</em>(本物の採点ロジック)。ハードコード10を、応答内容を見て点数を出す仕組みに置き換える必要がある → #26 以降で実装。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑥ 学校の例えで覚える</h2>
+
+    <table class="vocab">
+      <thead>
+        <tr><th style="width: 35%;">学校の例え</th><th>評価パイプライン</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1問解いて答えを書き出す</td><td>run_prompt</td></tr>
+        <tr><td>1問解いて点数をつける</td><td>run_test_case</td></tr>
+        <tr><td>問題集を最初から最後まで解く</td><td>run_eval</td></tr>
+        <tr><td>採点機が「とりあえず全問10点」と返す</td><td>今のダミー score=10</td></tr>
+        <tr><td>本物の先生が中身を見て採点する</td><td>#26 グレーダー本実装</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑦ キーワード一覧</h2>
+
+    <table class="vocab">
+      <thead>
+        <tr><th style="width: 30%;">英語</th><th style="width: 25%;">読み方</th><th>意味</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="code">run_prompt</td><td>ラン・プロンプト</td><td>1問だけ解く関数</td></tr>
+        <tr><td class="code">run_test_case</td><td>ラン・テスト・ケース</td><td>1問解いて採点して返す関数</td></tr>
+        <tr><td class="code">run_eval</td><td>ラン・エバル</td><td>全件を回す関数</td></tr>
+        <tr><td class="code">test_case</td><td>テスト・ケース</td><td>テスト入力1個</td></tr>
+        <tr><td class="code">hardcoded</td><td>ハードコーデッド</td><td>固定値を直接書いている</td></tr>
+        <tr><td class="code">verbose</td><td>バーボーズ</td><td>冗長・くどい</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑧ 理解度チェック</h2>
+
+    <details>
+      <summary>Q1. 3つの関数の階層関係は?</summary>
+      <p>外側から: <code class="inline">run_eval</code>(全件)→ <code class="inline">run_test_case</code>(1件)→ <code class="inline">run_prompt</code>(1問解くだけ)。責務を3層に分けて、それぞれ単純な役割にする。</p>
+    </details>
+
+    <details>
+      <summary>Q2. なぜ今 score を 10 にハードコードしているの?</summary>
+      <p>採点ロジックは複雑なので、いったん仮置きにして <strong>パイプライン全体が動く</strong> ことを確かめるため。次の章で本物のグレーダーに置き換える。</p>
+    </details>
+
+    <details>
+      <summary>Q3. run_eval の戻り値はどんな形?</summary>
+      <p>結果オブジェクトのリスト。各要素は <code class="inline">{output, test_case, score}</code> の3要素を持つ辞書。</p>
+    </details>
+
+    <details>
+      <summary>Q4. Haiku で30秒かかる。もっと速くするには?</summary>
+      <p>並列実行(複数テストケースを同時に Claude に投げる)・プロンプトキャッシュ(共通部分を再利用)等。後の章で扱う。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑨ 自分メモ</h2>
+    <div class="memo-area">自分が学んだことや疑問を書き込もう…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 25: Running the eval<br>
+    元レクチャー: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287743">SkillJar — Running the eval</a><br>
+    前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_24_textbook.html">Lecture 24</a> ・ 次章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_26_textbook.html">Lecture 26: Model based grading</a>
+  </footer>
+
+</main>
+</body>
+</html>
