@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 23: A typical eval workflow — 評価ワークフロー6ステップ | Anthropic Academy 教科書</title>
+<style>
+:root {
+  --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a;
+  --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028;
+  --soft-blue: #cfe7ef; --soft-yellow: #fdf0c8; --soft-mint: #d8ecd6; --soft-pink: #f6dcdc;
+  --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+h3 { font-size: 17px; font-weight: 700; margin: 22px 0 10px; color: var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.yellow { background: var(--soft-yellow); border-left: 4px solid #d9a431; }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+.step-card { background: var(--paper-2); border-radius: var(--radius); padding: 20px; margin: 16px 0; box-shadow: var(--shadow); border-left: 6px solid var(--accent); }
+.step-card h4 { display: flex; align-items: center; gap: 12px; font-size: 17px; margin-bottom: 12px; color: var(--accent); }
+.step-num { display: inline-block; background: var(--accent); color: white; width: 32px; height: 32px; border-radius: 50%; text-align: center; line-height: 32px; font-weight: 800; font-size: 15px; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+table.vocab td.code { font-family: "Consolas","Menlo",monospace; color: var(--accent); font-weight: 700; white-space: nowrap; }
+pre { background: #f4eedb; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: "Consolas","Menlo",monospace; font-size: 14px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--border); }
+code.inline { background: #f4eedb; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Menlo",monospace; font-size: 0.92em; color: #a85200; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+.illustration { text-align: center; margin: 24px 0; }
+.illustration svg { max-width: 100%; height: auto; }
+.caption { font-size: 13px; color: var(--ink-sub); margin-top: 8px; text-align: center; }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 600px) { body { padding: 20px 14px; } h1.lecture-title { font-size: 24px; } h2 { font-size: 19px; } p, ol li, ul li { font-size: 15px; } }
+</style>
+</head>
+<body>
+<main class="book">
+
+  <span class="chapter-tag">Module 7 ・ Lecture 23</span>
+  <h1 class="lecture-title">A typical eval workflow<span class="ja-sub">— プロンプト評価の6ステップ反復プロセス</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① 全体像: 6ステップで何が起きるか</h2>
+
+    <div class="illustration">
+      <svg width="640" height="280" viewBox="0 0 640 280" xmlns="http://www.w3.org/2000/svg">
+        <g font-family="Hiragino Sans" font-size="11" font-weight="700">
+          <circle cx="100" cy="80" r="38" fill="#fdf0c8" stroke="#d9a431" stroke-width="2"/>
+          <text x="100" y="78" text-anchor="middle" fill="#6b5028">Step 1</text>
+          <text x="100" y="92" text-anchor="middle" font-size="10" fill="#5a5a5a">プロンプト</text>
+
+          <circle cx="240" cy="80" r="38" fill="#fdf0c8" stroke="#d9a431" stroke-width="2"/>
+          <text x="240" y="78" text-anchor="middle" fill="#6b5028">Step 2</text>
+          <text x="240" y="92" text-anchor="middle" font-size="10" fill="#5a5a5a">データセット</text>
+
+          <circle cx="380" cy="80" r="38" fill="#fdebde" stroke="#d97757" stroke-width="2"/>
+          <text x="380" y="78" text-anchor="middle" fill="#a85200">Step 3</text>
+          <text x="380" y="92" text-anchor="middle" font-size="10" fill="#5a5a5a">差し込み</text>
+
+          <circle cx="520" cy="80" r="38" fill="#fdebde" stroke="#d97757" stroke-width="2"/>
+          <text x="520" y="78" text-anchor="middle" fill="#a85200">Step 4</text>
+          <text x="520" y="92" text-anchor="middle" font-size="10" fill="#5a5a5a">Claude実行</text>
+
+          <circle cx="240" cy="200" r="38" fill="#d8ecd6" stroke="#67a061" stroke-width="2"/>
+          <text x="240" y="198" text-anchor="middle" fill="#2b6e2e">Step 5</text>
+          <text x="240" y="212" text-anchor="middle" font-size="10" fill="#5a5a5a">採点</text>
+
+          <circle cx="380" cy="200" r="38" fill="#cfe7ef" stroke="#5a8aa0" stroke-width="2"/>
+          <text x="380" y="198" text-anchor="middle" fill="#2b6577">Step 6</text>
+          <text x="380" y="212" text-anchor="middle" font-size="10" fill="#5a5a5a">反復改善</text>
+        </g>
+        <line x1="138" y1="80" x2="202" y2="80" stroke="#d97757" stroke-width="2"/>
+        <line x1="278" y1="80" x2="342" y2="80" stroke="#d97757" stroke-width="2"/>
+        <line x1="418" y1="80" x2="482" y2="80" stroke="#d97757" stroke-width="2"/>
+        <path d="M 520 118 Q 520 160 278 200" stroke="#d97757" stroke-width="2" fill="none"/>
+        <line x1="278" y1="200" x2="342" y2="200" stroke="#d97757" stroke-width="2"/>
+        <path d="M 380 162 Q 380 130 100 118" stroke="#5a8aa0" stroke-width="2" stroke-dasharray="5 3" fill="none"/>
+        <text x="240" y="262" text-anchor="middle" font-family="Hiragino Sans" font-size="12" fill="#5a5a5a" font-style="italic">反復で Step 1 (プロンプト改善) に戻る</text>
+      </svg>
+      <p class="caption">図① 6ステップの反復プロセス全体像</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>② ステップ別の中身</h2>
+
+    <div class="step-card">
+      <h4><span class="step-num">1</span>初期プロンプトのドラフトを書く</h4>
+      <p>最適化の出発点(ベースライン)を作る。例:</p>
+<pre><code>Please answer the user's question: {question}</code></pre>
+      <p>とても素朴な書き方からスタートしてOK。これを改善していくのが目的。</p>
+    </div>
+
+    <div class="step-card">
+      <h4><span class="step-num">2</span>評価データセットを作る</h4>
+      <p>テスト入力の集まり(3例〜数千例)。例:</p>
+      <ul>
+        <li>「2 + 2 はいくつ?」</li>
+        <li>「オートミールはどう作る?」</li>
+        <li>「月までの距離は?」</li>
+      </ul>
+      <p>手書きでも、別の LLM に作らせてもOK。まずは3〜5問の少数から始めるのが現実的。</p>
+    </div>
+
+    <div class="step-card">
+      <h4><span class="step-num">3</span>プロンプトのバリエーションを作る</h4>
+      <p>各データセット入力をプロンプトテンプレートに差し込んで、完成プロンプトを作る。</p>
+<pre><code>Please answer the user's question:
+What's 2+2?</code></pre>
+    </div>
+
+    <div class="step-card">
+      <h4><span class="step-num">4</span>Claude に応答を生成させる</h4>
+      <p>各プロンプトを Claude に送って出力を集める。例:</p>
+      <ul>
+        <li>数学質問 → 「2 + 2 = 4」</li>
+        <li>オートミール質問 → 簡単な作り方を返す</li>
+        <li>月質問 → 月までの距離を返す</li>
+      </ul>
+    </div>
+
+    <div class="step-card">
+      <h4><span class="step-num">5</span>応答を採点する</h4>
+      <p>グレーダー(採点機)で1〜10のスケールで点数化。10が満点。</p>
+
+      <div class="illustration">
+        <svg width="600" height="200" viewBox="0 0 600 200" xmlns="http://www.w3.org/2000/svg">
+          <rect x="20" y="40" width="120" height="40" rx="6" fill="#fff" stroke="#dcd3c0"/>
+          <text x="80" y="65" text-anchor="middle" font-family="Hiragino Sans" font-size="12" fill="#2b2b2b">数学: 「2+2=4」</text>
+
+          <rect x="20" y="90" width="120" height="40" rx="6" fill="#fff" stroke="#dcd3c0"/>
+          <text x="80" y="115" text-anchor="middle" font-family="Hiragino Sans" font-size="12" fill="#2b2b2b">オートミール...</text>
+
+          <rect x="20" y="140" width="120" height="40" rx="6" fill="#fff" stroke="#dcd3c0"/>
+          <text x="80" y="165" text-anchor="middle" font-family="Hiragino Sans" font-size="12" fill="#2b2b2b">月の距離...</text>
+
+          <line x1="145" y1="110" x2="220" y2="110" stroke="#d97757" stroke-width="2"/>
+          <polygon points="220,110 215,105 215,115" fill="#d97757"/>
+
+          <rect x="225" y="60" width="120" height="100" rx="10" fill="#d8ecd6" stroke="#67a061" stroke-width="2"/>
+          <text x="285" y="90" text-anchor="middle" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#2b6e2e">グレーダー</text>
+          <text x="285" y="120" text-anchor="middle" font-size="24">📊</text>
+          <text x="285" y="148" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#888">1〜10で採点</text>
+
+          <line x1="350" y1="110" x2="420" y2="110" stroke="#d97757" stroke-width="2"/>
+          <polygon points="420,110 415,105 415,115" fill="#d97757"/>
+
+          <rect x="425" y="40" width="160" height="140" rx="10" fill="#fdf0c8" stroke="#d9a431" stroke-width="2"/>
+          <text x="505" y="60" text-anchor="middle" font-family="Hiragino Sans" font-size="12" fill="#888">スコア</text>
+          <text x="440" y="85" font-family="Hiragino Sans" font-size="13" fill="#2b2b2b">数学:</text>
+          <text x="570" y="85" text-anchor="end" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#2b6e2e">10</text>
+          <text x="440" y="105" font-family="Hiragino Sans" font-size="13" fill="#2b2b2b">オートミール:</text>
+          <text x="570" y="105" text-anchor="end" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#a04040">4</text>
+          <text x="440" y="125" font-family="Hiragino Sans" font-size="13" fill="#2b2b2b">月:</text>
+          <text x="570" y="125" text-anchor="end" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#2b6e2e">9</text>
+          <line x1="440" y1="135" x2="570" y2="135" stroke="#dcd3c0"/>
+          <text x="440" y="155" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#a85200">平均:</text>
+          <text x="570" y="155" text-anchor="end" font-family="Hiragino Sans" font-size="16" font-weight="700" fill="#a85200">7.66</text>
+        </svg>
+        <p class="caption">図② グレーダーで採点 → ベースラインスコア</p>
+      </div>
+
+      <p>平均: (10 + 4 + 9) ÷ 3 = <strong>7.66</strong> → これがベースラインスコア。</p>
+    </div>
+
+    <div class="step-card">
+      <h4><span class="step-num">6</span>プロンプトを変えて、もう1周</h4>
+      <p>ベースラインが取れたら、プロンプトを改善して全体を再実行。例:</p>
+<pre><code>Please answer the user's question:
+{question}
+Answer the question with ample detail</code></pre>
+      <p>「ample detail (十分な詳細で)」を足してみる。</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>③ Before / After スコア比較</h2>
+
+    <div class="illustration">
+      <svg width="640" height="200" viewBox="0 0 640 200" xmlns="http://www.w3.org/2000/svg">
+        <rect x="40" y="40" width="240" height="120" rx="12" fill="#fdebde" stroke="#d97757" stroke-width="2"/>
+        <text x="160" y="70" text-anchor="middle" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#a85200">Before</text>
+        <text x="160" y="95" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#888">素のプロンプト</text>
+        <text x="160" y="135" text-anchor="middle" font-family="Hiragino Sans" font-size="36" font-weight="800" fill="#a85200">7.66</text>
+
+        <line x1="300" y1="100" x2="360" y2="100" stroke="#67a061" stroke-width="3"/>
+        <polygon points="360,100 354,95 354,105" fill="#67a061"/>
+        <text x="330" y="80" text-anchor="middle" font-family="Hiragino Sans" font-size="12" fill="#2b6e2e">+ 改善</text>
+
+        <rect x="380" y="40" width="240" height="120" rx="12" fill="#d8ecd6" stroke="#67a061" stroke-width="2"/>
+        <text x="500" y="70" text-anchor="middle" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#2b6e2e">After</text>
+        <text x="500" y="95" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#888">「ample detail」追加</text>
+        <text x="500" y="135" text-anchor="middle" font-family="Hiragino Sans" font-size="36" font-weight="800" fill="#2b6e2e">8.7</text>
+      </svg>
+      <p class="caption">図③ プロンプト改善で 7.66 → 8.7 へ</p>
+    </div>
+
+    <div class="card mint">
+      <strong>客観的に分かること:</strong> 「ample detail」を足したことが効いて、平均スコアが +1.04 上がった。「なんとなく良くなった」ではなく <em>数値で改善を証明</em> できる。
+    </div>
+  </section>
+
+  <section>
+    <h2>④ 模試の例えで覚える</h2>
+
+    <table class="vocab">
+      <thead>
+        <tr><th style="width: 30%;">模試の例え</th><th>評価ワークフロー</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>最初の答案テンプレを書く</td><td>Step 1 (初期プロンプト)</td></tr>
+        <tr><td>練習問題集を用意する</td><td>Step 2 (データセット)</td></tr>
+        <tr><td>テンプレで全問解く</td><td>Step 3-4 (Claude 実行)</td></tr>
+        <tr><td>採点機で点数を出す</td><td>Step 5 (採点)</td></tr>
+        <tr><td>テンプレを直して、また全問解いて点数比較</td><td>Step 6 (反復)</td></tr>
+      </tbody>
+    </table>
+
+    <p>これを何周もして「最高得点のテンプレ」を見つける。<strong>「なんとなく良い」を排除して、客観点数で実力を測る</strong>のがミソ。</p>
+  </section>
+
+  <section>
+    <h2>⑤ キーワード一覧</h2>
+
+    <table class="vocab">
+      <thead>
+        <tr><th style="width: 30%;">英語</th><th style="width: 25%;">読み方</th><th>意味</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="code">baseline</td><td>ベースライン</td><td>出発点・改善前の状態</td></tr>
+        <tr><td class="code">dataset</td><td>データセット</td><td>テスト入力の集まり</td></tr>
+        <tr><td class="code">grader</td><td>グレーダー</td><td>採点機(コード or LLM or 人)</td></tr>
+        <tr><td class="code">iterate</td><td>イテレート</td><td>反復する</td></tr>
+        <tr><td class="code">average score</td><td>アベレージ・スコア</td><td>平均点</td></tr>
+        <tr><td class="code">A/B comparison</td><td>エービー比較</td><td>2つのバージョンを並べて比べる</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑥ 理解度チェック</h2>
+
+    <details>
+      <summary>Q1. 評価ワークフローのStep 1は何?</summary>
+      <p>初期プロンプトのドラフトを書く(ベースラインを作る)。素朴な書き方からスタートしてOK。</p>
+    </details>
+
+    <details>
+      <summary>Q2. データセットは最初から数千問用意しないとダメ?</summary>
+      <p>違う。3〜5問の少数から始めて全然OK。手書きでも別のLLMに作らせてもOK。重要なのは「測れる」状態を早く作ること。</p>
+    </details>
+
+    <details>
+      <summary>Q3. なぜ平均スコアを計算するの?</summary>
+      <p>個別の応答スコアだとブレるが、平均すると <strong>プロンプト全体の性能</strong> を1つの数値で表現できる。v1 vs v2 の比較がしやすくなる。</p>
+    </details>
+
+    <details>
+      <summary>Q4. 「なんとなく良くなった気がする」が排除できる理由は?</summary>
+      <p>客観点数(7.66 → 8.7 等)で改善幅が出るから。主観や思い込みではなく、数値が証拠になる。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑦ 自分メモ</h2>
+    <div class="memo-area">自分が学んだことや疑問を書き込もう…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 23: A typical eval workflow<br>
+    元レクチャー: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287736">SkillJar — A typical eval workflow</a><br>
+    前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_22_textbook.html">Lecture 22</a> ・ 次章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_24_textbook.html">Lecture 24: Generating test datasets</a>
+  </footer>
+
+</main>
+</body>
+</html>
