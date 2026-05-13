@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 19: Structured data — JSONをきれいに取り出すしくみ | Anthropic Academy 教科書</title>
+<style>
+:root {
+  --paper: #faf6ef;
+  --paper-2: #ffffff;
+  --ink: #2b2b2b;
+  --ink-sub: #5a5a5a;
+  --accent: #d97757;
+  --accent-light: #fdebde;
+  --tag-bg: #ebe3d3;
+  --tag-text: #6b5028;
+  --soft-blue: #cfe7ef;
+  --soft-yellow: #fdf0c8;
+  --soft-mint: #d8ecd6;
+  --soft-pink: #f6dcdc;
+  --border: #dcd3c0;
+  --radius: 12px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  line-height: 1.9;
+  padding: 40px 20px;
+}
+.book { max-width: 760px; margin: 0 auto; }
+
+.chapter-tag {
+  display: inline-block;
+  background: var(--tag-bg);
+  color: var(--tag-text);
+  padding: 8px 28px;
+  border-radius: 0 24px 24px 0;
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  margin-left: -20px;
+  margin-bottom: 14px;
+}
+
+h1.lecture-title {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.35;
+  margin-bottom: 6px;
+}
+h1.lecture-title .ja-sub {
+  display: block;
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--ink-sub);
+  margin-top: 6px;
+}
+.subtitle {
+  color: var(--ink-sub);
+  font-size: 14px;
+  margin-bottom: 40px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+section { margin-bottom: 52px; }
+h2 {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 18px;
+  padding-left: 18px;
+  border-left: 6px solid var(--accent);
+}
+h3 {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 22px 0 10px;
+  color: var(--accent);
+}
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+
+.card {
+  background: var(--paper-2);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow);
+  margin: 16px 0;
+}
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.yellow { background: var(--soft-yellow); border-left: 4px solid #d9a431; }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+
+table.vocab {
+  width: 100%;
+  background: var(--paper-2);
+  border-collapse: collapse;
+  margin: 16px 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+table.vocab th, table.vocab td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 15px;
+}
+table.vocab th {
+  background: var(--tag-bg);
+  color: var(--tag-text);
+  font-weight: 700;
+}
+table.vocab td.code {
+  font-family: "Consolas","Menlo",monospace;
+  color: var(--accent);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+pre {
+  background: #f4eedb;
+  border-radius: 8px;
+  padding: 16px 18px;
+  overflow-x: auto;
+  font-family: "Consolas","Menlo",monospace;
+  font-size: 14px;
+  line-height: 1.7;
+  margin: 12px 0;
+  border: 1px solid var(--border);
+}
+code.inline {
+  background: #f4eedb;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: "Consolas","Menlo",monospace;
+  font-size: 0.92em;
+  color: #a85200;
+}
+
+details {
+  background: var(--paper-2);
+  border-radius: var(--radius);
+  padding: 14px 22px;
+  margin: 10px 0;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--tag-bg);
+}
+details summary {
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 15px;
+  outline: none;
+}
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+
+.illustration {
+  text-align: center;
+  margin: 24px 0;
+}
+.illustration svg { max-width: 100%; height: auto; }
+.caption {
+  font-size: 13px;
+  color: var(--ink-sub);
+  margin-top: 8px;
+  text-align: center;
+}
+
+.memo-area {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  min-height: 120px;
+  background: var(--paper-2);
+  color: #b0a589;
+  font-size: 14px;
+  font-style: italic;
+}
+
+footer {
+  margin-top: 60px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--ink-sub);
+  text-align: center;
+  line-height: 1.7;
+}
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+
+@media (max-width: 600px) {
+  body { padding: 20px 14px; }
+  h1.lecture-title { font-size: 24px; }
+  h2 { font-size: 19px; }
+  p, ol li, ul li { font-size: 15px; }
+}
+</style>
+</head>
+<body>
+<main class="book">
+
+  <span class="chapter-tag">Module 6 ・ Lecture 19</span>
+  <h1 class="lecture-title">
+    Structured data
+    <span class="ja-sub">— JSON や コードを「中身だけ」取り出すしくみ</span>
+  </h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① 構造化データの取り出しってなに？</h2>
+
+    <p>Web アプリで「JSONをコピペで使いたい」場面はとても多い。たとえば AWS の設定ファイル・API のテストデータ・CSV エクスポート…。</p>
+
+    <p>ところが、Claude に「JSON で書いて」と頼むと、親切心から <strong>マークダウンの枠で囲み + 英語の説明文を添えて</strong> 返してくる。これだとユーザーが JSON 部分だけを手で選ぶ手間がかかって体験が悪い。</p>
+
+    <div class="illustration">
+      <svg width="640" height="320" viewBox="0 0 640 320" xmlns="http://www.w3.org/2000/svg">
+        <rect x="20" y="20" width="290" height="280" rx="12" fill="#fff" stroke="#d97757" stroke-width="2"/>
+        <text x="165" y="50" text-anchor="middle" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#a85200">普通に頼んだ場合</text>
+        <text x="165" y="70" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#888">余計なものが混じる</text>
+
+        <rect x="50" y="90" width="230" height="180" rx="6" fill="#fcf6e8" stroke="#dcd3c0"/>
+        <text x="65" y="115" font-family="Consolas" font-size="12" fill="#d97757">```json</text>
+        <text x="65" y="135" font-family="Consolas" font-size="11" fill="#2b2b2b">{</text>
+        <text x="75" y="150" font-family="Consolas" font-size="11" fill="#2b2b2b">"source": ["aws.ec2"],</text>
+        <text x="75" y="165" font-family="Consolas" font-size="11" fill="#2b2b2b">"detail": {...}</text>
+        <text x="65" y="180" font-family="Consolas" font-size="11" fill="#2b2b2b">}</text>
+        <text x="65" y="200" font-family="Consolas" font-size="12" fill="#d97757">```</text>
+        <text x="65" y="225" font-family="Hiragino Sans" font-size="10" fill="#888">This rule captures EC2</text>
+        <text x="65" y="240" font-family="Hiragino Sans" font-size="10" fill="#888">instance state changes</text>
+        <text x="65" y="255" font-family="Hiragino Sans" font-size="10" fill="#888">when instances start...</text>
+        <text x="240" y="135" font-size="20">😣</text>
+
+        <rect x="330" y="20" width="290" height="280" rx="12" fill="#fff" stroke="#67a061" stroke-width="2"/>
+        <text x="475" y="50" text-anchor="middle" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#2b6e2e">プレフィル + ストップ</text>
+        <text x="475" y="70" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#888">中身だけ取れる</text>
+
+        <rect x="360" y="90" width="230" height="180" rx="6" fill="#fcf6e8" stroke="#dcd3c0"/>
+        <text x="375" y="115" font-family="Consolas" font-size="11" fill="#2b2b2b">{</text>
+        <text x="385" y="130" font-family="Consolas" font-size="11" fill="#2b2b2b">"source": ["aws.ec2"],</text>
+        <text x="385" y="145" font-family="Consolas" font-size="11" fill="#2b2b2b">"detail-type": [...],</text>
+        <text x="385" y="160" font-family="Consolas" font-size="11" fill="#2b2b2b">"detail": {</text>
+        <text x="395" y="175" font-family="Consolas" font-size="11" fill="#2b2b2b">"state": ["running"]</text>
+        <text x="385" y="190" font-family="Consolas" font-size="11" fill="#2b2b2b">}</text>
+        <text x="375" y="205" font-family="Consolas" font-size="11" fill="#2b2b2b">}</text>
+        <text x="540" y="135" font-size="20">😊</text>
+        <text x="475" y="250" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#67a061" font-weight="700">そのままコピペできる</text>
+      </svg>
+      <p class="caption">図① 普通に頼んだ場合(左：枠付き+説明文) vs プレフィル+ストップ(右：中身だけ)</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>② どんなしくみ？(3つの仕掛け)</h2>
+
+    <p>使う道具は <strong>2つだけ</strong>。アシスタントメッセージの「プレフィル」と「ストップシーケンス」。</p>
+
+    <div class="illustration">
+      <svg width="640" height="220" viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg">
+        <rect x="20" y="30" width="180" height="150" rx="10" fill="#fdf0c8" stroke="#d9a431" stroke-width="2"/>
+        <circle cx="50" cy="60" r="16" fill="#d9a431"/>
+        <text x="50" y="65" text-anchor="middle" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#fff">1</text>
+        <text x="110" y="65" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#6b5028">User メッセージ</text>
+        <text x="40" y="100" font-family="Hiragino Sans" font-size="12" fill="#2b2b2b">JSONで生成して</text>
+        <text x="40" y="120" font-family="Hiragino Sans" font-size="12" fill="#2b2b2b">と頼む</text>
+        <text x="40" y="160" font-family="Hiragino Sans" font-size="11" fill="#888" font-style="italic">"Generate ... as json"</text>
+
+        <polygon points="200,105 220,105 220,100 230,110 220,120 220,115 200,115" fill="#d97757"/>
+
+        <rect x="240" y="30" width="180" height="150" rx="10" fill="#fdebde" stroke="#d97757" stroke-width="2"/>
+        <circle cx="270" cy="60" r="16" fill="#d97757"/>
+        <text x="270" y="65" text-anchor="middle" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#fff">2</text>
+        <text x="330" y="65" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#a85200">Assistant プレフィル</text>
+        <text x="260" y="100" font-family="Hiragino Sans" font-size="12" fill="#2b2b2b">先に枠線スタート</text>
+        <text x="260" y="120" font-family="Hiragino Sans" font-size="12" fill="#2b2b2b">を埋めておく</text>
+        <text x="260" y="160" font-family="Consolas" font-size="11" fill="#a85200">```json</text>
+
+        <polygon points="420,105 440,105 440,100 450,110 440,120 440,115 420,115" fill="#d97757"/>
+
+        <rect x="460" y="30" width="160" height="150" rx="10" fill="#d8ecd6" stroke="#67a061" stroke-width="2"/>
+        <circle cx="490" cy="60" r="16" fill="#67a061"/>
+        <text x="490" y="65" text-anchor="middle" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#fff">3</text>
+        <text x="540" y="65" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#2b6e2e">Stop シーケンス</text>
+        <text x="480" y="100" font-family="Hiragino Sans" font-size="12" fill="#2b2b2b">閉じカッコ書こうと</text>
+        <text x="480" y="120" font-family="Hiragino Sans" font-size="12" fill="#2b2b2b">したら止める</text>
+        <text x="480" y="160" font-family="Consolas" font-size="11" fill="#2b6e2e">stop=["```"]</text>
+
+        <text x="320" y="205" text-anchor="middle" font-family="Hiragino Sans" font-size="13" fill="#5a5a5a">→ Claude は「中身の JSON だけ」を書いて止まる</text>
+      </svg>
+      <p class="caption">図② プレフィル+ストップシーケンスの3ステップ</p>
+    </div>
+
+    <div class="card accent">
+      <strong>キーアイデア:</strong> プレフィルしたメッセージを見た Claude は <em>「自分が既に応答を書き始めた」</em> と思い込む。だから続きの中身だけを生成する。
+    </div>
+  </section>
+
+  <section>
+    <h2>③ コードで書いてみよう</h2>
+
+    <p>実装は驚くほど短い。3行だけ。</p>
+
+<pre><code>messages = []
+
+add_user_message(messages, "Generate a very short event bridge rule as json")
+add_assistant_message(messages, "```json")
+
+text = chat(messages, stop_sequences=["```"])</code></pre>
+
+    <p>変数 <code class="inline">text</code> には、説明文も囲みもない <strong>生の JSON 文字列</strong> が入る。</p>
+
+    <div class="card yellow">
+      <strong>動きを追う:</strong> ① ユーザーが「JSONで」と頼む → ② アシスタントが「<code class="inline">```json</code>」と書き始めた状態にする → ③ Claude が中身を続ける → ④ 閉じの「<code class="inline">```</code>」を書こうとした瞬間に停止。
+    </div>
+  </section>
+
+  <section>
+    <h2>④ 返ってきた文字列の後処理</h2>
+
+    <p>取得した <code class="inline">text</code> には、前後に余分な改行や空白が入っていることがある。簡単に整えてからパースすればOK。</p>
+
+<pre><code>import json
+
+# 前後の余分な空白・改行を取り除いてからJSONとして読み込む
+clean_json = json.loads(text.strip())</code></pre>
+
+    <p><code class="inline">strip()</code> = 前後の余白削り。<code class="inline">json.loads()</code> = 文字列を Python の辞書/リストに変換。</p>
+  </section>
+
+  <section>
+    <h2>⑤ JSON 以外への応用</h2>
+
+    <p>このテクニックは JSON 専用ではない。「説明なしで中身だけ欲しい」場面ならどこでも使える。</p>
+
+    <div class="illustration">
+      <svg width="640" height="180" viewBox="0 0 640 180" xmlns="http://www.w3.org/2000/svg">
+        <rect x="30" y="30" width="130" height="120" rx="10" fill="#fdf0c8" stroke="#d9a431" stroke-width="2"/>
+        <text x="95" y="60" text-anchor="middle" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#6b5028">JSON</text>
+        <text x="95" y="95" text-anchor="middle" font-size="32">{ }</text>
+        <text x="95" y="125" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#888">設定・データ交換</text>
+
+        <rect x="180" y="30" width="130" height="120" rx="10" fill="#cfe7ef" stroke="#5a8aa0" stroke-width="2"/>
+        <text x="245" y="60" text-anchor="middle" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#2b6577">Python</text>
+        <text x="245" y="100" text-anchor="middle" font-size="32">🐍</text>
+        <text x="245" y="125" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#888">コードスニペット</text>
+
+        <rect x="330" y="30" width="130" height="120" rx="10" fill="#d8ecd6" stroke="#67a061" stroke-width="2"/>
+        <text x="395" y="60" text-anchor="middle" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#2b6e2e">リスト</text>
+        <text x="395" y="95" text-anchor="middle" font-family="Consolas" font-size="14" fill="#2b2b2b">- A</text>
+        <text x="395" y="110" text-anchor="middle" font-family="Consolas" font-size="14" fill="#2b2b2b">- B</text>
+        <text x="395" y="135" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#888">箇条書き</text>
+
+        <rect x="480" y="30" width="130" height="120" rx="10" fill="#f6dcdc" stroke="#c66b6b" stroke-width="2"/>
+        <text x="545" y="60" text-anchor="middle" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#a04040">CSV</text>
+        <text x="545" y="95" text-anchor="middle" font-family="Consolas" font-size="12" fill="#2b2b2b">a,b,c</text>
+        <text x="545" y="110" text-anchor="middle" font-family="Consolas" font-size="12" fill="#2b2b2b">1,2,3</text>
+        <text x="545" y="135" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#888">表データ</text>
+
+        <text x="320" y="175" text-anchor="middle" font-family="Hiragino Sans" font-size="12" fill="#5a5a5a">全部、プレフィル+ストップで「中身だけ」取れる</text>
+      </svg>
+      <p class="caption">図③ 応用範囲のいろいろ</p>
+    </div>
+
+    <p>コツは <strong>「Claude が自然に付けたがる囲み」を見抜いて、それをプレフィル+ストップに据える</strong> こと。</p>
+
+    <ul>
+      <li>コード → マークダウンのコードブロック ( <code class="inline">```</code> )</li>
+      <li>リスト → 別の記号・改行</li>
+      <li>CSV → ヘッダー行を埋めておく等</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>⑥ 紙の例えで覚える</h2>
+
+    <div class="illustration">
+      <svg width="640" height="240" viewBox="0 0 640 240" xmlns="http://www.w3.org/2000/svg">
+        <text x="160" y="30" text-anchor="middle" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#a85200">普通に頼む</text>
+
+        <rect x="40" y="50" width="240" height="160" rx="4" fill="#fcf6e8" stroke="#a85200" stroke-width="2"/>
+        <rect x="40" y="50" width="240" height="22" fill="#a85200"/>
+        <text x="160" y="66" text-anchor="middle" font-family="Hiragino Sans" font-size="11" font-weight="700" fill="#fff">📄 レポート用紙</text>
+        <rect x="55" y="90" width="210" height="80" fill="none" stroke="#d97757" stroke-width="1" stroke-dasharray="3 2"/>
+        <text x="160" y="120" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">{ JSON 本文 }</text>
+        <text x="160" y="138" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">(枠線の内側)</text>
+        <text x="55" y="187" font-family="Hiragino Sans" font-size="10" fill="#888">解説: このJSONは...</text>
+        <text x="55" y="200" font-family="Hiragino Sans" font-size="10" fill="#888">が含まれています。</text>
+
+        <text x="160" y="230" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#5a5a5a">枠線+解説で着飾る(丁寧すぎ)</text>
+
+        <text x="480" y="30" text-anchor="middle" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#2b6e2e">プレフィル指定</text>
+
+        <rect x="360" y="50" width="240" height="160" rx="4" fill="#fcf6e8" stroke="#67a061" stroke-width="2"/>
+        <text x="375" y="80" font-family="Consolas" font-size="11" fill="#2b2b2b">{</text>
+        <text x="385" y="100" font-family="Consolas" font-size="11" fill="#2b2b2b">"source": ["aws.ec2"],</text>
+        <text x="385" y="120" font-family="Consolas" font-size="11" fill="#2b2b2b">"detail": {</text>
+        <text x="395" y="140" font-family="Consolas" font-size="11" fill="#2b2b2b">"state": ["running"]</text>
+        <text x="385" y="160" font-family="Consolas" font-size="11" fill="#2b2b2b">}</text>
+        <text x="375" y="180" font-family="Consolas" font-size="11" fill="#2b2b2b">}</text>
+
+        <text x="480" y="230" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#5a5a5a">本文だけスポッと取り出せる</text>
+      </svg>
+    </div>
+
+    <table class="vocab">
+      <thead>
+        <tr><th style="width: 50%;">紙の例え</th><th>API テクニック</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>友達に「JSON 書いて」とそのまま頼む</td><td>普通の応答(枠線+解説まで付く)</td></tr>
+        <tr><td>「ここから書いてね」と紙の途中を指で押さえる</td><td>プレフィル (<code class="inline">add_assistant_message</code>)</td></tr>
+        <tr><td>「閉じカッコ書こうとしたら筆を止めて」と約束</td><td>ストップシーケンス (<code class="inline">stop_sequences</code>)</td></tr>
+        <tr><td>「囲みも解説もいらない、本文だけほしい」</td><td>このテクニックの動機</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑦ キーワード一覧</h2>
+
+    <table class="vocab">
+      <thead>
+        <tr><th style="width: 30%;">英語</th><th style="width: 25%;">読み方</th><th>意味</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="code">structured data</td><td>ストラクチャード・データ</td><td>形式が決まったデータ(JSON/CSV等)</td></tr>
+        <tr><td class="code">prefill</td><td>プレフィル</td><td>事前に埋めておく</td></tr>
+        <tr><td class="code">stop_sequences</td><td>ストップ・シーケンス</td><td>「ここで止まれ」の合言葉</td></tr>
+        <tr><td class="code">delimiter</td><td>デリミタ</td><td>区切り文字</td></tr>
+        <tr><td class="code">add_assistant_message</td><td>アド・アシスタント・メッセージ</td><td>アシスタント発言を埋め込む関数</td></tr>
+        <tr><td class="code">json.loads()</td><td>ジェイソン・ロード</td><td>JSON文字列をオブジェクトに変換</td></tr>
+        <tr><td class="code">strip()</td><td>ストリップ</td><td>前後の余白を削る</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑧ 理解度チェック</h2>
+
+    <details>
+      <summary>Q1. なぜ Claude に「JSONで」と頼むと困ることがある？</summary>
+      <p>親切心からマークダウンの枠線・ヘッダー・英語の説明文を付けてしまうので、ユーザーがコピペで使うとき余計な手間がかかるから。</p>
+    </details>
+
+    <details>
+      <summary>Q2. このテクニックで使う2つの仕掛けは？</summary>
+      <p><code class="inline">プレフィル(アシスタントメッセージの先頭を埋める)</code> と <code class="inline">stop_sequences(ストップシーケンス)</code> の2つ。プレフィルで Claude を「中身を書く構え」にして、ストップで閉じ記号の手前で止める。</p>
+    </details>
+
+    <details>
+      <summary>Q3. このテクニックは JSON 以外に何に使える?</summary>
+      <p>Python コードスニペット、箇条書きリスト、CSV データ、その他「説明なしで中身だけほしい」整形済みコンテンツなら何でも。</p>
+    </details>
+
+    <details>
+      <summary>Q4. <code class="inline">text.strip()</code> は何のため?</summary>
+      <p>返ってきた文字列の前後に余分な改行や空白が入っていることがあるので、それを削ってからパースするため。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑨ 自分メモ</h2>
+    <div class="memo-area">自分が学んだことや疑問を書き込もう…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 19: Structured data<br>
+    元レクチャー: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287732">SkillJar — Structured data</a><br>
+    学習版HTML: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_19.html">Anthropic_02API_19.html</a>
+  </footer>
+
+</main>
+</body>
+</html>
