@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 20: Structured data exercise — 演習で身につける | Anthropic Academy 教科書</title>
+<style>
+:root {
+  --paper: #faf6ef;
+  --paper-2: #ffffff;
+  --ink: #2b2b2b;
+  --ink-sub: #5a5a5a;
+  --accent: #d97757;
+  --accent-light: #fdebde;
+  --tag-bg: #ebe3d3;
+  --tag-text: #6b5028;
+  --soft-blue: #cfe7ef;
+  --soft-yellow: #fdf0c8;
+  --soft-mint: #d8ecd6;
+  --soft-pink: #f6dcdc;
+  --border: #dcd3c0;
+  --radius: 12px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  line-height: 1.9;
+  padding: 40px 20px;
+}
+.book { max-width: 760px; margin: 0 auto; }
+
+.chapter-tag {
+  display: inline-block;
+  background: var(--tag-bg);
+  color: var(--tag-text);
+  padding: 8px 28px;
+  border-radius: 0 24px 24px 0;
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  margin-left: -20px;
+  margin-bottom: 14px;
+}
+.exercise-badge {
+  display: inline-block;
+  background: #d8ecd6;
+  color: #2b6e2e;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+
+h1.lecture-title {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.35;
+  margin-bottom: 6px;
+}
+h1.lecture-title .ja-sub {
+  display: block;
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--ink-sub);
+  margin-top: 6px;
+}
+.subtitle {
+  color: var(--ink-sub);
+  font-size: 14px;
+  margin-bottom: 40px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+section { margin-bottom: 52px; }
+h2 {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 18px;
+  padding-left: 18px;
+  border-left: 6px solid var(--accent);
+}
+h3 {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 22px 0 10px;
+  color: var(--accent);
+}
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+
+.card {
+  background: var(--paper-2);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  box-shadow: var(--shadow);
+  margin: 16px 0;
+}
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.yellow { background: var(--soft-yellow); border-left: 4px solid #d9a431; }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+
+.exercise-box {
+  background: var(--paper-2);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin: 20px 0;
+  box-shadow: var(--shadow);
+  border-top: 6px solid var(--accent);
+}
+.exercise-box h3 {
+  margin-top: 0;
+  font-size: 19px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.exercise-number {
+  display: inline-block;
+  background: var(--accent);
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 36px;
+  font-weight: 800;
+  font-size: 17px;
+}
+.problem-section {
+  background: #fdf0c8;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin: 14px 0;
+  border-left: 4px solid #d9a431;
+}
+.problem-section strong { color: #6b5028; }
+.hint-section {
+  background: #cfe7ef;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin: 14px 0;
+  border-left: 4px solid #5a8aa0;
+  font-size: 14px;
+}
+.hint-section strong { color: #2b6577; }
+
+table.vocab {
+  width: 100%;
+  background: var(--paper-2);
+  border-collapse: collapse;
+  margin: 16px 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+table.vocab th, table.vocab td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 15px;
+}
+table.vocab th {
+  background: var(--tag-bg);
+  color: var(--tag-text);
+  font-weight: 700;
+}
+table.vocab td.code {
+  font-family: "Consolas","Menlo",monospace;
+  color: var(--accent);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+pre {
+  background: #f4eedb;
+  border-radius: 8px;
+  padding: 16px 18px;
+  overflow-x: auto;
+  font-family: "Consolas","Menlo",monospace;
+  font-size: 14px;
+  line-height: 1.7;
+  margin: 12px 0;
+  border: 1px solid var(--border);
+}
+code.inline {
+  background: #f4eedb;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: "Consolas","Menlo",monospace;
+  font-size: 0.92em;
+  color: #a85200;
+}
+
+details {
+  background: var(--soft-mint);
+  border-radius: var(--radius);
+  padding: 14px 22px;
+  margin: 14px 0;
+  border-left: 4px solid #67a061;
+}
+details summary {
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 15px;
+  outline: none;
+  color: #2b6e2e;
+}
+details[open] summary { margin-bottom: 12px; }
+
+.illustration {
+  text-align: center;
+  margin: 24px 0;
+}
+.illustration svg { max-width: 100%; height: auto; }
+.caption {
+  font-size: 13px;
+  color: var(--ink-sub);
+  margin-top: 8px;
+  text-align: center;
+}
+
+.memo-area {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  min-height: 120px;
+  background: var(--paper-2);
+  color: #b0a589;
+  font-size: 14px;
+  font-style: italic;
+}
+
+footer {
+  margin-top: 60px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--ink-sub);
+  text-align: center;
+  line-height: 1.7;
+}
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+
+@media (max-width: 600px) {
+  body { padding: 20px 14px; }
+  h1.lecture-title { font-size: 24px; }
+  h2 { font-size: 19px; }
+  p, ol li, ul li { font-size: 15px; }
+}
+</style>
+</head>
+<body>
+<main class="book">
+
+  <span class="chapter-tag">Module 6 ・ Lecture 20</span>
+  <h1 class="lecture-title">
+    Structured data exercise <span class="exercise-badge">✏ 演習回</span>
+    <span class="ja-sub">— 学んだ技を、実際に使ってみよう</span>
+  </h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① このレクチャーは「演習回」</h2>
+
+    <div class="illustration">
+      <svg width="640" height="180" viewBox="0 0 640 180" xmlns="http://www.w3.org/2000/svg">
+        <rect x="50" y="30" width="160" height="100" rx="10" fill="#fdf0c8" stroke="#d9a431" stroke-width="2"/>
+        <polygon points="115,60 115,100 145,80" fill="#d97757"/>
+        <text x="130" y="150" text-anchor="middle" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#a85200">動画 4分57秒</text>
+
+        <text x="265" y="90" font-family="Hiragino Sans" font-size="36" font-weight="700" fill="#888">+</text>
+
+        <rect x="310" y="30" width="160" height="100" rx="10" fill="#d8ecd6" stroke="#67a061" stroke-width="2"/>
+        <text x="390" y="85" text-anchor="middle" font-size="40">✏</text>
+        <text x="390" y="150" text-anchor="middle" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#2b6e2e">手を動かす</text>
+
+        <text x="510" y="90" font-family="Hiragino Sans" font-size="36" font-weight="700" fill="#888">=</text>
+
+        <rect x="540" y="30" width="80" height="100" rx="10" fill="#fdebde" stroke="#d97757" stroke-width="2"/>
+        <text x="580" y="85" text-anchor="middle" font-size="32">💡</text>
+        <text x="580" y="150" text-anchor="middle" font-family="Hiragino Sans" font-size="12" font-weight="700" fill="#a85200">身につく</text>
+      </svg>
+      <p class="caption">図① 演習回の構成: 動画 + 手を動かす = 知識が身につく</p>
+    </div>
+
+    <p>このレクチャーは <strong>SkillJar 上にテキスト本文記事はない</strong>。代わりに動画(4分57秒)を見ながら、視聴者が手を動かして実装するハンズオン形式。</p>
+
+    <p>この教科書では、<strong>#19 (Structured data) で学んだ技</strong>を試す <strong>オリジナル演習問題3問</strong>を用意した。答えは <code class="inline">&lt;details&gt;</code> で隠してあるので、まずは自分で考えてから開こう。</p>
+  </section>
+
+  <section>
+    <h2>② #19の復習: 使う道具4つ</h2>
+
+    <div class="illustration">
+      <svg width="640" height="200" viewBox="0 0 640 200" xmlns="http://www.w3.org/2000/svg">
+        <rect x="20" y="30" width="140" height="150" rx="10" fill="#fdf0c8" stroke="#d9a431" stroke-width="2"/>
+        <text x="90" y="60" text-anchor="middle" font-size="28">📨</text>
+        <text x="90" y="100" text-anchor="middle" font-family="Hiragino Sans" font-size="12" font-weight="700" fill="#6b5028">User メッセージ</text>
+        <text x="90" y="125" text-anchor="middle" font-family="Consolas" font-size="9" fill="#a85200">add_user_message</text>
+        <text x="90" y="155" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#888">依頼を入れる</text>
+
+        <rect x="180" y="30" width="140" height="150" rx="10" fill="#fdebde" stroke="#d97757" stroke-width="2"/>
+        <text x="250" y="60" text-anchor="middle" font-size="28">📝</text>
+        <text x="250" y="100" text-anchor="middle" font-family="Hiragino Sans" font-size="12" font-weight="700" fill="#a85200">Assistantプレフィル</text>
+        <text x="250" y="125" text-anchor="middle" font-family="Consolas" font-size="9" fill="#a85200">add_assistant_message</text>
+        <text x="250" y="155" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#888">先頭を埋める</text>
+
+        <rect x="340" y="30" width="140" height="150" rx="10" fill="#d8ecd6" stroke="#67a061" stroke-width="2"/>
+        <text x="410" y="60" text-anchor="middle" font-size="28">🛑</text>
+        <text x="410" y="100" text-anchor="middle" font-family="Hiragino Sans" font-size="12" font-weight="700" fill="#2b6e2e">ストップシーケンス</text>
+        <text x="410" y="125" text-anchor="middle" font-family="Consolas" font-size="10" fill="#2b6e2e">stop_sequences</text>
+        <text x="410" y="155" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#888">閉じで止める</text>
+
+        <rect x="500" y="30" width="120" height="150" rx="10" fill="#cfe7ef" stroke="#5a8aa0" stroke-width="2"/>
+        <text x="560" y="60" text-anchor="middle" font-size="28">🧹</text>
+        <text x="560" y="100" text-anchor="middle" font-family="Hiragino Sans" font-size="12" font-weight="700" fill="#2b6577">後処理</text>
+        <text x="560" y="125" text-anchor="middle" font-family="Consolas" font-size="10" fill="#2b6577">strip() / loads()</text>
+        <text x="560" y="155" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#888">整えて使う</text>
+      </svg>
+      <p class="caption">図② 演習で使う道具4つ</p>
+    </div>
+
+    <div class="card mint">
+      <strong>3手順の合言葉:</strong> ①どんな囲みを Claude が付けたがるか観察する → ②開きをプレフィル・閉じをストップに置く → ③ <code class="inline">strip()</code> で整えてから使う
+    </div>
+  </section>
+
+  <section>
+    <h2>③ 演習問題</h2>
+
+    <div class="exercise-box">
+      <h3><span class="exercise-number">1</span> JSONで天気データを取り出す</h3>
+
+      <div class="problem-section">
+        <strong>お題:</strong> 「東京の天気をJSONで教えて」と頼んで、Claude には <strong>説明文なしで JSON だけ</strong> 返してもらいなさい。
+      </div>
+
+      <p><strong>期待する出力例:</strong></p>
+<pre><code>{
+  "city": "Tokyo",
+  "weather": "sunny",
+  "temperature": 22
+}</code></pre>
+
+      <div class="hint-section">
+        <strong>💡 ヒント:</strong> プレフィルに <code class="inline">```json</code> を埋める。ストップに <code class="inline">```</code> を指定する。
+      </div>
+
+      <details>
+        <summary>答えを見る</summary>
+<pre><code>messages = []
+add_user_message(messages, "Give me a fictional weather report for Tokyo in JSON format")
+add_assistant_message(messages, "```json")
+
+text = chat(messages, stop_sequences=["```"])
+
+import json
+weather = json.loads(text.strip())
+print(weather)</code></pre>
+        <p>📍 <strong>ポイント:</strong> ` ```json ` で開き、` ``` ` で閉じる前に停止。<code class="inline">json.loads(text.strip())</code> で Python の辞書に変換。</p>
+      </details>
+    </div>
+
+    <div class="exercise-box">
+      <h3><span class="exercise-number">2</span> Python関数だけを取り出す</h3>
+
+      <div class="problem-section">
+        <strong>お題:</strong> 「2つの数を足す関数を書いて」と頼んで、Claude に <strong>コードだけ</strong> を返してほしい。普通に頼むと「この関数は…」のような説明文が付いてしまう。
+      </div>
+
+      <p><strong>期待する出力:</strong></p>
+<pre><code>def add(a, b):
+    return a + b</code></pre>
+
+      <div class="hint-section">
+        <strong>💡 ヒント:</strong> JSON の代わりに <code class="inline">```python</code> を使う。
+      </div>
+
+      <details>
+        <summary>答えを見る</summary>
+<pre><code>messages = []
+add_user_message(messages, "Write a Python function that adds two numbers")
+add_assistant_message(messages, "```python")
+
+code = chat(messages, stop_sequences=["```"])
+print(code.strip())</code></pre>
+        <p>📍 <strong>ポイント:</strong> 言語が変わっても、コードブロックの種類を変えるだけで同じパターンが効く。</p>
+      </details>
+    </div>
+
+    <div class="exercise-box">
+      <h3><span class="exercise-number">3</span> 箇条書きリストだけを取り出す</h3>
+
+      <div class="problem-section">
+        <strong>お題:</strong> 「初心者向けプログラミング言語を5つ挙げて」と頼んで、<strong>箇条書きだけ</strong>を返してほしい。導入文や解説文は不要。
+      </div>
+
+      <p><strong>期待する出力:</strong></p>
+<pre><code>- Python
+- JavaScript
+- Ruby
+- Scratch
+- Go</code></pre>
+
+      <div class="hint-section">
+        <strong>💡 ヒント:</strong> リストは <code class="inline">```</code> で囲まれないので、別の発想が要る。<code class="inline">"- "</code> をプレフィルに、空行(<code class="inline">\n\n</code>)をストップにすると…？
+      </div>
+
+      <details>
+        <summary>答えを見る</summary>
+<pre><code>messages = []
+add_user_message(messages, "List 5 beginner-friendly programming languages")
+add_assistant_message(messages, "- ")
+
+text = chat(messages, stop_sequences=["\n\n"])
+print(text.strip())</code></pre>
+        <p>📍 <strong>ポイント:</strong> コードブロックではなくリストの「<code class="inline">- </code>」をプレフィルに置くと、Claude は箇条書きモードに入る。空行 <code class="inline">\n\n</code> で「箇条書きが終わって解説に移ろうとした瞬間」を捉えて停止。</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2>④ 3手順の流れ図</h2>
+
+    <div class="illustration">
+      <svg width="640" height="220" viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="100" cy="100" r="50" fill="#fdf0c8" stroke="#d9a431" stroke-width="2"/>
+        <text x="100" y="92" text-anchor="middle" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#6b5028">①観察</text>
+        <text x="100" y="115" text-anchor="middle" font-family="Hiragino Sans" font-size="10" fill="#888">どんな囲み？</text>
+
+        <polygon points="170,100 195,100 195,93 215,103 195,113 195,107 170,107" fill="#d97757"/>
+
+        <circle cx="280" cy="100" r="50" fill="#fdebde" stroke="#d97757" stroke-width="2"/>
+        <text x="280" y="92" text-anchor="middle" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#a85200">②埋める</text>
+        <text x="280" y="115" text-anchor="middle" font-family="Hiragino Sans" font-size="10" fill="#888">プレフィル</text>
+
+        <polygon points="350,100 375,100 375,93 395,103 375,113 375,107 350,107" fill="#d97757"/>
+
+        <circle cx="460" cy="100" r="50" fill="#d8ecd6" stroke="#67a061" stroke-width="2"/>
+        <text x="460" y="92" text-anchor="middle" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#2b6e2e">③止める</text>
+        <text x="460" y="115" text-anchor="middle" font-family="Hiragino Sans" font-size="10" fill="#888">ストップ</text>
+
+        <polygon points="530,100 555,100 555,93 575,103 555,113 555,107 530,107" fill="#d97757"/>
+
+        <circle cx="610" cy="100" r="20" fill="#cfe7ef" stroke="#5a8aa0" stroke-width="2"/>
+        <text x="610" y="106" text-anchor="middle" font-size="20">✨</text>
+
+        <text x="320" y="190" text-anchor="middle" font-family="Hiragino Sans" font-size="13" fill="#5a5a5a">中身だけスポッと取れる</text>
+      </svg>
+      <p class="caption">図③ プレフィル+ストップの3手順 → 中身だけが手に入る</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>⑤ キーワード一覧</h2>
+
+    <table class="vocab">
+      <thead>
+        <tr><th style="width: 30%;">英語</th><th style="width: 25%;">読み方</th><th>意味</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="code">exercise</td><td>エクササイズ</td><td>演習・練習問題</td></tr>
+        <tr><td class="code">prefill</td><td>プレフィル</td><td>事前に埋めておく</td></tr>
+        <tr><td class="code">stop_sequences</td><td>ストップ・シーケンス</td><td>「ここで止まれ」の合言葉</td></tr>
+        <tr><td class="code">```json</td><td>バッククォート・ジェイソン</td><td>JSON コードブロックの開き</td></tr>
+        <tr><td class="code">```python</td><td>バッククォート・パイソン</td><td>Python コードブロックの開き</td></tr>
+        <tr><td class="code">json.loads()</td><td>ジェイソン・ロード</td><td>JSON文字列を辞書に変換</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑥ 理解度チェック</h2>
+
+    <details>
+      <summary>Q1. JSON 取り出しと Python コード取り出しの違いは？</summary>
+      <p>プレフィルする文字列だけが違う。JSON は <code class="inline">```json</code>、Python は <code class="inline">```python</code>。ストップは両方 <code class="inline">```</code>。同じパターンの中で記号を入れ替えるだけ。</p>
+    </details>
+
+    <details>
+      <summary>Q2. 箇条書きリストを取り出すとき、ストップシーケンスに何を指定する？</summary>
+      <p>空行 <code class="inline">\n\n</code> を指定する。箇条書きが終わって解説文に移る前に、Claude は必ず空行を挟む。そこを捉えて止める。</p>
+    </details>
+
+    <details>
+      <summary>Q3. 受け取った文字列をすぐ <code class="inline">json.loads()</code> に渡せないことがある。なぜ？</summary>
+      <p>前後に余分な改行や空白が入っていることがあるから。<code class="inline">text.strip()</code> で削いでから <code class="inline">json.loads()</code> に渡す。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑦ 自分メモ</h2>
+    <div class="memo-area">演習をやってみての気づきや、別の応用アイデアを書き込もう…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 20: Structured data exercise<br>
+    元レクチャー: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287729">SkillJar — Structured data exercise</a><br>
+    学習版HTML: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_20.html">Anthropic_02API_20.html</a> ・ 前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_19_textbook.html">Lecture 19 教科書版</a>
+  </footer>
+
+</main>
+</body>
+</html>
