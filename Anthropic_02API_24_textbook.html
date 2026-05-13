@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 24: Generating test datasets — Claude にテスト問題集を作らせる | Anthropic Academy 教科書</title>
+<style>
+:root {
+  --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a;
+  --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028;
+  --soft-blue: #cfe7ef; --soft-yellow: #fdf0c8; --soft-mint: #d8ecd6; --soft-pink: #f6dcdc;
+  --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+h3 { font-size: 17px; font-weight: 700; margin: 22px 0 10px; color: var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.yellow { background: var(--soft-yellow); border-left: 4px solid #d9a431; }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+.step-card { background: var(--paper-2); border-radius: var(--radius); padding: 20px; margin: 16px 0; box-shadow: var(--shadow); border-left: 6px solid var(--accent); }
+.step-card h4 { display: flex; align-items: center; gap: 12px; font-size: 17px; margin-bottom: 12px; color: var(--accent); }
+.step-num { display: inline-block; background: var(--accent); color: white; width: 32px; height: 32px; border-radius: 50%; text-align: center; line-height: 32px; font-weight: 800; font-size: 15px; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+table.vocab td.code { font-family: "Consolas","Menlo",monospace; color: var(--accent); font-weight: 700; white-space: nowrap; }
+pre { background: #f4eedb; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: "Consolas","Menlo",monospace; font-size: 14px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--border); }
+code.inline { background: #f4eedb; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Menlo",monospace; font-size: 0.92em; color: #a85200; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+.illustration { text-align: center; margin: 24px 0; }
+.illustration svg { max-width: 100%; height: auto; }
+.caption { font-size: 13px; color: var(--ink-sub); margin-top: 8px; text-align: center; }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 600px) { body { padding: 20px 14px; } h1.lecture-title { font-size: 24px; } h2 { font-size: 19px; } p, ol li, ul li { font-size: 15px; } }
+</style>
+</head>
+<body>
+<main class="book">
+
+  <span class="chapter-tag">Module 7 ・ Lecture 24</span>
+  <h1 class="lecture-title">Generating test datasets<span class="ja-sub">— テスト問題集を Claude に作らせる</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① なぜ Claude にデータセットを作らせる?</h2>
+
+    <div class="illustration">
+      <svg width="640" height="240" viewBox="0 0 640 240" xmlns="http://www.w3.org/2000/svg">
+        <rect x="20" y="30" width="280" height="190" rx="12" fill="#fdebde" stroke="#d97757" stroke-width="2"/>
+        <text x="160" y="60" text-anchor="middle" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#a85200">手で書く</text>
+        <text x="160" y="100" text-anchor="middle" font-size="36">✍️😓</text>
+        <text x="160" y="140" text-anchor="middle" font-family="Hiragino Sans" font-size="12" fill="#5a5a5a">時間かかる</text>
+        <text x="160" y="160" text-anchor="middle" font-family="Hiragino Sans" font-size="12" fill="#5a5a5a">発想が偏る</text>
+        <text x="160" y="180" text-anchor="middle" font-family="Hiragino Sans" font-size="12" fill="#5a5a5a">大量に作るのが苦痛</text>
+
+        <rect x="340" y="30" width="280" height="190" rx="12" fill="#d8ecd6" stroke="#67a061" stroke-width="2"/>
+        <text x="480" y="60" text-anchor="middle" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#2b6e2e">Claude に頼む</text>
+        <text x="480" y="100" text-anchor="middle" font-size="36">⚡✨</text>
+        <text x="480" y="140" text-anchor="middle" font-family="Hiragino Sans" font-size="12" fill="#5a5a5a">数秒で大量生成</text>
+        <text x="480" y="160" text-anchor="middle" font-family="Hiragino Sans" font-size="12" fill="#5a5a5a">多様な切り口</text>
+        <text x="480" y="180" text-anchor="middle" font-family="Hiragino Sans" font-size="12" fill="#5a5a5a">速いモデルで安い</text>
+      </svg>
+      <p class="caption">図① 手書き vs Claude 自動生成</p>
+    </div>
+
+    <p>今回作るのは「<strong>AWS コード支援プロンプト</strong>」の評価データセット。説明文なしで Python / JSON config / Regex のいずれかだけを出力するプロンプトを評価したい。</p>
+  </section>
+
+  <section>
+    <h2>② 実装の4ステップ</h2>
+
+    <div class="illustration">
+      <svg width="640" height="160" viewBox="0 0 640 160" xmlns="http://www.w3.org/2000/svg">
+        <g font-family="Hiragino Sans" font-size="11" font-weight="700">
+          <rect x="20" y="40" width="130" height="80" rx="10" fill="#fdf0c8" stroke="#d9a431" stroke-width="2"/>
+          <text x="85" y="65" text-anchor="middle" fill="#6b5028">Step 1</text>
+          <text x="85" y="85" text-anchor="middle" font-size="11" fill="#2b2b2b">chat()</text>
+          <text x="85" y="100" text-anchor="middle" font-size="11" fill="#2b2b2b">改良</text>
+
+          <polygon points="155,80 175,80 175,73 190,83 175,93 175,87 155,87" fill="#d97757"/>
+
+          <rect x="195" y="40" width="130" height="80" rx="10" fill="#fdebde" stroke="#d97757" stroke-width="2"/>
+          <text x="260" y="65" text-anchor="middle" fill="#a85200">Step 2</text>
+          <text x="260" y="85" text-anchor="middle" font-size="11" fill="#2b2b2b">generate_dataset</text>
+          <text x="260" y="100" text-anchor="middle" font-size="11" fill="#2b2b2b">関数を書く</text>
+
+          <polygon points="330,80 350,80 350,73 365,83 350,93 350,87 330,87" fill="#d97757"/>
+
+          <rect x="370" y="40" width="120" height="80" rx="10" fill="#d8ecd6" stroke="#67a061" stroke-width="2"/>
+          <text x="430" y="65" text-anchor="middle" fill="#2b6e2e">Step 3</text>
+          <text x="430" y="85" text-anchor="middle" font-size="11" fill="#2b2b2b">実行して</text>
+          <text x="430" y="100" text-anchor="middle" font-size="11" fill="#2b2b2b">結果確認</text>
+
+          <polygon points="495,80 515,80 515,73 530,83 515,93 515,87 495,87" fill="#d97757"/>
+
+          <rect x="535" y="40" width="100" height="80" rx="10" fill="#cfe7ef" stroke="#5a8aa0" stroke-width="2"/>
+          <text x="585" y="65" text-anchor="middle" fill="#2b6577">Step 4</text>
+          <text x="585" y="85" text-anchor="middle" font-size="11" fill="#2b2b2b">ファイル</text>
+          <text x="585" y="100" text-anchor="middle" font-size="11" fill="#2b2b2b">に保存</text>
+        </g>
+      </svg>
+      <p class="caption">図② 4ステップの流れ</p>
+    </div>
+
+    <div class="step-card">
+      <h4><span class="step-num">1</span>chat() ヘルパー関数を改良</h4>
+      <p>system / temperature / stop_sequences を渡せるように拡張する。</p>
+<pre><code>def chat(messages, system=None, temperature=1.0, stop_sequences=None):
+    params = {
+        "model": model,
+        "max_tokens": 1000,
+        "messages": messages,
+        "temperature": temperature
+    }
+    if system:
+        params["system"] = system
+    if stop_sequences:
+        params["stop_sequences"] = stop_sequences
+
+    response = client.messages.create(**params)
+    return response.content[0].text</code></pre>
+      <p>こうしておくと、データセット生成時に <code class="inline">temperature</code> を上げて多様性を増やせる。</p>
+    </div>
+
+    <div class="step-card">
+      <h4><span class="step-num">2</span>generate_dataset() 関数を書く</h4>
+      <p>Claude に「テストケースを N 個作って」と頼む。プレフィル+ストップ で raw JSON を取得。</p>
+<pre><code>def generate_dataset():
+    prompt = """
+Generate an evaluation dataset...
+* Focus on Python/JSON/Regex tasks
+* Please generate 3 objects.
+"""
+    messages = []
+    add_user_message(messages, prompt)
+    add_assistant_message(messages, "```json")
+    text = chat(messages, stop_sequences=["```"])
+    return json.loads(text)</code></pre>
+    </div>
+
+    <div class="step-card">
+      <h4><span class="step-num">3</span>動かして結果を確認</h4>
+<pre><code>dataset = generate_dataset()
+print(dataset)</code></pre>
+      <p>3つのテストケース(Python関数 / JSON config / Regex)が JSON で返ってくる。</p>
+    </div>
+
+    <div class="step-card">
+      <h4><span class="step-num">4</span>ファイルに保存</h4>
+<pre><code>with open('dataset.json', 'w') as f:
+    json.dump(dataset, f, indent=2)</code></pre>
+      <p><code class="inline">dataset.json</code> ファイルができる。次の評価ステップで何度も使い回せる。</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>③ このアプローチの嬉しいところ</h2>
+
+    <table class="vocab">
+      <thead>
+        <tr><th style="width: 35%;">嬉しい点</th><th>説明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>🔁 再現性</td><td>ファイル保存しておけば、何度同じ評価を走らせても同じ条件</td></tr>
+        <tr><td>♻ 使い回し</td><td>別のプロンプトを評価するときも同じデータセットを使える</td></tr>
+        <tr><td>📈 拡張性</td><td>「もっと例が欲しい」となれば生成数を 3→30→300 に変えるだけ</td></tr>
+        <tr><td>🎲 多様性</td><td>Claude が自分の発想にない切り口のタスクを提案してくれる</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>④ 問題集の例えで覚える</h2>
+
+    <div class="illustration">
+      <svg width="640" height="180" viewBox="0 0 640 180" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="100" cy="100" r="40" fill="#fdf0c8" stroke="#d9a431" stroke-width="2"/>
+        <text x="100" y="115" text-anchor="middle" font-size="36">👨‍🏫</text>
+        <text x="100" y="160" text-anchor="middle" font-family="Hiragino Sans" font-size="12" font-weight="700" fill="#6b5028">先生 (Claude)</text>
+
+        <line x1="145" y1="100" x2="200" y2="100" stroke="#d97757" stroke-width="2"/>
+        <polygon points="200,100 195,95 195,105" fill="#d97757"/>
+        <text x="172" y="80" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#5a5a5a">問題作って</text>
+
+        <rect x="220" y="60" width="160" height="100" rx="6" fill="#fff" stroke="#dcd3c0" stroke-width="2"/>
+        <text x="300" y="85" text-anchor="middle" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#a85200">問題集ノート</text>
+        <text x="240" y="110" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">1. Python関数...</text>
+        <text x="240" y="128" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">2. JSON config...</text>
+        <text x="240" y="146" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">3. Regex 抽出...</text>
+
+        <line x1="385" y1="100" x2="440" y2="100" stroke="#d97757" stroke-width="2"/>
+        <polygon points="440,100 435,95 435,105" fill="#d97757"/>
+        <text x="412" y="80" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#5a5a5a">保存</text>
+
+        <rect x="460" y="60" width="140" height="100" rx="6" fill="#cfe7ef" stroke="#5a8aa0" stroke-width="2"/>
+        <text x="530" y="110" text-anchor="middle" font-size="32">💾</text>
+        <text x="530" y="140" text-anchor="middle" font-family="Consolas" font-size="12" fill="#2b6577">dataset.json</text>
+      </svg>
+      <p class="caption">図③ 先生に問題集を作ってもらってノートに保存</p>
+    </div>
+
+    <table class="vocab">
+      <thead>
+        <tr><th style="width: 50%;">問題集の例え</th><th>API 実装</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>先生に「初心者向けの算数問題を10問作って」と頼む</td><td>Claude に generate_dataset() で依頼</td></tr>
+        <tr><td>問題を紙のノートに書き写す</td><td><code class="inline">json.dump()</code> で dataset.json に保存</td></tr>
+        <tr><td>ノートを見ながら何度も練習する</td><td>dataset.json を読み込んで何度も評価実行</td></tr>
+        <tr><td>「もっと難しい問題を10問追加」と先生に頼む</td><td>生成数を増やして再実行</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑤ キーワード一覧</h2>
+
+    <table class="vocab">
+      <thead>
+        <tr><th style="width: 30%;">英語</th><th style="width: 25%;">読み方</th><th>意味</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="code">dataset</td><td>データセット</td><td>テスト入力の集まり</td></tr>
+        <tr><td class="code">temperature</td><td>テンパラチャー</td><td>生成の多様性(0=同じ・1以上=ばらける)</td></tr>
+        <tr><td class="code">generate_dataset()</td><td>ジェネレート・データセット</td><td>自前で書く生成関数</td></tr>
+        <tr><td class="code">json.dump()</td><td>ジェイソン・ダンプ</td><td>Pythonオブジェクトを JSON ファイルに保存</td></tr>
+        <tr><td class="code">dataset.json</td><td>データセット・ジェイソン</td><td>保存先のファイル名</td></tr>
+        <tr><td class="code">Haiku</td><td>ハイク</td><td>速くて安い Claude モデル(生成タスク向き)</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑥ 理解度チェック</h2>
+
+    <details>
+      <summary>Q1. なぜ Claude にデータセットを作らせる?</summary>
+      <p>手で書くと時間がかかる・発想が偏る・大量に作るのが苦痛。Claude なら数秒で数十・数百ケース、多様な切り口で生成できる。Haiku 等の速いモデルなら安い。</p>
+    </details>
+
+    <details>
+      <summary>Q2. なぜ chat() に temperature を渡せるようにする?</summary>
+      <p>データセット生成時に <code class="inline">temperature</code> を上げると Claude の出力にバラツキが出る → より多様なテストケースが集まる。本番評価時は低めの temperature でブレを抑える。</p>
+    </details>
+
+    <details>
+      <summary>Q3. なぜ dataset.json にファイル保存する?</summary>
+      <p>再現性と使い回しのため。同じデータセットで何度も評価すれば、プロンプトの違いだけがスコアに反映される。別のプロンプトを評価する時も同じデータを使える。</p>
+    </details>
+
+    <details>
+      <summary>Q4. 「もっと例が欲しい」となったら?</summary>
+      <p>プロンプト内の生成数を 3 から 30 や 300 に変えて再実行。コードはほぼ変えなくていい。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑦ 自分メモ</h2>
+    <div class="memo-area">自分が学んだことや疑問を書き込もう…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 24: Generating test datasets<br>
+    元レクチャー: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287739">SkillJar — Generating test datasets</a><br>
+    前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_23_textbook.html">Lecture 23</a> ・ 次章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_25_textbook.html">Lecture 25: Running the eval</a>
+  </footer>
+
+</main>
+</body>
+</html>
