@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 45: Using multiple tools — 複数ツール統合でエージェント基盤完成 | Anthropic Academy 教科書</title>
+<style>
+:root {
+  --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a;
+  --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028;
+  --soft-blue: #cfe7ef; --soft-yellow: #fdf0c8; --soft-mint: #d8ecd6; --soft-pink: #f6dcdc;
+  --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04);
+  --exercise-bg: #fff9ec; --exercise-border: #e6c97a;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+.card.blue { background: var(--soft-blue); border-left: 4px solid #4a8aa3; }
+.exercise-box { background: var(--exercise-bg); border: 2px solid var(--exercise-border); border-radius: var(--radius); padding: 20px 24px; margin: 18px 0; }
+.exercise-box h3 { color: #8a6a1c; margin-bottom: 12px; font-size: 17px; }
+.problem-section { background: #fff; border-left: 4px solid #c8a93a; padding: 12px 16px; border-radius: 6px; margin: 10px 0; }
+.hint-section { background: #f4e9c4; padding: 10px 14px; border-radius: 6px; margin-top: 10px; font-size: 14px; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+table.vocab td.code { font-family: "Consolas","Menlo",monospace; color: var(--accent); font-weight: 700; white-space: nowrap; }
+pre { background: #f4eedb; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: "Consolas","Menlo",monospace; font-size: 14px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--border); }
+code.inline { background: #f4eedb; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Menlo",monospace; font-size: 0.92em; color: #a85200; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+.illustration { text-align: center; margin: 24px 0; }
+.illustration svg { max-width: 100%; height: auto; }
+.caption { font-size: 13px; color: var(--ink-sub); margin-top: 8px; text-align: center; }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 600px) { body { padding: 20px 14px; } h1.lecture-title { font-size: 24px; } h2 { font-size: 19px; } p, ol li, ul li { font-size: 15px; } }
+</style>
+</head>
+<body>
+<main class="book">
+
+  <span class="chapter-tag">Module 9 ・ Lecture 45 ・ 演習回</span>
+  <h1 class="lecture-title">Using multiple tools<span class="ja-sub">— 複数ツール統合で完全なエージェント基盤を作る</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① 1ツールから複数ツールへ</h2>
+    <p>#44 では <strong>1つのツール</strong>(<code class="inline">get_current_datetime</code>)だけでループを回した。実アプリでは <strong>複数のツールが協調して動く</strong> 必要がある。本章は <code class="inline">run_conversation</code> を <strong>3ツール対応</strong> に拡張する。</p>
+
+    <table class="vocab">
+      <thead><tr><th style="width: 36%;">ツール名</th><th>役割</th></tr></thead>
+      <tbody>
+        <tr><td class="code">get_current_datetime</td><td>現在の日時を取得</td></tr>
+        <tr><td class="code">add_duration_to_datetime</td><td>日付の足し算(7日後・3週間後等)</td></tr>
+        <tr><td class="code">set_reminder</td><td>リマインダー登録</td></tr>
+      </tbody>
+    </table>
+
+    <div class="card accent">
+      これで <strong>「来週木曜にリマインドして」</strong> のような自然言語依頼が、Claude の自動連鎖呼び出しで処理できる。エージェントらしいエージェントの完成。
+    </div>
+  </section>
+
+  <section>
+    <h2>② #44 からの変更点は2箇所だけ</h2>
+<pre><code># 変更1: run_tool が3ツール全部にルーティング
+def run_tool(tool_name, tool_input):
+    if tool_name == "get_current_datetime":
+        return get_current_datetime(**tool_input)
+    elif tool_name == "add_duration_to_datetime":
+        return add_duration_to_datetime(**tool_input)
+    elif tool_name == "set_reminder":
+        return set_reminder(**tool_input)
+
+# 変更2: run_conversation が3ツール全部のスキーマを渡す
+def run_conversation(messages):
+    while True:
+        response = chat(
+            messages,
+            tools=[
+                get_current_datetime_schema,
+                add_duration_to_datetime_schema,
+                set_reminder_schema,  # ← 3つ並べる
+            ],
+        )
+        # ... ループの中身は #44 と同じ</code></pre>
+
+    <div class="card mint">
+      <strong>これだけ。</strong> ループのロジックは触らずに、ツールラインナップだけ増やす。Claude が <strong>自動で連鎖呼び出し</strong> してくれる。これがモジュラー設計の威力。
+    </div>
+  </section>
+
+  <section>
+    <h2>③ 連鎖呼び出し — エージェントの正体</h2>
+
+    <div class="illustration">
+      <svg width="640" height="340" viewBox="0 0 640 340" xmlns="http://www.w3.org/2000/svg">
+        <rect x="20" y="20" width="600" height="46" rx="6" fill="#fdf0c8" stroke="#c8a93a"/>
+        <text x="40" y="46" font-family="Hiragino Sans" font-size="12" font-weight="700" fill="#6b5028">Turn 0: ユーザー入力</text>
+        <text x="200" y="46" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">「2050年1月1日の177日後に医者予約のリマインダーを」</text>
+        <text x="320" y="80" text-anchor="middle" font-size="14" fill="#a85200">↓</text>
+
+        <rect x="20" y="86" width="600" height="46" rx="6" fill="#fdebde" stroke="#d97757"/>
+        <text x="40" y="112" font-family="Hiragino Sans" font-size="12" font-weight="700" fill="#a04500">Turn 1: Claude → 道具A 要請</text>
+        <text x="220" y="112" font-family="Hiragino Sans" font-size="10" fill="#2b2b2b">add_duration_to_datetime("2050-01-01", 177, "days")</text>
+        <text x="320" y="148" text-anchor="middle" font-size="14" fill="#a85200">↓ tool_result: "Monday, June 27, 2050"</text>
+
+        <rect x="20" y="158" width="600" height="46" rx="6" fill="#d8ecd6" stroke="#67a061"/>
+        <text x="40" y="184" font-family="Hiragino Sans" font-size="12" font-weight="700" fill="#2b6e2e">Turn 2: Claude が結果を読む → 道具B 要請</text>
+        <text x="40" y="200" font-family="Hiragino Sans" font-size="10" fill="#2b2b2b">set_reminder("Doctor's appointment", "2050-06-27T00:00:00")</text>
+        <text x="320" y="220" text-anchor="middle" font-size="14" fill="#a85200">↓ tool_result: null (登録成功)</text>
+
+        <rect x="20" y="230" width="600" height="46" rx="6" fill="#cfe7ef" stroke="#4a8aa3"/>
+        <text x="40" y="256" font-family="Hiragino Sans" font-size="12" font-weight="700" fill="#2a5a73">Turn 3: Claude 最終応答</text>
+        <text x="40" y="272" font-family="Hiragino Sans" font-size="10" fill="#2b2b2b">「6月27日にリマインダー登録完了。時刻指定したかったら言って」</text>
+        <text x="320" y="292" text-anchor="middle" font-size="14" fill="#a85200">↓</text>
+
+        <rect x="20" y="296" width="600" height="38" rx="6" fill="#f6dcdc" stroke="#c66b6b"/>
+        <text x="320" y="320" text-anchor="middle" font-family="Hiragino Sans" font-size="12" font-weight="700" fill="#a04040">エージェントの自動多段推論 = 完成</text>
+      </svg>
+      <p class="caption">図① 逐次連鎖呼び出しの流れ(Turn 1 → 2 → 3)</p>
+    </div>
+
+    <div class="card accent">
+      <strong>核心:</strong> Claude が <strong>tool A の出力(June 27, 2050)を tool B の入力に渡す</strong>。プログラマが「次はこれ呼んで」と指示しなくても、Claude が自動で多段推論する。これが「<em>エージェント</em>」の正体。
+    </div>
+  </section>
+
+  <section>
+    <h2>④ 並列 vs 逐次連鎖 — 2つのパターン</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 16%;">パターン</th><th>使うとき</th><th>例</th></tr></thead>
+      <tbody>
+        <tr><td><strong>並列</strong>(#44)</td><td>独立した情報が複数欲しい</td><td>「HH:MM と SS の両方欲しい」 → 同ターン内で tool_use 2個</td></tr>
+        <tr><td><strong>逐次連鎖</strong>(#45)</td><td>tool B が tool A の出力を必要とする</td><td>「177日後にリマインド」 → 日付計算 → リマインダー</td></tr>
+      </tbody>
+    </table>
+
+    <div class="card blue">
+      両方 <strong>同じ <code class="inline">run_conversation</code> ループ</strong> で動く。Claude が状況に応じて自動で使い分ける。
+    </div>
+
+    <div class="illustration">
+      <svg width="640" height="260" viewBox="0 0 640 260" xmlns="http://www.w3.org/2000/svg">
+        <text x="160" y="28" text-anchor="middle" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#a04500">並列(#44)</text>
+        <rect x="40" y="48" width="240" height="190" rx="8" fill="#fdebde" stroke="#d97757" stroke-width="2"/>
+        <rect x="60" y="70" width="200" height="40" rx="6" fill="#fff" stroke="#dcd3c0"/>
+        <text x="160" y="94" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">Turn 1: 道具A + 道具B 同時要請</text>
+        <text x="160" y="135" text-anchor="middle" font-size="22">⏰⏰</text>
+        <rect x="60" y="155" width="200" height="40" rx="6" fill="#fff" stroke="#dcd3c0"/>
+        <text x="160" y="180" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">Turn 2: 結果統合 → 最終応答</text>
+        <text x="160" y="222" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#5a5a5a">独立情報を並列に取る</text>
+
+        <text x="480" y="28" text-anchor="middle" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#2b6e2e">逐次連鎖(#45)</text>
+        <rect x="360" y="48" width="240" height="190" rx="8" fill="#d8ecd6" stroke="#67a061" stroke-width="2"/>
+        <rect x="380" y="60" width="200" height="32" rx="6" fill="#fff" stroke="#dcd3c0"/>
+        <text x="480" y="80" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">Turn 1: 道具A 要請</text>
+        <rect x="380" y="100" width="200" height="32" rx="6" fill="#fff" stroke="#dcd3c0"/>
+        <text x="480" y="120" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">Turn 2: A結果 → 道具B 要請</text>
+        <rect x="380" y="140" width="200" height="32" rx="6" fill="#fff" stroke="#dcd3c0"/>
+        <text x="480" y="160" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">Turn 3: B結果 → 最終応答</text>
+        <text x="480" y="195" text-anchor="middle" font-size="20">📅 → 🔔</text>
+        <text x="480" y="222" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#5a5a5a">A の結果を B の入力に</text>
+      </svg>
+      <p class="caption">図② 並列(同時要請) vs 逐次連鎖(A → B)</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>⑤ 新ツール追加の4ステップ</h2>
+    <p>SkillJar 記事より、ツールを増やす標準パターン:</p>
+
+    <ol>
+      <li><strong>ツール関数本体</strong> を作る(普通の Python 関数)</li>
+      <li><strong>スキーマ</strong> を定義する(JSON で説明書)</li>
+      <li><code class="inline">run_conversation</code> の <strong>tools リスト</strong> にスキーマを追加</li>
+      <li><code class="inline">run_tool</code> に <strong>elif ケース</strong> を追加</li>
+    </ol>
+
+    <div class="card accent">
+      中央のループロジック(<code class="inline">while True</code> 本体)は <strong>絶対に触らない</strong>。これがモジュラー設計の強さ。新機能追加が「足すだけ」で済む。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑥ ハンズオン素材 — 001_tools_009.ipynb</h2>
+    <p>本章のハンズオン素材は <code class="inline">001_tools_009.ipynb</code>。008 (#44 用)とほぼ同じ構成だが、cell-4/5/6 が <strong>マルチツール対応</strong> に進化している。</p>
+
+    <table class="vocab">
+      <thead><tr><th style="width: 18%;">セル</th><th>内容</th><th style="width: 18%;">008 → 009</th></tr></thead>
+      <tbody>
+        <tr><td><code class="inline">cell-0</code></td><td>環境設定</td><td>同じ</td></tr>
+        <tr><td><code class="inline">cell-1</code></td><td>ヘルパー関数</td><td>同じ</td></tr>
+        <tr><td><code class="inline">cell-2</code></td><td>3ツール本体 + スキーマ + batch_tool_schema</td><td>同じ</td></tr>
+        <tr><td><code class="inline">cell-3</code></td><td>get_current_datetime + ToolParam</td><td>同じ</td></tr>
+        <tr><td><code class="inline">cell-4</code></td><td><strong>run_tool が3ツール全部対応</strong></td><td>進化(elif追加)</td></tr>
+        <tr><td><code class="inline">cell-5</code></td><td><strong>run_conversation が3スキーマ全部渡す</strong></td><td>進化(tools配列に追加)</td></tr>
+        <tr><td><code class="inline">cell-6</code></td><td><strong>逐次連鎖の実演</strong>(177日後リマインダー)</td><td>新しい実演</td></tr>
+      </tbody>
+    </table>
+
+    <div class="card mint">
+      cell-6 を実行すると、Claude が <code class="inline">add_duration_to_datetime</code> → <code class="inline">set_reminder</code> と <strong>連鎖呼び出し</strong> する様子が見える。エージェント挙動の決定的瞬間。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑦ 実演 — 動かしてみる(cell-6)</h2>
+<pre><code>messages = []
+add_user_message(
+    messages,
+    "Set a reminder for my doctors appointment. Its 177 days after Jan 1st, 2050."
+)
+run_conversation(messages)</code></pre>
+
+    <p>実行結果(抜粋):</p>
+<pre><code>I'll set a reminder for your doctor's appointment that's 177 days after
+January 1st, 2050. Let me calculate that date first.
+
+[Turn 1] tool_use: add_duration_to_datetime("2050-01-01", 177, "days")
+[Turn 1] tool_result: "Monday, June 27, 2050 12:00:00 AM"
+
+Now I'll set the reminder for your doctor's appointment on June 27, 2050:
+
+[Turn 2] tool_use: set_reminder(content="Doctor's appointment",
+                                timestamp="2050-06-27T00:00:00")
+[Turn 2] tool_result: null
+[Turn 2] 副作用: ----
+                  Setting the following reminder for 2050-06-27T00:00:00:
+                  Doctor's appointment
+                  ----
+
+[Turn 3] 最終応答:
+Your reminder has been set successfully! You will be reminded of your
+doctor's appointment on Monday, June 27, 2050. If you need to set a
+specific time for this appointment rather than midnight (12:00 AM),
+please let me know and I can adjust the reminder.</code></pre>
+
+    <div class="card blue">
+      <strong>注目ポイント:</strong>
+      <ul>
+        <li>Claude が <strong>2つのツールを順番に</strong> 呼ぶ(並列ではなく連鎖)</li>
+        <li>1つ目の結果(June 27, 2050)を <strong>2つ目の引数</strong> として使う</li>
+        <li>最後に Claude が気を利かせて「<em>時刻指定したかったら言って</em>」と提案 → エージェントらしい配慮</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>⑧ オリジナル演習問題 (4問・実演用)</h2>
+
+    <div class="exercise-box">
+      <h3>問題1: 別の時間表現で試す</h3>
+      <div class="problem-section">
+        <strong>課題:</strong> 「3週間後」「半年後」「来年の同じ日」のように、別の時間表現でリマインダーをセットさせてください。Claude が <code class="inline">unit</code> パラメータ("weeks" / "months" / "years")を使い分けるか観察。
+      </div>
+      <div class="hint-section">
+        <strong>試す質問例:</strong><br>
+        ・「3週間後に提出物のリマインダーを」<br>
+        ・「半年後に健康診断のリマインダーを」<br>
+        ・「来年の同じ日に契約更新のリマインダーを」
+      </div>
+      <details>
+        <summary>観察ポイント</summary>
+        <ul>
+          <li><code class="inline">unit="weeks"</code> / <code class="inline">"months"</code> / <code class="inline">"years"</code> どれを選ぶか</li>
+          <li><code class="inline">duration</code> の数値(3 / 6 / 1)の選び方</li>
+          <li>各 unit で正しく日付が計算されるか(月またぎ・うるう年等)</li>
+        </ul>
+      </details>
+    </div>
+
+    <div class="exercise-box">
+      <h3>問題2: 別の事象でリマインダー</h3>
+      <div class="problem-section">
+        <strong>課題:</strong> 「来月の旅行の準備」「3日後の重要会議」など、別の文脈でリマインダーを試す。Claude の <code class="inline">content</code> 引数の選び方を観察。
+      </div>
+      <div class="hint-section">
+        <strong>試す質問例:</strong><br>
+        ・「来週金曜の朝、健康診断のリマインダーお願い」<br>
+        ・「2週間後の打ち合わせ準備を思い出させて」<br>
+        ・「3日後に薬の処方箋更新のリマインダーを」
+      </div>
+      <details>
+        <summary>観察ポイント</summary>
+        <ul>
+          <li>Claude が ユーザー文から <code class="inline">content</code> を抽出する精度</li>
+          <li>「朝」「夕方」等の時刻指定があった場合の対応(timestamp の時刻部分)</li>
+          <li>曖昧な表現「来週」「2週間後」をどう解釈するか</li>
+        </ul>
+      </details>
+    </div>
+
+    <div class="exercise-box">
+      <h3>問題3: 並列 vs 逐次連鎖の比較</h3>
+      <div class="problem-section">
+        <strong>課題:</strong> 両方のスタイルを比較する質問を投げる。
+        <ul>
+          <li><strong>並列:</strong>「今日が何日と何曜日か両方知りたい」 → 同ターンで複数 tool_use</li>
+          <li><strong>逐次:</strong>「来週月曜に会議のリマインダーを」 → 連鎖呼び出し</li>
+        </ul>
+      </div>
+      <div class="hint-section">
+        <strong>ヒント:</strong> ループ回数を可視化(#44 演習問題1の改造)してから2種類の質問を投げると、明確に違いが見える。
+      </div>
+      <details>
+        <summary>期待される観察</summary>
+        <ul>
+          <li>並列: Turn 1 の response.content に tool_use ブロックが <strong>2個</strong>(同じターンで両方要請)</li>
+          <li>逐次: Turn 1 で1個 → Turn 2 で1個(別ターンで順番に要請)</li>
+          <li>Claude は <strong>自動で判断</strong>。プログラム側で並列/逐次を切り替える必要なし</li>
+        </ul>
+      </details>
+    </div>
+
+    <div class="exercise-box">
+      <h3>問題4: batch_tool を試す(発展)</h3>
+      <div class="problem-section">
+        <strong>課題:</strong> cell-2 に <code class="inline">batch_tool_schema</code> が定義されているが、ipynb では使われていない。これも <code class="inline">run_tool</code> / <code class="inline">tools</code> リストに追加して、Claude が <code class="inline">batch_tool</code> を選ぶか観察。
+      </div>
+      <div class="hint-section">
+        <strong>ヒント:</strong> <code class="inline">batch_tool</code> は「複数 tool 呼び出しを1つにまとめる」用のメタツール。<code class="inline">invocations</code> パラメータに複数の tool 呼び出し情報を配列で渡す。実装する場合は <code class="inline">run_tool</code> に <code class="inline">batch_tool</code> ケース追加 + 各 invocation を再帰的に <code class="inline">run_tool</code> で実行する形になる。
+      </div>
+      <details>
+        <summary>発展ポイント</summary>
+        <ul>
+          <li>batch_tool は <strong>並列性をより明示的に</strong> 制御するパターン</li>
+          <li>ネストした構造のため Claude が選びにくい(普通は並列 tool_use の方が選ばれる)</li>
+          <li>大量の似たツール呼び出しを1メッセージに圧縮したい時に有効</li>
+        </ul>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2>⑨ 中学生向けに例えると</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 44%;">学校の例え</th><th>tool use の対応</th></tr></thead>
+      <tbody>
+        <tr><td>#44 = 電卓1つだけ持った Claude</td><td>1ツールのみ</td></tr>
+        <tr><td>#45 = 電卓・カレンダー・付箋メモ帳の3つ持った Claude</td><td>3ツール統合</td></tr>
+        <tr><td>「カレンダーで6月27日を確認 → 付箋メモに『医者予約』」順番作業</td><td>逐次連鎖</td></tr>
+        <tr><td>「時刻と日付、両方教えて」と同時に頼む</td><td>並列要請</td></tr>
+        <tr><td>その場で「どの道具を、どの順番で使うか」を決める</td><td>Claude の自動判断(エージェント)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="card accent">
+      <strong>核心:</strong> プログラマがいちいち「次はこれ呼んで」と指示しなくていい。Claude が <strong>自分で計画して、自分で道具を選んで、自分で順番に呼ぶ</strong>。これが <em>エージェント</em>。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑩ モジュール9 → 次への橋渡し</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 12%;">#</th><th style="width: 32%;">章</th><th>役割</th></tr></thead>
+      <tbody>
+        <tr><td>37-44</td><td>tool use 基礎</td><td>単一ツールでのループ実装</td></tr>
+        <tr><td><strong>45</strong></td><td><strong>Using multiple tools</strong></td><td><strong>複数ツールが連携する完全エージェント基盤</strong> ← 今ここ</td></tr>
+        <tr><td>46+</td><td>アプリ統合・運用</td><td>実プロジェクト構築・エラーハンドリング等</td></tr>
+      </tbody>
+    </table>
+
+    <div class="card mint">
+      45 で <strong>エージェント基盤が完成</strong>。あとはユースケースに合わせて道具を増やすだけ(4ステップで)。検索ツール・データベース・メール送信・ファイル操作 — 何でも繋げられる。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑪ キーワード一覧</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 30%;">英語</th><th style="width: 28%;">読み方</th><th>意味</th></tr></thead>
+      <tbody>
+        <tr><td class="code">multiple tools</td><td>マルチプル ツールズ</td><td>複数のツール</td></tr>
+        <tr><td class="code">chained tool calls</td><td>チェインド ツール コールズ</td><td>連鎖呼び出し(A→B→C)</td></tr>
+        <tr><td class="code">sequential</td><td>シーケンシャル</td><td>逐次の・順番に</td></tr>
+        <tr><td class="code">parallel</td><td>パラレル</td><td>並列の・同時に</td></tr>
+        <tr><td class="code">modular design</td><td>モジュラー デザイン</td><td>部品ごとに独立した設計</td></tr>
+        <tr><td class="code">agent</td><td>エージェント</td><td>自律的に道具を使うAI</td></tr>
+        <tr><td class="code">batch_tool</td><td>バッチ ツール</td><td>複数ツール呼び出しをまとめるメタツール</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑫ 理解度チェック</h2>
+    <details>
+      <summary>Q1. #44 から #45 で変更する箇所は何箇所?</summary>
+      <p><strong>2箇所だけ</strong>:<br>
+        ① <code class="inline">run_tool</code> に elif を追加<br>
+        ② <code class="inline">run_conversation</code> の <code class="inline">tools=</code> リストにスキーマを追加<br>
+        中央の <code class="inline">while True</code> ループは一切触らない。これがモジュラー設計の強さ。
+      </p>
+    </details>
+    <details>
+      <summary>Q2. 並列と逐次連鎖の違いは?</summary>
+      <p>
+        <strong>並列</strong>: 独立した情報が複数欲しい時。Claude が同ターン内で <code class="inline">tool_use</code> ブロックを2個以上返す。<br>
+        <strong>逐次連鎖</strong>: tool B の入力が tool A の出力に依存する時。Claude が Turn 1 で A を呼び、結果を受けて Turn 2 で B を呼ぶ。<br>
+        Claude が <strong>自動で使い分ける</strong>。プログラマは切り替えコードを書かなくていい。
+      </p>
+    </details>
+    <details>
+      <summary>Q3. ipynb cell-6 の実演で、ループは何回回る?</summary>
+      <p><strong>3回</strong>:<br>
+        Turn 1: Claude が <code class="inline">add_duration_to_datetime</code> を要請 → "Monday, June 27, 2050"<br>
+        Turn 2: Claude が結果を読んで <code class="inline">set_reminder</code> を要請 → null(登録成功)<br>
+        Turn 3: Claude が最終応答(<code class="inline">stop_reason="end_turn"</code>)→ ループ脱出
+      </p>
+    </details>
+    <details>
+      <summary>Q4. 新ツールを4つ目に追加するときの4ステップは?</summary>
+      <p>
+        ① ツール関数本体を作る<br>
+        ② スキーマを定義<br>
+        ③ <code class="inline">run_conversation</code> の <code class="inline">tools=</code> リストにスキーマ追加<br>
+        ④ <code class="inline">run_tool</code> に elif ケース追加<br>
+        ループ本体は触らない。これが「足すだけで増える」モジュラー設計。
+      </p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑬ 自分メモ</h2>
+    <div class="memo-area">演習やってみての気づきや、自分のプロジェクトに応用するアイディアを書き込もう…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 45: Using multiple tools<br>
+    元レクチャー: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287749">SkillJar — Using multiple tools</a><br>
+    ハンズオン: <code>001_tools_009.ipynb</code> cell-4, cell-5, cell-6<br>
+    前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_44_textbook.html">Lecture 44</a> ・ <strong>モジュール9「Tool use」完全完了</strong>
+  </footer>
+
+</main>
+</body>
+</html>
