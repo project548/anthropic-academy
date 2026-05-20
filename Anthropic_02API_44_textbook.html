@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 44: Implementing multiple turns — ループ実装で Tool use 完成 | Anthropic Academy 教科書</title>
+<style>
+:root {
+  --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a;
+  --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028;
+  --soft-blue: #cfe7ef; --soft-yellow: #fdf0c8; --soft-mint: #d8ecd6; --soft-pink: #f6dcdc;
+  --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04);
+  --exercise-bg: #fff9ec; --exercise-border: #e6c97a;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+.card.blue { background: var(--soft-blue); border-left: 4px solid #4a8aa3; }
+.exercise-box { background: var(--exercise-bg); border: 2px solid var(--exercise-border); border-radius: var(--radius); padding: 20px 24px; margin: 18px 0; }
+.exercise-box h3 { color: #8a6a1c; margin-bottom: 12px; font-size: 17px; }
+.problem-section { background: #fff; border-left: 4px solid #c8a93a; padding: 12px 16px; border-radius: 6px; margin: 10px 0; }
+.hint-section { background: #f4e9c4; padding: 10px 14px; border-radius: 6px; margin-top: 10px; font-size: 14px; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+table.vocab td.code { font-family: "Consolas","Menlo",monospace; color: var(--accent); font-weight: 700; white-space: nowrap; }
+pre { background: #f4eedb; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: "Consolas","Menlo",monospace; font-size: 14px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--border); }
+code.inline { background: #f4eedb; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Menlo",monospace; font-size: 0.92em; color: #a85200; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+.illustration { text-align: center; margin: 24px 0; }
+.illustration svg { max-width: 100%; height: auto; }
+.caption { font-size: 13px; color: var(--ink-sub); margin-top: 8px; text-align: center; }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 600px) { body { padding: 20px 14px; } h1.lecture-title { font-size: 24px; } h2 { font-size: 19px; } p, ol li, ul li { font-size: 15px; } }
+</style>
+</head>
+<body>
+<main class="book">
+
+  <span class="chapter-tag">Module 9 ・ Lecture 44 ・ 演習回</span>
+  <h1 class="lecture-title">Implementing multiple turns<span class="ja-sub">— ループ実装で Tool use の完全フローを完成させる</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① モジュール9 最終章 — ループで全部つなげる</h2>
+    <p>これまでに <strong>関数(#39)・スキーマ(#40)・マルチブロック(#41)・tool_result(#42)・ヘルパー更新(#43)</strong> が揃った。本章は最後の総仕上げ: <strong>ループ実装</strong>。</p>
+
+    <div class="card accent">
+      <strong>ゴール:</strong> 「来週木曜にリマインドして」「HH:MM と SS の両方欲しい」のような <em>複数ステップ推論</em> を、Claude が <strong>自動で何ターンも tool を呼んで</strong> 解決できるシステムを作る。
+    </div>
+  </section>
+
+  <section>
+    <h2>② run_tools — 複数 tool_use を変換</h2>
+<pre><code>def run_tools(message):
+    tool_requests = [b for b in message.content if b.type == "tool_use"]
+    tool_result_blocks = []
+
+    for tool_request in tool_requests:
+        try:
+            tool_output = run_tool(tool_request.name, tool_request.input)
+            tool_result_block = {
+                "type": "tool_result",
+                "tool_use_id": tool_request.id,
+                "content": json.dumps(tool_output),
+                "is_error": False
+            }
+        except Exception as e:
+            tool_result_block = {
+                "type": "tool_result",
+                "tool_use_id": tool_request.id,
+                "content": f"Error: {e}",
+                "is_error": True
+            }
+        tool_result_blocks.append(tool_result_block)
+
+    return tool_result_blocks</code></pre>
+
+    <p>ポイント:</p>
+    <ul>
+      <li><code class="inline">message.content</code> から <code class="inline">tool_use</code> ブロックだけを抜き出す</li>
+      <li>各々を try/except で実行 — 成功時は結果、失敗時はエラー文を block 化</li>
+      <li><strong>失敗時も tool_result を返す</strong>(返さないと Claude が困惑して固まる)</li>
+      <li>戻り値は <strong>複数 tool_result の配列</strong></li>
+    </ul>
+
+    <div class="card mint">
+      <strong>is_error=True 設計の妙:</strong> 「失敗を Claude に伝えて、別の手を考えてもらう」発想。沈黙より失敗共有のほうが安全。
+    </div>
+  </section>
+
+  <section>
+    <h2>③ run_tool — スケーラブルなルーティング</h2>
+<pre><code>def run_tool(tool_name, tool_input):
+    if tool_name == "get_current_datetime":
+        return get_current_datetime(**tool_input)
+    elif tool_name == "add_duration_to_datetime":
+        return add_duration_to_datetime(**tool_input)
+    elif tool_name == "set_reminder":
+        return set_reminder(**tool_input)
+    # ツールが増えたらここに elif を追加</code></pre>
+
+    <p>シンプルな if/elif でツール名を関数にマップ。新ツール追加が楽。dict や registry パターンで書いてもOK。</p>
+  </section>
+
+  <section>
+    <h2>④ run_conversation — 核心のループ</h2>
+<pre><code>def run_conversation(messages):
+    while True:
+        response = chat(messages, tools=[get_current_datetime_schema])
+        add_assistant_message(messages, response)
+        print(text_from_message(response))
+
+        if response.stop_reason != "tool_use":
+            break  # ← Claude がもう tool 要らないと判断したら抜ける
+
+        tool_results = run_tools(response)
+        add_user_message(messages, tool_results)
+
+    return messages</code></pre>
+
+    <div class="illustration">
+      <svg width="640" height="320" viewBox="0 0 640 320" xmlns="http://www.w3.org/2000/svg">
+        <rect x="20" y="20" width="600" height="44" rx="6" fill="#fdf0c8" stroke="#c8a93a"/>
+        <text x="40" y="46" font-family="Hiragino Sans" font-size="12" font-weight="700" fill="#6b5028">① Claude に問い合わせ</text>
+        <text x="200" y="46" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">response = chat(messages, tools=[...])</text>
+        <text x="320" y="78" text-anchor="middle" font-size="14" fill="#a85200">↓</text>
+
+        <rect x="20" y="84" width="600" height="44" rx="6" fill="#fdebde" stroke="#d97757"/>
+        <text x="40" y="110" font-family="Hiragino Sans" font-size="12" font-weight="700" fill="#a04500">② 応答を履歴に追加</text>
+        <text x="200" y="110" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">add_assistant_message(messages, response)</text>
+        <text x="320" y="142" text-anchor="middle" font-size="14" fill="#a85200">↓</text>
+
+        <rect x="20" y="148" width="600" height="44" rx="6" fill="#cfe7ef" stroke="#4a8aa3"/>
+        <text x="40" y="174" font-family="Hiragino Sans" font-size="12" font-weight="700" fill="#2a5a73">③ stop_reason チェック</text>
+        <text x="200" y="174" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">"tool_use" 以外 → break (終了)</text>
+        <text x="320" y="206" text-anchor="middle" font-size="14" fill="#a85200">↓ "tool_use" のとき</text>
+
+        <rect x="20" y="212" width="600" height="44" rx="6" fill="#d8ecd6" stroke="#67a061"/>
+        <text x="40" y="238" font-family="Hiragino Sans" font-size="12" font-weight="700" fill="#2b6e2e">④ tool を実行</text>
+        <text x="200" y="238" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">tool_results = run_tools(response)</text>
+        <text x="320" y="270" text-anchor="middle" font-size="14" fill="#a85200">↓</text>
+
+        <rect x="20" y="276" width="600" height="44" rx="6" fill="#f6dcdc" stroke="#c66b6b"/>
+        <text x="40" y="302" font-family="Hiragino Sans" font-size="12" font-weight="700" fill="#a04040">⑤ 結果を履歴追加 → ループ先頭へ</text>
+        <text x="280" y="302" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">add_user_message(messages, tool_results)</text>
+      </svg>
+      <p class="caption">図① run_conversation の5ステップループ</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>⑤ stop_reason の意味と使い方</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 28%;">stop_reason</th><th>意味</th><th style="width: 20%;">ループ</th></tr></thead>
+      <tbody>
+        <tr><td class="code">"end_turn"</td><td>Claude が自然に終わった(最終応答)</td><td>break(終了)</td></tr>
+        <tr><td class="code">"max_tokens"</td><td>トークン上限に達した</td><td>break(終了)</td></tr>
+        <tr><td class="code">"tool_use"</td><td>tool を呼びたいので止めた</td><td>継続</td></tr>
+        <tr><td class="code">"stop_sequence"</td><td>指定 stop sequence にヒット</td><td>break(終了)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="card accent">
+      <strong>ループ継続の条件は <code class="inline">stop_reason == "tool_use"</code> のみ</strong>。それ以外は break して終了。シンプルだけど強力な設計。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑥ 実演 — 動かしてみる(cell-6)</h2>
+<pre><code>messages = []
+add_user_message(messages,
+    "What is the current time in HH:MM format? Also, what is the current time in SS format?"
+)
+run_conversation(messages)</code></pre>
+
+    <p>実行結果(抜粋):</p>
+<pre><code>I can help you get the current time in the requested formats.
+Let me fetch that for you.
+[Turn 1] Claude が "%H:%M" で tool_use → tool_result "11:16"
+[Turn 2] Claude が "%S" で tool_use → tool_result "30"
+[Turn 3] (最終応答)
+The current time in HH:MM format is 11:16.
+The current time in SS format (seconds only) is 30.</code></pre>
+
+    <p><strong>ポイント:</strong> 1つの質問に2つの情報が必要なとき、Claude は <strong>自動的に2回 tool_use</strong> をループ。</p>
+    <ul>
+      <li>1ターン目: Claude が <code class="inline">%H:%M</code> で要請 → サーバーが "11:16" を返す</li>
+      <li>2ターン目: Claude が <code class="inline">%S</code> で要請 → サーバーが "30" を返す</li>
+      <li>3ターン目: Claude が両方を組み合わせて最終応答(stop_reason="end_turn")</li>
+    </ul>
+
+    <div class="card blue">
+      これが <strong>multi-turn tool conversation</strong> の本質。「Claude が必要なだけ道具を借り、最後にまとめて答える」自動推論システム。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑦ オリジナル演習問題 (3問・実演用)</h2>
+
+    <div class="exercise-box">
+      <h3>問題1: ループ回数を可視化する</h3>
+      <div class="problem-section">
+        <strong>課題:</strong> <code class="inline">run_conversation</code> を改造して、ループが何回回ったかを表示してください。
+      </div>
+      <div class="hint-section">
+        <strong>ヒント:</strong> <code class="inline">turn = 0</code> を初期化、ループ開始時に <code class="inline">turn += 1</code>、break 時に合計を print。
+      </div>
+      <details>
+        <summary>解答例を見る</summary>
+<pre><code>def run_conversation(messages):
+    turn = 0
+    while True:
+        turn += 1
+        print(f"[Turn {turn}]")
+        response = chat(messages, tools=[get_current_datetime_schema])
+        add_assistant_message(messages, response)
+        print(text_from_message(response))
+        if response.stop_reason != "tool_use":
+            print(f"[完了 - 合計 {turn} ターン]")
+            break
+        tool_results = run_tools(response)
+        add_user_message(messages, tool_results)
+    return messages</code></pre>
+      </details>
+    </div>
+
+    <div class="exercise-box">
+      <h3>問題2: 別のツールを追加</h3>
+      <div class="problem-section">
+        <strong>課題:</strong> <code class="inline">set_reminder</code> ツールも <code class="inline">run_tool</code> に追加して、「明日リマインドして」と頼むと set_reminder が呼ばれるようにしてください。
+      </div>
+      <div class="hint-section">
+        <strong>ヒント:</strong> <code class="inline">run_tool</code> に <code class="inline">elif</code> 追加 + <code class="inline">chat</code> の <code class="inline">tools=</code> 引数にスキーマを追加。
+      </div>
+      <details>
+        <summary>解答例を見る</summary>
+<pre><code>def run_tool(tool_name, tool_input):
+    if tool_name == "get_current_datetime":
+        return get_current_datetime(**tool_input)
+    elif tool_name == "add_duration_to_datetime":
+        return add_duration_to_datetime(**tool_input)
+    elif tool_name == "set_reminder":
+        return set_reminder(**tool_input)
+
+# run_conversation 内の chat 呼び出しを修正
+response = chat(messages, tools=[
+    get_current_datetime_schema,
+    add_duration_to_datetime_schema,
+    set_reminder_schema
+])
+
+# 試す
+add_user_message(messages, "明日の朝9時に『水を飲む』とリマインダーをセットして")
+run_conversation(messages)
+# → Claude が get_current_datetime → add_duration → set_reminder の3連鎖呼び出し</code></pre>
+      </details>
+    </div>
+
+    <div class="exercise-box">
+      <h3>問題3: エラーケースを観察</h3>
+      <div class="problem-section">
+        <strong>課題:</strong> Claude にあえて空文字書式を要求させて、<code class="inline">ValueError</code> が発生 → <code class="inline">is_error: True</code> の tool_result が返る挙動を観察。Claude がエラーから学習して再試行するか確認してください。
+      </div>
+      <div class="hint-section">
+        <strong>ヒント:</strong> 質問例「現在の時刻を、書式指定 '' (空文字) で返してください」を投げてみる。<code class="inline">run_tools</code> の try/except が捕捉して <code class="inline">"Error: date_format cannot be empty"</code> が tool_result に入る。Claude がそれを読んで別の書式で再試行するか観察。
+      </div>
+      <details>
+        <summary>観察ポイント</summary>
+        <ul>
+          <li>Claude は <code class="inline">is_error: True</code> を見て「失敗した」と認識する</li>
+          <li>多くの場合、Claude は自分で別の書式(例 "%Y-%m-%d")を選んで再要請する</li>
+          <li><strong>エラー文が具体的</strong>(<code class="inline">"date_format cannot be empty"</code>)なほど、Claude の自己修復が成功しやすい</li>
+          <li>これが #39 で学んだ「親切なエラーメッセージが大事」の実証実験</li>
+        </ul>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2>⑧ ハンズオン環境のセットアップ</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 28%;">項目</th><th>内容</th></tr></thead>
+      <tbody>
+        <tr><td>ノートブック</td><td><code class="inline">C:/Users/adgad/Downloads/Anthropic学習/001_tools_008.ipynb</code></td></tr>
+        <tr><td>必要パッケージ</td><td><code class="inline">pip install anthropic python-dotenv</code></td></tr>
+        <tr><td>API キー</td><td><code class="inline">.env</code> に <code class="inline">ANTHROPIC_API_KEY=sk-ant-...</code> を設定</td></tr>
+        <tr><td>モデル</td><td><code class="inline">claude-haiku-4-5</code>(Haiku は安価でツール用途に十分)</td></tr>
+        <tr><td>1回のコスト目安</td><td>数円〜十数円(短いプロンプトなら)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="card mint">
+      <strong>実行手順:</strong>
+      <ol>
+        <li>VS Code or Jupyter で <code class="inline">001_tools_008.ipynb</code> を開く</li>
+        <li>cell-0 から cell-6 まで順に Shift+Enter で実行</li>
+        <li>cell-6 の出力で「2回 tool_use ループ」が起きているか確認</li>
+        <li>余裕があれば演習問題1〜3 に挑戦</li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <h2>⑨ モジュール9 完了 — 学んだことの全体像</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 8%;">#</th><th style="width: 32%;">章</th><th>役割</th></tr></thead>
+      <tbody>
+        <tr><td>37</td><td>Introducing tool use</td><td>概念導入</td></tr>
+        <tr><td>38</td><td>Project overview</td><td>リマインダーアプリで学ぶ</td></tr>
+        <tr><td>39</td><td>Tool functions</td><td>道具本体(Python 関数)</td></tr>
+        <tr><td>40</td><td>Tool schemas</td><td>取説(JSON スキーマ)</td></tr>
+        <tr><td>41</td><td>Handling message blocks</td><td>マルチブロック処理</td></tr>
+        <tr><td>42</td><td>Sending tool results</td><td>結果返送</td></tr>
+        <tr><td>43</td><td>Multi-turn conversations</td><td>ヘルパー更新</td></tr>
+        <tr><td>44</td><td>Implementing multiple turns</td><td><strong>ループ完成・自動推論実現</strong></td></tr>
+      </tbody>
+    </table>
+
+    <div class="card accent">
+      <strong>到達点:</strong> Claude が <em>自分で道具を選び・複数回呼び出し・結果を統合して最終応答</em> する完全自動エージェント基盤が完成。これがアプリ開発の出発点になる。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑩ 中学生向けに例えると</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 44%;">学校の例え</th><th>tool use ループの対応</th></tr></thead>
+      <tbody>
+        <tr><td>「Claude に質問 → 道具借りる? → 借りるなら貸す → また確認」のおかわり付きキャッチボール</td><td><code class="inline">run_conversation</code> ループ</td></tr>
+        <tr><td>「もう道具要らない、答えます」と言ったらキャッチボール終了</td><td><code class="inline">stop_reason != "tool_use"</code> で break</td></tr>
+        <tr><td>「電卓と物差し、両方借りていい?」と一気に頼む</td><td>複数 tool_use 並列要請</td></tr>
+        <tr><td>「電卓壊れてました」を伝えれば、別の手を考える</td><td><code class="inline">is_error: True</code> で Claude が自己修復</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑪ キーワード一覧</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 30%;">英語</th><th style="width: 28%;">読み方</th><th>意味</th></tr></thead>
+      <tbody>
+        <tr><td class="code">run_conversation</td><td>ラン カンバセーション</td><td>多ターン会話ループ関数</td></tr>
+        <tr><td class="code">run_tools</td><td>ラン ツールズ</td><td>複数 tool_use → tool_result 変換</td></tr>
+        <tr><td class="code">stop_reason</td><td>ストップ リーズン</td><td>応答停止の理由</td></tr>
+        <tr><td class="code">end_turn</td><td>エンド ターン</td><td>自然な応答終了</td></tr>
+        <tr><td class="code">try/except</td><td>トライ エクセプト</td><td>Python のエラー処理構文</td></tr>
+        <tr><td class="code">while True loop</td><td>ホワイル トゥルー ループ</td><td>break するまで回る無限ループ</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑫ 理解度チェック</h2>
+    <details>
+      <summary>Q1. <code class="inline">run_conversation</code> ループはいつ抜ける?</summary>
+      <p><code class="inline">response.stop_reason != "tool_use"</code> のとき。具体的には <code class="inline">"end_turn"</code>(自然終了)・<code class="inline">"max_tokens"</code>(上限)・<code class="inline">"stop_sequence"</code>(指定文字ヒット)のいずれか。Claude が「もう道具要らない」と判断したサイン。</p>
+    </details>
+    <details>
+      <summary>Q2. なぜ try/except で囲むの?</summary>
+      <p>ツール関数が失敗(ValueError 等)しても <strong>Claude に結果を返さなければループが止まる</strong> から。失敗時は <code class="inline">is_error: True</code> + エラー文を tool_result に入れることで、Claude が読んで自己修復できる。</p>
+    </details>
+    <details>
+      <summary>Q3. 1回の質問で Claude が複数の tool を呼ぶ典型例は?</summary>
+      <p>「HH:MM と SS の両方欲しい」のように、<strong>1つの質問に複数の情報が必要</strong> な場合。Claude は1ターン目で1個目を要請 → 結果受け取り → 2ターン目で2個目を要請 → 結果受け取り → 3ターン目で統合応答、というループを自動でこなす。</p>
+    </details>
+    <details>
+      <summary>Q4. 新ツールを追加するときどこをいじる?</summary>
+      <p>3箇所:<br>
+        ① ツール関数本体を定義<br>
+        ② スキーマを定義<br>
+        ③ <code class="inline">run_tool</code> に elif 追加 + <code class="inline">chat</code> の <code class="inline">tools=</code> リストにスキーマ追加
+      <br>core conversation ロジックには触らない(=スケーラブル設計の効果)。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑬ 自分メモ</h2>
+    <div class="memo-area">演習やってみての気づきや、自分のプロジェクトに応用するアイディアを書き込もう…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 44: Implementing multiple turns<br>
+    元レクチャー: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287758">SkillJar — Implementing multiple turns</a><br>
+    ハンズオン: <code>001_tools_008.ipynb</code> cell-4, cell-5, cell-6<br>
+    前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_43_textbook.html">Lecture 43</a> ・ <strong>モジュール9「Tool use」完了</strong>
+  </footer>
+
+</main>
+</body>
+</html>
