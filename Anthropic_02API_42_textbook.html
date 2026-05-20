@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 42: Sending tool results — 結果を返してワークフロー完結 | Anthropic Academy 教科書</title>
+<style>
+:root {
+  --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a;
+  --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028;
+  --soft-blue: #cfe7ef; --soft-yellow: #fdf0c8; --soft-mint: #d8ecd6; --soft-pink: #f6dcdc;
+  --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+.card.blue { background: var(--soft-blue); border-left: 4px solid #4a8aa3; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+table.vocab td.code { font-family: "Consolas","Menlo",monospace; color: var(--accent); font-weight: 700; white-space: nowrap; }
+pre { background: #f4eedb; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: "Consolas","Menlo",monospace; font-size: 14px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--border); }
+code.inline { background: #f4eedb; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Menlo",monospace; font-size: 0.92em; color: #a85200; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+.illustration { text-align: center; margin: 24px 0; }
+.illustration svg { max-width: 100%; height: auto; }
+.caption { font-size: 13px; color: var(--ink-sub); margin-top: 8px; text-align: center; }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 600px) { body { padding: 20px 14px; } h1.lecture-title { font-size: 24px; } h2 { font-size: 19px; } p, ol li, ul li { font-size: 15px; } }
+</style>
+</head>
+<body>
+<main class="book">
+
+  <span class="chapter-tag">Module 9 ・ Lecture 42</span>
+  <h1 class="lecture-title">Sending tool results<span class="ja-sub">— tool 実行結果を Claude に返してワークフロー完結</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① tool_result を返す — 最後の一手</h2>
+    <p>#41 で受け取った <code class="inline">tool_use</code> ブロックの中身に従って関数を実行し、その <strong>結果を Claude に返す</strong> ことで、tool use の完全な往復が成立する。</p>
+
+    <div class="card accent">
+      これで「Claude が道具を要請 → サーバーが実行 → Claude が結果を読んで自然言語応答」の <strong>完全フロー</strong> が完成する。
+    </div>
+  </section>
+
+  <section>
+    <h2>② 関数を実行する</h2>
+<pre><code># Claude が要求した引数(辞書)
+args = response.content[1].input
+# → { "date_format": "%H:%M:%S" }
+
+# Python の ** で辞書を展開してキーワード引数として渡す
+result = get_current_datetime(**args)
+# → "15:04:22"</code></pre>
+
+    <p><code class="inline">**</code> は Python の <strong>辞書アンパック</strong>。<code class="inline">{"a": 1, "b": 2}</code> を <code class="inline">a=1, b=2</code> として展開する。Claude が JSON で渡してきた引数をそのまま関数に渡せる。</p>
+  </section>
+
+  <section>
+    <h2>③ tool_result ブロックの3項目</h2>
+
+    <table class="vocab">
+      <thead><tr><th style="width: 22%;">キー</th><th style="width: 38%;">内容</th><th>例</th></tr></thead>
+      <tbody>
+        <tr><td class="code">tool_use_id</td><td>対応する tool_use ブロックの <code class="inline">id</code> を必ず一致させる</td><td><code class="inline">"toolu_01ABC..."</code></td></tr>
+        <tr><td class="code">content</td><td>関数の戻り値を文字列にして入れる</td><td><code class="inline">"15:04:22"</code></td></tr>
+        <tr><td class="code">is_error</td><td>エラー時 <code class="inline">True</code>(成功時 <code class="inline">False</code>)</td><td><code class="inline">False</code></td></tr>
+      </tbody>
+    </table>
+
+    <div class="card accent">
+      <strong>tool_use_id の照合が最重要</strong>。複数 tool 並列要請のとき、ID が一致していないと Claude は「どの結果がどの要請に対応するか」分からなくなる。
+    </div>
+  </section>
+
+  <section>
+    <h2>④ 続きのリクエストを組み立てる</h2>
+<pre><code>messages.append({
+    "role": "user",  # ← tool_result は user メッセージとして送る
+    "content": [{
+        "type": "tool_result",
+        "tool_use_id": response.content[1].id,
+        "content": "15:04:22",
+        "is_error": False
+    }]
+})</code></pre>
+
+    <ul>
+      <li><code class="inline">role</code> は <strong>"user"</strong>(assistant ではない・ここ要注意)</li>
+      <li><code class="inline">content</code> は <strong>配列</strong>(複数 tool_result を入れられる)</li>
+      <li>元の user / assistant メッセージはそのまま残し、append する</li>
+    </ul>
+
+    <div class="card mint">
+      <strong>なぜ role が user?</strong> Claude の視点では「ツール実行結果は、ユーザー側(サーバー側)から渡される情報」だから。Claude 自身は道具を持っていないので、結果は外部(=user 側)から来る扱い。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑤ 最終リクエストでも tools を渡す</h2>
+<pre><code>client.messages.create(
+    model=model,
+    max_tokens=1000,
+    messages=messages,
+    tools=[get_current_datetime_schema]  # ← 二度目の呼び出しでも必須
+)</code></pre>
+
+    <div class="card accent">
+      <strong>Why?</strong> 会話履歴に <code class="inline">tool_use</code> / <code class="inline">tool_result</code> が含まれているので、Claude がそれを解釈するために <strong>スキーマ情報が引き続き必要</strong>。<code class="inline">tools</code> 引数を省略すると Claude は履歴を読めなくなる。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑥ 複数 tool 呼び出しの扱い</h2>
+    <p>Claude は <strong>1回の返答で複数のツールを並列要請</strong> することもある。例: 「10+10 と 30+30 は?」 → tool_use ブロック2つ。</p>
+
+    <div class="illustration">
+      <svg width="640" height="220" viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg">
+        <text x="320" y="28" text-anchor="middle" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#6b5028">Claude からの応答(content 配列)</text>
+
+        <rect x="40" y="50" width="170" height="140" rx="8" fill="#fdebde" stroke="#d97757" stroke-width="2"/>
+        <text x="125" y="78" text-anchor="middle" font-family="Hiragino Sans" font-size="11" font-weight="700" fill="#a04500">tool_use #1</text>
+        <text x="125" y="100" text-anchor="middle" font-family="Hiragino Sans" font-size="10" fill="#2b2b2b">id: toolu_aaa</text>
+        <text x="125" y="118" text-anchor="middle" font-family="Hiragino Sans" font-size="10" fill="#2b2b2b">name: calculator</text>
+        <text x="125" y="136" text-anchor="middle" font-family="Hiragino Sans" font-size="10" fill="#2b2b2b">input: 10+10</text>
+        <text x="125" y="170" text-anchor="middle" font-size="22">🧮</text>
+
+        <rect x="235" y="50" width="170" height="140" rx="8" fill="#cfe7ef" stroke="#4a8aa3" stroke-width="2"/>
+        <text x="320" y="78" text-anchor="middle" font-family="Hiragino Sans" font-size="11" font-weight="700" fill="#2a5a73">tool_use #2</text>
+        <text x="320" y="100" text-anchor="middle" font-family="Hiragino Sans" font-size="10" fill="#2b2b2b">id: toolu_bbb</text>
+        <text x="320" y="118" text-anchor="middle" font-family="Hiragino Sans" font-size="10" fill="#2b2b2b">name: calculator</text>
+        <text x="320" y="136" text-anchor="middle" font-family="Hiragino Sans" font-size="10" fill="#2b2b2b">input: 30+30</text>
+        <text x="320" y="170" text-anchor="middle" font-size="22">🧮</text>
+
+        <text x="450" y="125" text-anchor="middle" font-size="22" fill="#a85200">→</text>
+
+        <rect x="475" y="50" width="145" height="140" rx="8" fill="#d8ecd6" stroke="#67a061" stroke-width="2"/>
+        <text x="547" y="78" text-anchor="middle" font-family="Hiragino Sans" font-size="11" font-weight="700" fill="#2b6e2e">tool_result × 2</text>
+        <text x="547" y="100" text-anchor="middle" font-family="Hiragino Sans" font-size="10" fill="#2b2b2b">id: toolu_aaa → 20</text>
+        <text x="547" y="118" text-anchor="middle" font-family="Hiragino Sans" font-size="10" fill="#2b2b2b">id: toolu_bbb → 60</text>
+        <text x="547" y="148" text-anchor="middle" font-family="Hiragino Sans" font-size="10" fill="#2b6e2e">ID で照合</text>
+        <text x="547" y="172" text-anchor="middle" font-size="22">✅</text>
+      </svg>
+      <p class="caption">図① 複数 tool_use 並列要請 → ID で照合して並列 tool_result を返す</p>
+    </div>
+
+    <p><strong>ID を必ず照合</strong> して、対応する tool_result を返す。順番がずれても ID で紐付けされる設計。</p>
+  </section>
+
+  <section>
+    <h2>⑦ tool use 完全フロー(再掲・コード付き)</h2>
+
+<pre><code># [1] user 質問 + tools=スキーマ
+messages = [{"role": "user", "content": "今何時?"}]
+response = client.messages.create(
+    model=model, max_tokens=1000, messages=messages,
+    tools=[get_current_datetime_schema])
+
+# [2] assistant (text + tool_use) を履歴に保存
+messages.append({"role": "assistant", "content": response.content})
+
+# [3] サーバーが関数実行
+tool_use = response.content[1]  # tool_use block
+result = get_current_datetime(**tool_use.input)
+
+# [4] user (tool_result) + tools=スキーマ
+messages.append({
+    "role": "user",
+    "content": [{
+        "type": "tool_result",
+        "tool_use_id": tool_use.id,
+        "content": str(result),
+        "is_error": False
+    }]
+})
+final = client.messages.create(
+    model=model, max_tokens=1000, messages=messages,
+    tools=[get_current_datetime_schema])
+
+# [5] assistant 最終応答(自然言語)
+print(final.content[0].text)  # → "現在は 15:04:22 です"</code></pre>
+  </section>
+
+  <section>
+    <h2>⑧ 中学生向けに例えると</h2>
+
+    <table class="vocab">
+      <thead><tr><th style="width: 38%;">学校の例え</th><th>tool use の対応</th></tr></thead>
+      <tbody>
+        <tr><td>#39 関数 = 道具の本体</td><td>電卓そのもの</td></tr>
+        <tr><td>#40 スキーマ = 道具の取説</td><td>電卓の使い方説明書</td></tr>
+        <tr><td>#41 マルチブロック受信</td><td>Claude から「電卓借りていい?」と聞かれた</td></tr>
+        <tr><td>#42 tool_result 返送</td><td>電卓を貸して、計算結果を Claude に渡す</td></tr>
+        <tr><td><code class="inline">tool_use_id</code> の照合</td><td>「○○くんから借りた電卓」と「その結果」のラベル合わせ</td></tr>
+        <tr><td>複数 tool 並列</td><td>「電卓と物差し、両方借りていい?」と聞かれて、両方貸す</td></tr>
+        <tr><td>最終応答</td><td>Claude が結果を元に「答えは20と60です」と人間向けにまとめる</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑨ モジュール9 まとめ (Lecture 37-42)</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 8%;">#</th><th style="width: 28%;">章</th><th>役割</th></tr></thead>
+      <tbody>
+        <tr><td>37</td><td>Introducing tool use</td><td>tool use とは何か(基本コンセプト)</td></tr>
+        <tr><td>38</td><td>Project overview</td><td>リマインダーアプリで学ぶ(題材紹介)</td></tr>
+        <tr><td>39</td><td>Tool functions</td><td>道具本体(Python 関数)の書き方</td></tr>
+        <tr><td>40</td><td>Tool schemas</td><td>道具の取説(JSON スキーマ)の書き方</td></tr>
+        <tr><td>41</td><td>Handling message blocks</td><td>Claude の応答(text + tool_use)を扱う</td></tr>
+        <tr><td>42</td><td>Sending tool results</td><td>結果を返してワークフロー完結 ← 今ここ</td></tr>
+      </tbody>
+    </table>
+
+    <div class="card mint">
+      これで <strong>Tool use の基礎は完成</strong>。次のモジュールでは応用(複数ツール連携・エラーハンドリング・実プロジェクト構築)に進む。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑩ キーワード一覧</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 30%;">英語</th><th style="width: 28%;">読み方</th><th>意味</th></tr></thead>
+      <tbody>
+        <tr><td class="code">tool_result block</td><td>ツール リザルト ブロック</td><td>関数実行結果を Claude に返すブロック</td></tr>
+        <tr><td class="code">tool_use_id</td><td>ツール ユース アイディー</td><td>tool_use と tool_result を紐付ける ID</td></tr>
+        <tr><td class="code">is_error</td><td>イズ エラー</td><td>エラー時に True にするフラグ</td></tr>
+        <tr><td class="code">**kwargs unpacking</td><td>キーワード アーグズ アンパック</td><td>辞書を関数のキーワード引数に展開</td></tr>
+        <tr><td class="code">parallel tool calls</td><td>パラレル ツール コールズ</td><td>複数ツールの並列要請</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑪ 理解度チェック</h2>
+    <details>
+      <summary>Q1. tool_result ブロックの3項目は?</summary>
+      <p>
+        ① <code class="inline">tool_use_id</code>(対応する tool_use の id と一致)<br>
+        ② <code class="inline">content</code>(関数の戻り値を文字列化)<br>
+        ③ <code class="inline">is_error</code>(エラー時 True)
+      </p>
+    </details>
+    <details>
+      <summary>Q2. なぜ tool_result の <code class="inline">role</code> は "user" なの?</summary>
+      <p>Claude の視点では「ツール実行結果は、ユーザー側(サーバー側)から渡される情報」だから。Claude 自身は道具を持っていないので、結果は外部(=user 側)から来る扱いになる。</p>
+    </details>
+    <details>
+      <summary>Q3. 最終リクエストで <code class="inline">tools</code> 引数を省略するとどうなる?</summary>
+      <p>会話履歴に tool_use / tool_result が含まれているのに、Claude がそれを解釈するためのスキーマがない状態になる。結果、Claude は履歴を読めず、エラーまたは破綻した応答を返す。<strong>tools 引数は最後まで必ず渡す</strong>。</p>
+    </details>
+    <details>
+      <summary>Q4. 複数 tool 並列要請のとき、どう対応すれば良い?</summary>
+      <p>tool_use ブロックそれぞれの <code class="inline">id</code> を取り出し、対応する tool_result を <strong>同じ ID で</strong> 返す。content 配列に複数の tool_result を入れて1回の user メッセージで送る。順番ではなく ID で紐付けされる設計。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑫ 自分メモ</h2>
+    <div class="memo-area">自分が学んだことや疑問を書き込もう…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 42: Sending tool results<br>
+    元レクチャー: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287752">SkillJar — Sending tool results</a><br>
+    前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_41_textbook.html">Lecture 41</a> ・ モジュール9 完了 ・ コース02 終了
+  </footer>
+
+</main>
+</body>
+</html>

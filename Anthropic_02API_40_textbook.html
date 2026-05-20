@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 40: Tool schemas — Claude にツールを説明する JSON 取扱説明書 | Anthropic Academy 教科書</title>
+<style>
+:root {
+  --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a;
+  --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028;
+  --soft-blue: #cfe7ef; --soft-yellow: #fdf0c8; --soft-mint: #d8ecd6; --soft-pink: #f6dcdc;
+  --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+.card.blue { background: var(--soft-blue); border-left: 4px solid #4a8aa3; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+table.vocab td.code { font-family: "Consolas","Menlo",monospace; color: var(--accent); font-weight: 700; white-space: nowrap; }
+pre { background: #f4eedb; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: "Consolas","Menlo",monospace; font-size: 14px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--border); }
+code.inline { background: #f4eedb; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Menlo",monospace; font-size: 0.92em; color: #a85200; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+.illustration { text-align: center; margin: 24px 0; }
+.illustration svg { max-width: 100%; height: auto; }
+.caption { font-size: 13px; color: var(--ink-sub); margin-top: 8px; text-align: center; }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 600px) { body { padding: 20px 14px; } h1.lecture-title { font-size: 24px; } h2 { font-size: 19px; } p, ol li, ul li { font-size: 15px; } }
+</style>
+</head>
+<body>
+<main class="book">
+
+  <span class="chapter-tag">Module 9 ・ Lecture 40</span>
+  <h1 class="lecture-title">Tool schemas<span class="ja-sub">— Claude にツールを説明する JSON 取扱説明書</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① Tool schema とは何か</h2>
+    <p><strong>Tool schema = 関数の説明書を JSON で書いたもの</strong>。これを Claude に渡さないと、Claude はツールの存在に気づけない。</p>
+
+    <div class="illustration">
+      <svg width="640" height="220" viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg">
+        <rect x="20" y="30" width="180" height="160" rx="10" fill="#fdebde" stroke="#d97757" stroke-width="2"/>
+        <text x="110" y="60" text-anchor="middle" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#a04500">#39 関数本体</text>
+        <text x="110" y="100" text-anchor="middle" font-size="32">🛠️</text>
+        <text x="110" y="135" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">道具そのもの</text>
+        <text x="110" y="155" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">(電卓の本体)</text>
+        <text x="110" y="180" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#a04500">def get_current...</text>
+
+        <text x="240" y="115" text-anchor="middle" font-size="24" fill="#a85200">+</text>
+
+        <rect x="270" y="30" width="180" height="160" rx="10" fill="#fdf0c8" stroke="#c8a93a" stroke-width="2"/>
+        <text x="360" y="60" text-anchor="middle" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#6b5028">#40 スキーマ</text>
+        <text x="360" y="100" text-anchor="middle" font-size="32">📋</text>
+        <text x="360" y="135" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">道具の取扱説明書</text>
+        <text x="360" y="155" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">(JSON 形式)</text>
+        <text x="360" y="180" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#a04500">name / description...</text>
+
+        <text x="490" y="115" text-anchor="middle" font-size="24" fill="#a85200">→</text>
+
+        <rect x="520" y="30" width="100" height="160" rx="10" fill="#d8ecd6" stroke="#67a061" stroke-width="2"/>
+        <text x="570" y="60" text-anchor="middle" font-family="Hiragino Sans" font-size="12" font-weight="700" fill="#2b6e2e">Claude が</text>
+        <text x="570" y="78" text-anchor="middle" font-family="Hiragino Sans" font-size="12" font-weight="700" fill="#2b6e2e">使える!</text>
+        <text x="570" y="120" text-anchor="middle" font-size="32">🤖</text>
+        <text x="570" y="160" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#2b6e2e">適切に</text>
+        <text x="570" y="178" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#2b6e2e">呼び出し可能</text>
+      </svg>
+      <p class="caption">図① 関数本体 + スキーマ(取説) → Claude が使える</p>
+    </div>
+
+    <div class="card accent">
+      <strong>核心:</strong> 関数だけ渡しても Claude は「中身ブラックボックスの謎の道具」しか見えない。<strong>スキーマで「何を・いつ・どう」使うかを言葉で説明</strong> して初めて、Claude は安全に呼べるようになる。
+    </div>
+  </section>
+
+  <section>
+    <h2>② 良い description の4要件</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 32%;">書くべきこと</th><th>例</th></tr></thead>
+      <tbody>
+        <tr><td><strong>何をする道具か</strong></td><td>「現在の日時を指定書式で返す」</td></tr>
+        <tr><td><strong>いつ Claude が使うべきか</strong></td><td>「ユーザーが現在時刻を尋ねたとき」</td></tr>
+        <tr><td><strong>何を返すか</strong></td><td>「'2024-01-15 14:30:25' 形式の文字列」</td></tr>
+        <tr><td><strong>各引数の意味</strong></td><td><code class="inline">date_format</code> は strftime 書式コードの文字列</td></tr>
+      </tbody>
+    </table>
+    <p>3〜4文程度が目安。短すぎると Claude が判断ミスする、長すぎるとトークンを食う。</p>
+  </section>
+
+  <section>
+    <h2>③ スキーマを楽に作るコツ — Claude に書かせる</h2>
+    <p><strong>ゼロから JSON を書かなくていい。Claude にお願いする</strong> のが正攻法。</p>
+
+    <ol>
+      <li>ツール関数のコードをコピー</li>
+      <li>Claude に「これの JSON スキーマを書いて」と頼む</li>
+      <li>Anthropic 公式 tool use ドキュメントをコンテキストに添付</li>
+      <li>ベストプラクティスに沿った形で生成してくれる</li>
+    </ol>
+
+<pre><code>プロンプト例:
+"Write a valid JSON schema spec for the purposes of tool calling
+ for this function. Follow the best practices listed in the
+ attached documentation."
+(添付: Python 関数コード + tool use ドキュメント)</code></pre>
+
+    <div class="card mint">
+      <strong>Why?</strong> 手書きだと typo・必須キー漏れ・型ミスが起きやすい。Claude に書かせれば <strong>仕様に沿った形式</strong> で出してくれる。生成後に微調整すればOK。
+    </div>
+  </section>
+
+  <section>
+    <h2>④ スキーマの実体 — 完全な例</h2>
+<pre><code>def get_current_datetime(date_format="%Y-%m-%d %H:%M:%S"):
+    if not date_format:
+        raise ValueError("date_format cannot be empty")
+    return datetime.now().strftime(date_format)
+
+get_current_datetime_schema = {
+    "name": "get_current_datetime",
+    "description": "現在の日時を指定書式で返す。ユーザーが現在時刻を尋ねたときに使用。",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "date_format": {
+                "type": "string",
+                "description": "strftime 書式コードの文字列",
+                "default": "%Y-%m-%d %H:%M:%S"
+            }
+        },
+        "required": []
+    }
+}</code></pre>
+
+    <table class="vocab">
+      <thead><tr><th style="width: 28%;">キー</th><th>意味</th></tr></thead>
+      <tbody>
+        <tr><td class="code">name</td><td>関数名(Python の関数名と一致させる)</td></tr>
+        <tr><td class="code">description</td><td>道具の説明(何を・いつ・何を返すか)</td></tr>
+        <tr><td class="code">input_schema</td><td>引数の構造(JSON Schema 形式)</td></tr>
+        <tr><td class="code">properties</td><td>各引数の定義(型・説明・デフォルト)</td></tr>
+        <tr><td class="code">required</td><td>必須引数のリスト(デフォルト値があるなら省略可)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="card blue">
+      <strong>命名規範:</strong> <code class="inline">関数名</code> + <code class="inline">関数名_schema</code>。これで関数とスキーマがペアで一目で分かる。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑤ 型安全に書く — ToolParam</h2>
+<pre><code>from anthropic.types import ToolParam
+
+get_current_datetime_schema = ToolParam({
+    "name": "get_current_datetime",
+    "description": "現在の日時を指定書式で返す",
+    "input_schema": { ... }
+})</code></pre>
+
+    <p><code class="inline">ToolParam</code> で囲むと、エディタが型エラーを <strong>事前に</strong> 検出してくれる。必須キーの抜け漏れがコード書いた時点で分かる。</p>
+    <p>必須ではないが、保守性・チーム開発・将来の API 変更追従の観点で <strong>推奨</strong>。</p>
+  </section>
+
+  <section>
+    <h2>⑥ 中学生向けに例えると</h2>
+
+    <table class="vocab">
+      <thead><tr><th style="width: 36%;">家電の例え</th><th>tool schema の対応</th></tr></thead>
+      <tbody>
+        <tr><td>道具本体(電卓・腕時計)</td><td>#39 Python 関数</td></tr>
+        <tr><td>道具の取扱説明書</td><td>#40 JSON スキーマ</td></tr>
+        <tr><td>取説 表紙の「この製品で何ができるか」</td><td><code class="inline">description</code></td></tr>
+        <tr><td>取説 ボタン説明欄</td><td><code class="inline">properties</code></td></tr>
+        <tr><td>「これがないと動かないボタン」のリスト</td><td><code class="inline">required</code></td></tr>
+        <tr><td>取説のない家電を渡されても怖くて触れない</td><td>スキーマなしで関数だけ渡すと Claude は呼ばない</td></tr>
+      </tbody>
+    </table>
+
+    <div class="card accent">
+      <strong>例え:</strong> Claude は「お行儀の良い子」。取説のない道具は <strong>勝手に触らない</strong>。だから関数を書いたら必ず取説(スキーマ)もセットで渡す。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑦ キーワード一覧</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 30%;">英語</th><th style="width: 28%;">読み方</th><th>意味</th></tr></thead>
+      <tbody>
+        <tr><td class="code">tool schema</td><td>ツール スキーマ</td><td>関数の取扱説明書(JSON)</td></tr>
+        <tr><td class="code">description</td><td>ディスクリプション</td><td>道具の説明文</td></tr>
+        <tr><td class="code">input_schema</td><td>インプット スキーマ</td><td>引数の構造定義</td></tr>
+        <tr><td class="code">properties</td><td>プロパティーズ</td><td>引数1つ1つの定義</td></tr>
+        <tr><td class="code">required</td><td>リクワイヤード</td><td>必須引数の一覧</td></tr>
+        <tr><td class="code">ToolParam</td><td>ツール パラム</td><td>型安全な書き方のラッパー</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑧ 理解度チェック</h2>
+    <details>
+      <summary>Q1. なぜ関数本体だけでなくスキーマも必要なの?</summary>
+      <p>Claude は関数の中身(Python コード)を読まない。スキーマ(description / input_schema)で「何の道具か・どう使うか・何が必須か」を <strong>言葉で説明</strong> されて初めて、適切なタイミングで適切な引数で呼べる。スキーマなしで関数だけ渡しても、Claude は「謎の道具」として無視する。</p>
+    </details>
+    <details>
+      <summary>Q2. description には何を書くべき?</summary>
+      <p>4要件:<br>
+        ① 何をする道具か<br>
+        ② いつ Claude が使うべきか<br>
+        ③ 何を返すか<br>
+        ④ 各引数の意味
+      <br>3〜4文程度がベスト。短すぎると判断ミス、長すぎるとトークン無駄。</p>
+    </details>
+    <details>
+      <summary>Q3. スキーマを楽に書くコツは?</summary>
+      <p><strong>Claude 自身に書かせる</strong>。Python 関数コード + Anthropic 公式 tool use ドキュメントを添付して「JSON スキーマを書いて」と頼めば、ベストプラクティスに沿った形で生成してくれる。手書きより typo・キー漏れ・型ミスが減る。</p>
+    </details>
+    <details>
+      <summary>Q4. ToolParam を使うメリットは?</summary>
+      <p>エディタが型エラーを <strong>事前に</strong> 検出してくれる(必須キーの抜け漏れ・スペルミス・型ミスマッチ)。必須ではないが、保守性とチーム開発の観点で推奨。<code class="inline">from anthropic.types import ToolParam</code> で読み込み、<code class="inline">ToolParam({...})</code> で囲むだけ。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑨ 自分メモ</h2>
+    <div class="memo-area">自分が学んだことや疑問を書き込もう…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 40: Tool schemas<br>
+    元レクチャー: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287753">SkillJar — Tool schemas</a><br>
+    前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_39_textbook.html">Lecture 39</a> ・ 次章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_41_textbook.html">Lecture 41 (Handling message blocks)</a>
+  </footer>
+
+</main>
+</body>
+</html>
