@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 37: Introducing tool use — Claude を外の世界とつなぐ | Anthropic Academy 教科書</title>
+<style>
+:root {
+  --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a;
+  --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028;
+  --soft-blue: #cfe7ef; --soft-yellow: #fdf0c8; --soft-mint: #d8ecd6; --soft-pink: #f6dcdc;
+  --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+.card.blue { background: var(--soft-blue); border-left: 4px solid #4a8aa3; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+table.vocab td.code { font-family: "Consolas","Menlo",monospace; color: var(--accent); font-weight: 700; white-space: nowrap; }
+pre { background: #f4eedb; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: "Consolas","Menlo",monospace; font-size: 14px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--border); }
+code.inline { background: #f4eedb; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Menlo",monospace; font-size: 0.92em; color: #a85200; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+.illustration { text-align: center; margin: 24px 0; }
+.illustration svg { max-width: 100%; height: auto; }
+.caption { font-size: 13px; color: var(--ink-sub); margin-top: 8px; text-align: center; }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 600px) { body { padding: 20px 14px; } h1.lecture-title { font-size: 24px; } h2 { font-size: 19px; } p, ol li, ul li { font-size: 15px; } }
+</style>
+</head>
+<body>
+<main class="book">
+
+  <span class="chapter-tag">Module 9 ・ Lecture 37</span>
+  <h1 class="lecture-title">Introducing tool use<span class="ja-sub">— Claude を外の世界とつなぐ「ツール使用」入門</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① ツールなし Claude の限界</h2>
+    <p>Claude は学校でいう「すごく物知りな子」だけど、知っているのは <strong>学習時に読んだ本</strong> だけ。今日の天気、今日のニュース、自社の DB の中身は <strong>そのままでは知らない</strong>。</p>
+
+    <div class="illustration">
+      <svg width="640" height="240" viewBox="0 0 640 240" xmlns="http://www.w3.org/2000/svg">
+        <rect x="20" y="30" width="290" height="190" rx="12" fill="#f6dcdc" stroke="#c66b6b" stroke-width="2"/>
+        <text x="165" y="58" text-anchor="middle" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#a04040">ツールなし Claude</text>
+        <rect x="40" y="76" width="250" height="50" rx="6" fill="#fcf6e8" stroke="#dcd3c0"/>
+        <text x="50" y="98" font-family="Hiragino Sans" font-size="12" fill="#2b2b2b">ユーザー: SF の天気は?</text>
+        <text x="50" y="116" font-family="Hiragino Sans" font-size="11" fill="#5a5a5a">(2025年以後の最新情報)</text>
+        <rect x="40" y="138" width="250" height="60" rx="6" fill="#fff" stroke="#c66b6b"/>
+        <text x="165" y="162" text-anchor="middle" font-family="Hiragino Sans" font-size="12" fill="#a04040">Claude: 最新の天気は</text>
+        <text x="165" y="180" text-anchor="middle" font-family="Hiragino Sans" font-size="12" fill="#a04040">わかりません 🙇</text>
+        <text x="165" y="215" text-anchor="middle" font-size="22">📚</text>
+
+        <rect x="330" y="30" width="290" height="190" rx="12" fill="#d8ecd6" stroke="#67a061" stroke-width="2"/>
+        <text x="475" y="58" text-anchor="middle" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#2b6e2e">ツールあり Claude</text>
+        <rect x="350" y="76" width="250" height="50" rx="6" fill="#fcf6e8" stroke="#dcd3c0"/>
+        <text x="360" y="98" font-family="Hiragino Sans" font-size="12" fill="#2b2b2b">ユーザー: SF の天気は?</text>
+        <text x="360" y="116" font-family="Hiragino Sans" font-size="11" fill="#5a5a5a">→ tool 経由で外部 API</text>
+        <rect x="350" y="138" width="250" height="60" rx="6" fill="#fff" stroke="#67a061"/>
+        <text x="475" y="162" text-anchor="middle" font-family="Hiragino Sans" font-size="12" fill="#2b6e2e">Claude: SF は 曇り 15℃</text>
+        <text x="475" y="180" text-anchor="middle" font-family="Hiragino Sans" font-size="12" fill="#2b6e2e">です ✅</text>
+        <text x="475" y="215" text-anchor="middle" font-size="22">🌤️</text>
+      </svg>
+      <p class="caption">図① ツールなし(左：古い本だけで答える) vs ツールあり(右：外の世界に手を伸ばせる)</p>
+    </div>
+
+    <div class="card accent"><strong>核心:</strong> Tool use(ツール使用) は Claude を「<strong>静的な知識ベース</strong>」から「<strong>ライブデータを扱える動的アシスタント</strong>」に変える仕組み。</div>
+  </section>
+
+  <section>
+    <h2>② Tool use とは何か</h2>
+    <p><strong>Tool use(ツール使用)</strong> = Claude が <strong>訓練データの範囲を超えて</strong>、外部の情報やシステムにアクセスする手段。</p>
+    <p>「使っていいツール一覧」をプロンプトと一緒に渡しておくと、Claude が必要に応じて「これ使わせて」と要求できるようになる。</p>
+
+    <div class="card blue">
+      <strong>イメージ:</strong> Claude に「電卓」「天気 API」「社内 DB」「メール送信機能」 などの<em>道具箱</em>を渡しておく。質問の内容に応じて、Claude が自分で「天気 API 使うね」と選んで呼び出す。
+    </div>
+  </section>
+
+  <section>
+    <h2>③ 4ステップの往復フロー</h2>
+    <p>Tool use は <strong>明確な往復(back-and-forth)</strong> のパターンで動く。一度の API 呼び出しでは終わらず、Claude とサーバーの間で <strong>会話のキャッチボール</strong> が起きる。</p>
+
+    <div class="illustration">
+      <svg width="640" height="320" viewBox="0 0 640 320" xmlns="http://www.w3.org/2000/svg">
+        <rect x="20" y="20" width="600" height="60" rx="8" fill="#fdf0c8" stroke="#c8a93a" stroke-width="2"/>
+        <text x="40" y="44" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#6b5028">Step 1. 初期リクエスト</text>
+        <text x="40" y="64" font-family="Hiragino Sans" font-size="12" fill="#2b2b2b">ユーザー質問 + 「外部データが要るなら、こんな風に要求していい」という指示を Claude に送る</text>
+        <text x="600" y="50" text-anchor="end" font-size="22">📤</text>
+
+        <text x="320" y="98" text-anchor="middle" font-size="18" fill="#a85200">↓</text>
+
+        <rect x="20" y="105" width="600" height="60" rx="8" fill="#fdebde" stroke="#d97757" stroke-width="2"/>
+        <text x="40" y="129" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#a04500">Step 2. Tool 要請(Claude → サーバー)</text>
+        <text x="40" y="149" font-family="Hiragino Sans" font-size="12" fill="#2b2b2b">Claude「これは外部情報が要る」と判断 → 「天気 API を呼んで。場所=SF」のように要求</text>
+        <text x="600" y="135" text-anchor="end" font-size="22">🤖</text>
+
+        <text x="320" y="183" text-anchor="middle" font-size="18" fill="#a85200">↓</text>
+
+        <rect x="20" y="190" width="600" height="60" rx="8" fill="#d8ecd6" stroke="#67a061" stroke-width="2"/>
+        <text x="40" y="214" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#2b6e2e">Step 3. データ取得(サーバー側)</text>
+        <text x="40" y="234" font-family="Hiragino Sans" font-size="12" fill="#2b2b2b">サーバーのコードが外部 API や DB を実行 → 要求されたデータを取得(例: 曇り 15℃)</text>
+        <text x="600" y="220" text-anchor="end" font-size="22">⚙️</text>
+
+        <text x="320" y="268" text-anchor="middle" font-size="18" fill="#a85200">↓</text>
+
+        <rect x="20" y="275" width="600" height="40" rx="8" fill="#cfe7ef" stroke="#4a8aa3" stroke-width="2"/>
+        <text x="40" y="294" font-family="Hiragino Sans" font-size="14" font-weight="700" fill="#2a5a73">Step 4. 最終応答</text>
+        <text x="40" y="310" font-family="Hiragino Sans" font-size="12" fill="#2b2b2b">取得したデータを Claude に返送 → Claude が元の質問+データで完全な回答を生成</text>
+      </svg>
+      <p class="caption">図② Tool use の4ステップ往復フロー</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>④ 天気の具体例で追いかける</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 12%;">ステップ</th><th>やりとり</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Step 1</strong></td><td>ユーザー: 「SF の天気は?」 → アプリが Claude へ送信(tool 説明込み)</td></tr>
+        <tr><td><strong>Step 2</strong></td><td>Claude: 「<code class="inline">get_weather(location="San Francisco")</code> を呼んで」と <strong>tool 要請</strong> を返す</td></tr>
+        <tr><td><strong>Step 3</strong></td><td>サーバー: weather API を実行 → 「曇り 15℃」を取得</td></tr>
+        <tr><td><strong>Step 4</strong></td><td>サーバー → Claude: 「データ: 曇り 15℃」 → Claude: 「SF は現在曇りで15℃です」</td></tr>
+      </tbody>
+    </table>
+
+<pre><code># Step 2 で Claude が返す「tool 要請」のイメージ
+{
+  "type": "tool_use",
+  "id": "toolu_01A...",
+  "name": "get_weather",
+  "input": { "location": "San Francisco" }
+}
+
+# Step 4 でサーバーが返す「tool 結果」のイメージ
+{
+  "type": "tool_result",
+  "tool_use_id": "toolu_01A...",
+  "content": "曇り, 15℃"
+}</code></pre>
+
+    <p>このフォーマットの詳細は次以降のレクチャー(#40 Tool schemas / #41 Handling message blocks / #42 Sending tool results)で深掘りする。今は <strong>「往復で会話する」</strong> という感覚だけ掴めればOK。</p>
+  </section>
+
+  <section>
+    <h2>⑤ なぜ嬉しいのか(主な利点)</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 28%;">利点</th><th>説明</th></tr></thead>
+      <tbody>
+        <tr><td>リアルタイム情報</td><td>訓練データ以後の新しい情報にアクセスできる(今日の天気・最新ニュース・株価)</td></tr>
+        <tr><td>外部システム連携</td><td>DB・API・社内システム・他サービスと接続して情報を引っ張れる</td></tr>
+        <tr><td>動的応答</td><td>古い知識ではなく、今この瞬間のデータで答えられる</td></tr>
+        <tr><td>構造化インタラクション</td><td>Claude が「何が必要か」を <strong>明示</strong> するので、システム側も対応しやすい</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑥ 中学生向けに例えると</h2>
+
+    <div class="illustration">
+      <svg width="640" height="240" viewBox="0 0 640 240" xmlns="http://www.w3.org/2000/svg">
+        <text x="160" y="30" text-anchor="middle" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#a04040">ツールなし Claude</text>
+        <rect x="40" y="50" width="240" height="160" rx="6" fill="#fcf6e8" stroke="#c66b6b" stroke-width="2"/>
+        <text x="160" y="90" text-anchor="middle" font-size="36">📚</text>
+        <text x="160" y="125" text-anchor="middle" font-family="Hiragino Sans" font-size="13" fill="#2b2b2b">図書館で学んだ</text>
+        <text x="160" y="143" text-anchor="middle" font-family="Hiragino Sans" font-size="13" fill="#2b2b2b">知識だけで答える子</text>
+        <text x="160" y="175" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#a04040">「最新は分かりません」</text>
+        <text x="160" y="195" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#5a5a5a">古い本しか読んでない</text>
+
+        <text x="480" y="30" text-anchor="middle" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#2b6e2e">ツールあり Claude</text>
+        <rect x="360" y="50" width="240" height="160" rx="6" fill="#fcf6e8" stroke="#67a061" stroke-width="2"/>
+        <text x="480" y="90" text-anchor="middle" font-size="36">🔍</text>
+        <text x="480" y="125" text-anchor="middle" font-family="Hiragino Sans" font-size="13" fill="#2b2b2b">「ちょっと待って、</text>
+        <text x="480" y="143" text-anchor="middle" font-family="Hiragino Sans" font-size="13" fill="#2b2b2b">今 Google で調べる」</text>
+        <text x="480" y="175" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#2b6e2e">と言える子</text>
+        <text x="480" y="195" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#5a5a5a">最新情報も取りに行ける</text>
+      </svg>
+      <p class="caption">図③ 図書館だけの子(左) vs 調べに行ける子(右)</p>
+    </div>
+
+    <table class="vocab">
+      <thead><tr><th style="width: 50%;">学校の例え</th><th>Tool use の対応</th></tr></thead>
+      <tbody>
+        <tr><td>「今は分かりません」と答える子</td><td>ツールなし Claude</td></tr>
+        <tr><td>「ちょっと待って、今 Google で調べる」と言える子</td><td>ツールあり Claude</td></tr>
+        <tr><td>「○○について調べていい?」と先生に許可を取る</td><td>Step 2 の <strong>Tool 要請</strong></td></tr>
+        <tr><td>先生が代わりに Google で検索してメモを持ってくる</td><td>Step 3 の <strong>サーバー実行</strong></td></tr>
+        <tr><td>メモを見て「最新だと△△らしいよ」と答える</td><td>Step 4 の <strong>最終応答</strong></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑦ キーワード一覧</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 30%;">英語</th><th style="width: 25%;">読み方</th><th>意味</th></tr></thead>
+      <tbody>
+        <tr><td class="code">tool use</td><td>ツール ユース</td><td>Claude が外部の道具(API/DB等)を使う仕組み</td></tr>
+        <tr><td class="code">tool</td><td>ツール</td><td>Claude に渡せる「使っていい道具」(関数のようなもの)</td></tr>
+        <tr><td class="code">tool_use</td><td>ツール ユース ブロック</td><td>Claude が「この道具を使いたい」と要請する応答の型</td></tr>
+        <tr><td class="code">tool_result</td><td>ツール リザルト</td><td>サーバーが「道具を使った結果」を Claude に返す型</td></tr>
+        <tr><td class="code">back-and-forth</td><td>バック アンド フォース</td><td>往復のやりとり(キャッチボール)</td></tr>
+        <tr><td class="code">real-time</td><td>リアルタイム</td><td>今この瞬間の・最新の(訓練データに無い)</td></tr>
+        <tr><td class="code">static knowledge</td><td>スタティック ナレッジ</td><td>静的な知識(更新されない・古いもの)</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑧ 理解度チェック</h2>
+    <details>
+      <summary>Q1. ツールなし Claude の最大の問題点は何?</summary>
+      <p>訓練データの知識しか持っていないので、<strong>今この瞬間のデータ</strong>(現在の天気・最新ニュース・社内 DB の中身)にアクセスできないこと。「分かりません」としか答えられない場面が多発する。</p>
+    </details>
+    <details>
+      <summary>Q2. Tool use の4ステップを順番に言える?</summary>
+      <p>
+        Step 1. 初期リクエスト(ユーザー質問 + 使ってよい道具一覧を Claude に送る)<br>
+        Step 2. Tool 要請(Claude が「この道具を使いたい」と要求)<br>
+        Step 3. データ取得(サーバーが実際に道具を実行 → 結果を取得)<br>
+        Step 4. 最終応答(サーバーが結果を Claude に返送 → Claude が最終回答を生成)
+      </p>
+    </details>
+    <details>
+      <summary>Q3. Step 2 と Step 3 の違いは?</summary>
+      <p>Step 2 は <strong>Claude が「呼んでください」と要請する</strong> だけで、実際にはまだ API を叩いていない。Step 3 で <strong>サーバー側のコードが本当に外部 API/DB を実行</strong> する。Claude は自分でネットには出ない(出さない設計)。</p>
+    </details>
+    <details>
+      <summary>Q4. なぜ「構造化インタラクション」が利点なの?</summary>
+      <p>Claude が「何が欲しいか」を <code class="inline">tool_use</code> ブロックという <strong>決まった形式で明示する</strong> ので、サーバー側のコードは「どの関数をどの引数で呼ぶか」が機械的に判断できる。自然文を毎回パースするより遥かに安全で確実。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑨ 自分メモ</h2>
+    <div class="memo-area">自分が学んだことや疑問を書き込もう…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 37: Introducing tool use<br>
+    元レクチャー: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287747">SkillJar — Introducing tool use</a><br>
+    前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_35_textbook.html">Lecture 35</a> ・ 次章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_38_textbook.html">Lecture 38 (Project overview)</a>
+  </footer>
+
+</main>
+</body>
+</html>
