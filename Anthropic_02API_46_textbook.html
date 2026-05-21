@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 46: Fine grained tool calling — JSON検証を捨ててtool inputを即時ストリーミング | Anthropic Academy 教科書</title>
+<style>
+:root {
+  --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a;
+  --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028;
+  --soft-blue: #cfe7ef; --soft-yellow: #fdf0c8; --soft-mint: #d8ecd6; --soft-pink: #f6dcdc;
+  --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04);
+  --exercise-bg: #fff9ec; --exercise-border: #e6c97a;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+.card.blue { background: var(--soft-blue); border-left: 4px solid #4a8aa3; }
+.card.warning { background: var(--soft-pink); border-left: 4px solid #c66b6b; }
+.exercise-box { background: var(--exercise-bg); border: 2px solid var(--exercise-border); border-radius: var(--radius); padding: 20px 24px; margin: 18px 0; }
+.exercise-box h3 { color: #8a6a1c; margin-bottom: 12px; font-size: 17px; }
+.problem-section { background: #fff; border-left: 4px solid #c8a93a; padding: 12px 16px; border-radius: 6px; margin: 10px 0; }
+.hint-section { background: #f4e9c4; padding: 10px 14px; border-radius: 6px; margin-top: 10px; font-size: 14px; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+table.vocab td.code { font-family: "Consolas","Menlo",monospace; color: var(--accent); font-weight: 700; white-space: nowrap; }
+pre { background: #f4eedb; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: "Consolas","Menlo",monospace; font-size: 14px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--border); }
+code.inline { background: #f4eedb; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Menlo",monospace; font-size: 0.92em; color: #a85200; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+.illustration { text-align: center; margin: 24px 0; }
+.illustration svg { max-width: 100%; height: auto; }
+.caption { font-size: 13px; color: var(--ink-sub); margin-top: 8px; text-align: center; }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 600px) { body { padding: 20px 14px; } h1.lecture-title { font-size: 24px; } h2 { font-size: 19px; } p, ol li, ul li { font-size: 15px; } }
+</style>
+</head>
+<body>
+<main class="book">
+
+  <span class="chapter-tag">Module 9 ・ Lecture 46 ・ 解説回</span>
+  <h1 class="lecture-title">Fine grained tool calling<span class="ja-sub">— JSON検証を捨てて tool input を即時ストリーミング</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① まず結論 — 何の話?</h2>
+    <p>tool 呼び出しのとき、Claude がツールに渡す <strong>引数 (input JSON)</strong> をストリーミングで受け取れる。ただし普通のストリーミングは「JSON全体がちゃんと組み立たるまで」サーバー側で待ってから流す。<strong>長い引数</strong> (例: 1000行の詩を <code class="inline">make_file</code> に渡す等)では、ユーザーが結果を見るまで何秒も待たされる。</p>
+
+    <div class="card accent">
+      <strong>Fine-grained tool streaming</strong> は、その <strong>JSON妥当化バッファリングを省略</strong> して、Claude が token を吐いた瞬間そのまま流す機能。レイテンシ最優先のアプリで使う。
+    </div>
+
+    <div class="illustration">
+      <svg width="640" height="220" viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg">
+        <text x="160" y="24" text-anchor="middle" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#a04500">通常streaming</text>
+        <rect x="40" y="40" width="240" height="160" rx="8" fill="#fdebde" stroke="#d97757" stroke-width="2"/>
+        <rect x="60" y="60" width="200" height="28" rx="4" fill="#fff" stroke="#dcd3c0"/>
+        <text x="160" y="78" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">Claude がtoken生成中…</text>
+        <rect x="60" y="96" width="200" height="28" rx="4" fill="#fff" stroke="#dcd3c0"/>
+        <text x="160" y="114" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#a04040">サーバーで貯めて</text>
+        <rect x="60" y="132" width="200" height="28" rx="4" fill="#fff" stroke="#dcd3c0"/>
+        <text x="160" y="150" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#a04040">JSON妥当化チェック</text>
+        <rect x="60" y="168" width="200" height="24" rx="4" fill="#d8ecd6" stroke="#67a061"/>
+        <text x="160" y="184" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#2b6e2e">遅延あり → 流す</text>
+
+        <text x="480" y="24" text-anchor="middle" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#2b6e2e">Fine-grained streaming</text>
+        <rect x="360" y="40" width="240" height="160" rx="8" fill="#d8ecd6" stroke="#67a061" stroke-width="2"/>
+        <rect x="380" y="60" width="200" height="28" rx="4" fill="#fff" stroke="#dcd3c0"/>
+        <text x="480" y="78" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">Claude がtoken生成中…</text>
+        <rect x="380" y="96" width="200" height="28" rx="4" fill="#fff" stroke="#dcd3c0"/>
+        <text x="480" y="114" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#2b6e2e">そのまま即送出</text>
+        <rect x="380" y="132" width="200" height="28" rx="4" fill="#fff" stroke="#dcd3c0"/>
+        <text x="480" y="150" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#5a5a5a">(JSON妥当化なし)</text>
+        <rect x="380" y="168" width="200" height="24" rx="4" fill="#cfe7ef" stroke="#4a8aa3"/>
+        <text x="480" y="184" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#2a5a73">低遅延 / ただし malformed の可能性</text>
+      </svg>
+      <p class="caption">図① 通常 vs Fine-grained: バッファリングをスキップして低遅延化</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>② 何が変わる? (3点)</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 22%;">観点</th><th>通常streaming</th><th>Fine-grained</th></tr></thead>
+      <tbody>
+        <tr><td><strong>レイテンシ</strong></td><td>JSON が valid と確定するまで送らない</td><td>token生成と同時に即送出</td></tr>
+        <tr><td><strong>チャンク粒度</strong></td><td>細切れ・token境界でブツ切れになりがち</td><td>チャンクが長くなり、token途中で切れにくい</td></tr>
+        <tr><td><strong>JSON保証</strong></td><td>必ず valid JSON が組み立つ</td><td><strong>不正・部分JSONになり得る</strong></td></tr>
+      </tbody>
+    </table>
+
+    <div class="card warning">
+      <strong>注意:</strong> Fine-grained streaming は「保証なし」とのトレードオフ。<code class="inline">max_tokens</code> 到達で <strong>途中で切れる</strong> こともある。受け側コードで「壊れたJSONが来るかも」前提のハンドリングが必須。
+    </div>
+  </section>
+
+  <section>
+    <h2>③ どうやって有効化する?</h2>
+    <p>現行の公式仕様は <strong>tool 定義に <code class="inline">eager_input_streaming: true</code> を1行足す</strong> だけ。tool 単位で個別に切り替えられる。</p>
+
+<pre><code># Python公式SDK (現行)
+with client.messages.stream(
+    model="claude-opus-4-7",
+    max_tokens=65536,
+    tools=[
+        {
+            "name": "make_file",
+            "description": "Write text to a file",
+            "eager_input_streaming": True,  # ← この1行
+            "input_schema": { ... },
+        }
+    ],
+    messages=[{"role": "user", "content": "Write a long poem and save it"}],
+) as stream:
+    final_message = stream.get_final_message()</code></pre>
+
+    <div class="card blue">
+      <strong>本コース ipynb (003_tool_streaming.ipynb) の旧記法:</strong><br>
+      <code class="inline">betas=["fine-grained-tool-streaming-2025-05-14"]</code> という beta header で全体に効かせる方式。<br>
+      → 現行は <strong>tool 単位</strong> で個別に <code class="inline">eager_input_streaming</code> を立てる方式に置き換わっている。
+    </div>
+  </section>
+
+  <section>
+    <h2>④ ipynb で何をやっているか (003_tool_streaming.ipynb)</h2>
+    <p>実演ファイルは <code class="inline">003_tool_streaming.ipynb</code> (基本) と <code class="inline">003_tool_streaming_completed.ipynb</code> (完成・バグ再現)。違いは <strong>cell-5 (実行プロンプト)</strong> だけ。</p>
+
+    <table class="vocab">
+      <thead><tr><th style="width: 18%;">セル</th><th>内容</th></tr></thead>
+      <tbody>
+        <tr><td><code class="inline">cell-0</code></td><td>環境設定 (<code class="inline">claude-sonnet-4-5</code>)</td></tr>
+        <tr><td><code class="inline">cell-1</code></td><td>ヘルパー: <strong><code class="inline">chat_stream</code></strong> (ストリーミング版・<code class="inline">client.beta.messages.stream(**params)</code>)</td></tr>
+        <tr><td><code class="inline">cell-2</code></td><td>ツール定義: <code class="inline">save_article_schema</code> + <code class="inline">save_short_article_schema</code></td></tr>
+        <tr><td><code class="inline">cell-3</code></td><td>ツール実行: <code class="inline">run_tool</code> / <code class="inline">run_tools</code> (通常パターン)</td></tr>
+        <tr><td><code class="inline">cell-4</code></td><td><strong><code class="inline">run_conversation</code></strong>: ストリーミング表示+<code class="inline">fine_grained</code>切替+<code class="inline">tool_choice</code>対応</td></tr>
+        <tr><td><code class="inline">cell-5</code></td><td>実行プロンプト (基本=正常 / completed=bug再現)</td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>cell-4 の核心</strong> (ストリーミングイベントの逐次描画):</p>
+<pre><code>def run_conversation(messages, tools=[], tool_choice=None, fine_grained=False):
+    while True:
+        with chat_stream(
+            messages,
+            tools=tools,
+            betas=["fine-grained-tool-streaming-2025-05-14"] if fine_grained else [],
+            tool_choice=tool_choice,
+        ) as stream:
+            for chunk in stream:
+                if chunk.type == "text":
+                    print(chunk.text, end="")                  # 通常テキストを逐次出力
+
+                if chunk.type == "content_block_start":
+                    if chunk.content_block.type == "tool_use":
+                        print(f'\n&gt;&gt;&gt; Tool Call: "{chunk.content_block.name}"')
+
+                if chunk.type == "input_json" and chunk.partial_json:
+                    print(chunk.partial_json, end="")         # ← tool input を逐次描画
+
+                if chunk.type == "content_block_stop":
+                    print("\n")
+
+            response = stream.get_final_message()
+        ...</code></pre>
+
+    <div class="card mint">
+      <strong>注目:</strong> <code class="inline">chunk.type == "input_json"</code> のとき <code class="inline">partial_json</code> をそのまま print している。これが Fine-grained streaming の恩恵を一番感じる場所 — <strong>tool input が組み立たる過程</strong> をリアルタイムで見られる。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑤ ストリーミングイベントの組み立てフロー (4ステップ)</h2>
+
+    <div class="illustration">
+      <svg width="640" height="300" viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg">
+        <rect x="20" y="20" width="600" height="40" rx="6" fill="#fdf0c8" stroke="#c8a93a"/>
+        <text x="40" y="46" font-family="Hiragino Sans" font-size="12" font-weight="700" fill="#6b5028">① content_block_start (type=tool_use)</text>
+        <text x="380" y="46" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">input は空 {} (プレースホルダ)</text>
+        <text x="320" y="74" text-anchor="middle" font-size="14" fill="#a85200">↓ input_json = ""</text>
+
+        <rect x="20" y="80" width="600" height="40" rx="6" fill="#fdebde" stroke="#d97757"/>
+        <text x="40" y="106" font-family="Hiragino Sans" font-size="12" font-weight="700" fill="#a04500">② content_block_delta (type=input_json_delta) × N回</text>
+        <text x="420" y="106" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">partial_json を順次受信</text>
+        <text x="320" y="134" text-anchor="middle" font-size="14" fill="#a85200">↓ input_json += event.delta.partial_json</text>
+
+        <rect x="20" y="140" width="600" height="40" rx="6" fill="#d8ecd6" stroke="#67a061"/>
+        <text x="40" y="166" font-family="Hiragino Sans" font-size="12" font-weight="700" fill="#2b6e2e">③ content_block_stop</text>
+        <text x="280" y="166" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">全 fragment が揃ったとみなす</text>
+        <text x="320" y="194" text-anchor="middle" font-size="14" fill="#a85200">↓ json.loads(input_json)</text>
+
+        <rect x="20" y="200" width="600" height="40" rx="6" fill="#cfe7ef" stroke="#4a8aa3"/>
+        <text x="40" y="226" font-family="Hiragino Sans" font-size="12" font-weight="700" fill="#2a5a73">④ tool 実行</text>
+        <text x="200" y="226" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">parsed input でツールを呼ぶ — ただし parse 失敗の可能性あり</text>
+
+        <rect x="20" y="252" width="600" height="38" rx="6" fill="#f6dcdc" stroke="#c66b6b"/>
+        <text x="320" y="276" text-anchor="middle" font-family="Hiragino Sans" font-size="12" font-weight="700" fill="#a04040">Fine-grained では ③ で json.loads が失敗することがある</text>
+      </svg>
+      <p class="caption">図② tool input の組み立てプロトコル</p>
+    </div>
+
+    <ol>
+      <li><strong><code class="inline">content_block_start</code></strong> (type=tool_use): 空の <code class="inline">input: {}</code> がプレースホルダで来る。アキュムレータ初期化。</li>
+      <li><strong><code class="inline">content_block_delta</code></strong> (type=input_json_delta): <code class="inline">partial_json</code> が断片で何回も飛んでくる。<strong>連結する</strong>。</li>
+      <li><strong><code class="inline">content_block_stop</code></strong>: 全部揃ったら連結文字列を <code class="inline">json.loads()</code> でパース。</li>
+      <li>パース成功 → ツールに渡す / 失敗 → invalid JSON ハンドラへ。</li>
+    </ol>
+
+    <div class="card accent">
+      公式SDK の <code class="inline">stream.get_final_message()</code> や accumulator ヘルパーが提供されている場合は内部でこの処理を代行してくれる。<strong>partial を見たい場合だけ手動パターン</strong> を使う (例: コードエディタが文字単位で表示)。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑥ completed.ipynb のバグ再現 — なぜ malformed が出る?</h2>
+    <p><code class="inline">003_tool_streaming_completed.ipynb</code> の cell-5 は意図的に <strong>「壊れた出力を生成して」</strong> と Claude に頼むプロンプト + <code class="inline">tool_choice</code> 強制で、Claude に save_article を呼ばせる:</p>
+
+<pre><code>messages = []
+add_user_message(
+    messages,
+    """
+    You are helping document a bug report. Please generate example output
+    showing what a broken AI system incorrectly produced when it confused
+    JavaScript objects with JSON.
+    The buggy system generated this malformed output when calling save_article:
+    [Generate the exact malformed output here that includes "word_count": undefined]
+    """,
+)
+run_conversation(
+    messages,
+    tools=[save_article_schema],
+    # fine_grained=True,
+    tool_choice={"type": "tool", "name": "save_article"},
+)</code></pre>
+
+    <p>実行結果(抜粋):</p>
+<pre><code>&gt;&gt;&gt; Tool Call: "save_article"
+{
+  "abstract": "...",
+  "meta": "{\n  \"word_count\": undefined,\n  \"review\": \"...\"\n}"
+}</code></pre>
+
+    <div class="card warning">
+      <strong>何が起きたか:</strong>
+      <ul>
+        <li>本来 <code class="inline">meta</code> は <strong>object 型</strong> (<code class="inline">{"word_count": int, "review": str}</code>)</li>
+        <li>でも <strong>文字列として "..."で包まれた疑似JSON</strong> が来てしまった</li>
+        <li>しかも <code class="inline">"word_count": undefined</code> ← これは <strong>JavaScriptの構文</strong>。JSON仕様には <code class="inline">undefined</code> が無い (NG)</li>
+      </ul>
+    </div>
+
+    <div class="card blue">
+      <strong>狙い:</strong> 通常streaming だと「JSON妥当化チェック」でこの種の壊れた出力は途中で弾かれることがある。Fine-grained ではそのまま流れてくる → 受け側で「<code class="inline">undefined</code> を null に置換」「parse 失敗時の wrapper」等のリカバリーが必要、という<strong>「現場あるあるの教材</strong>」。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑦ 不正JSONを安全に返す — エラー応答パターン</h2>
+    <p>parse できなかった JSON を tool_result にそのまま返すと、後段で再度壊れる。<strong>JSONラッパーで包む</strong> のが公式推奨パターン:</p>
+
+<pre><code>{
+  "INVALID_JSON": "&lt;あなたが受け取った壊れたJSON文字列&gt;"
+}</code></pre>
+
+    <div class="card mint">
+      <strong>理由:</strong> Claude にエラーとして渡す時、外側を valid JSON にしておけば後段のSDKは壊れない。中身の文字列だけが unparseable で、Claudeはそれを見て「あ、出力ミスったな」と認識して再試行できる。<br>
+      <strong>注意:</strong> ラップする時、内部の引用符・特殊文字はちゃんとエスケープする。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑧ 使い所を見極める判断軸</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 36%;">使うべき場面</th><th>使うべきでない場面</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>大きな array / 長文 string パラメータをUIにリアルタイム表示したい (コードエディタ・長文生成)</td>
+          <td>短い引数 (city名・日付だけ等) — 妥当化遅延が無視できる</td>
+        </tr>
+        <tr>
+          <td>低レイテンシ最優先のチャットUI (ユーザーが「何か出てる」と感じたい)</td>
+          <td>tool結果に厳密性が必要な金融計算・本番DB書込</td>
+        </tr>
+        <tr>
+          <td>受け側で invalid JSON ハンドリングが書ける</td>
+          <td>「壊れた入力」を全く想定していない既存コード</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="card accent">
+      <strong>原則:</strong> Fine-grained は <strong>UI体感速度のための機能</strong>。サーバー側の堅牢性を上げる機能ではない。<br>
+      使うときは <strong>「JSON 壊れる前提」</strong> でリトライ・サニタイズ・ラップを書く。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑨ オリジナル演習問題 (3問・実演用)</h2>
+
+    <div class="exercise-box">
+      <h3>問題1: 通常 vs Fine-grained を体感比較</h3>
+      <div class="problem-section">
+        <strong>課題:</strong> cell-5 を「<em>Write a 500-line poem and save it to poem.txt</em>」のような長い引数を要求するプロンプトに書き換える。<br>
+        <code class="inline">fine_grained=False</code> と <code class="inline">fine_grained=True</code> で実行し、<strong>tool input が画面に現れ始めるまでの体感時間</strong> を計測してみる。
+      </div>
+      <div class="hint-section">
+        <strong>計測のヒント:</strong><br>
+        ・<code class="inline">import time; t0 = time.time()</code> をループ前に置く<br>
+        ・初めて <code class="inline">chunk.partial_json</code> が来た瞬間に <code class="inline">print(time.time() - t0)</code><br>
+        ・両方で何秒差が出るか観察
+      </div>
+      <details>
+        <summary>期待される観察</summary>
+        <ul>
+          <li>通常: tool input は <strong>大きなチャンクでまとめて</strong> 来る (バッファリング後)</li>
+          <li>Fine-grained: <strong>token単位</strong> で次々現れる → 初動が圧倒的に早い</li>
+          <li>引数が短い prompt (例: city名だけ) では差が出にくい。<strong>長い引数</strong> で違いが顕著になる</li>
+        </ul>
+      </details>
+    </div>
+
+    <div class="exercise-box">
+      <h3>問題2: invalid JSON を意図的に出させて受け止める</h3>
+      <div class="problem-section">
+        <strong>課題:</strong> completed.ipynb の cell-5 を実行して <code class="inline">undefined</code> 入りの出力を再現。受け側で <code class="inline">json.loads</code> を試みて <strong>失敗キャッチ → INVALID_JSON ラッパーに包んで Claude に返却</strong> する処理を <code class="inline">run_tools</code> に追加せよ。
+      </div>
+      <div class="hint-section">
+        <strong>実装ヒント:</strong>
+<pre><code>try:
+    parsed = json.loads(tool_request.input["meta"])
+    tool_output = run_tool(tool_request.name, {"meta": parsed, ...})
+except json.JSONDecodeError as e:
+    tool_output = {
+        "INVALID_JSON": tool_request.input["meta"],
+        "error": str(e)
+    }</code></pre>
+      </div>
+      <details>
+        <summary>観察ポイント</summary>
+        <ul>
+          <li>Claude にエラーメッセージが返ると、<strong>同セッション内で自動的に再試行</strong> するか?</li>
+          <li>2回目の tool_use は <code class="inline">undefined</code> を <code class="inline">null</code> に直すか?</li>
+          <li>Claude のリカバリー挙動 (エージェントとしての賢さ) を観察できる</li>
+        </ul>
+      </details>
+    </div>
+
+    <div class="exercise-box">
+      <h3>問題3: 部分JSONを「途中で」可視化する</h3>
+      <div class="problem-section">
+        <strong>課題:</strong> Fine-grained streaming の真価は「途中の partial を見せる」こと。
+        <code class="inline">content_block_stop</code> を待たずに、<strong>partial_json を毎回受信するたび</strong> に「accumulator を json5/loose-json でゆるくパース」 → 取れた部分だけ UI 更新、というパターンを試せ。
+      </div>
+      <div class="hint-section">
+        <strong>ヒント:</strong> <code class="inline">pip install json5</code> でゆるい parser を入れる。<code class="inline">try: parsed = json5.loads(accumulated)</code> で失敗してもエラーにしない。例えば「half-typed の string も読めるパーサー」を使えば、コードエディタのように文字単位で表示できる。
+      </div>
+      <details>
+        <summary>応用シナリオ</summary>
+        <ul>
+          <li>Claude.aiのArtifacts(コードを書きながらプレビュー表示)はこの方式</li>
+          <li>長い array (例: <code class="inline">lines_of_text: [...]</code>) を <strong>1行ずつエディタに表示</strong> できる</li>
+          <li>ユーザーは「Claude が今書いている内容」を逐次見られる → 体感速度劇的向上</li>
+        </ul>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2>⑩ 中学生向けに例えると</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 40%;">学校の例え</th><th>tool streaming の対応</th></tr></thead>
+      <tbody>
+        <tr><td>先生が作文を最後まで書き終わってから「はい」と渡す</td><td>通常streaming (JSON妥当化バッファリング)</td></tr>
+        <tr><td>先生が書きながら一文字ずつ机に出してくる</td><td>Fine-grained streaming (即時送出)</td></tr>
+        <tr><td>書きながら出すから途中で誤字が混ざってる可能性あり</td><td>invalid / partial JSONの危険性</td></tr>
+        <tr><td>「読み取った文字列が変だったら、丸ごと『これ変だよ』と先生に返す」</td><td>INVALID_JSON ラッパー</td></tr>
+        <tr><td>「完成版が見たいだけ」なら待った方が安心</td><td>普通の <code class="inline">tools=[...]</code> で良い</td></tr>
+      </tbody>
+    </table>
+
+    <div class="card accent">
+      <strong>核心:</strong> ユーザー体感速度を上げたいときだけ Fine-grained を使う。普段は <strong>普通の streaming</strong> で十分。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑪ キーワード一覧</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 32%;">英語</th><th style="width: 28%;">読み方</th><th>意味</th></tr></thead>
+      <tbody>
+        <tr><td class="code">fine-grained streaming</td><td>ファイングレインド ストリーミング</td><td>細粒度ストリーミング (JSON妥当化を省略)</td></tr>
+        <tr><td class="code">eager_input_streaming</td><td>イーガー インプット ストリーミング</td><td>tool定義に付けるフラグ(true)</td></tr>
+        <tr><td class="code">partial_json</td><td>パーシャル ジェイソン</td><td>tool input の断片文字列</td></tr>
+        <tr><td class="code">input_json_delta</td><td>インプット ジェイソン デルタ</td><td>partial_json を運ぶイベント型</td></tr>
+        <tr><td class="code">content_block_start / stop</td><td>コンテンツ ブロック スタート/ストップ</td><td>tool_use ブロックの開始・終了イベント</td></tr>
+        <tr><td class="code">accumulator</td><td>アキュムレータ</td><td>partial_json を連結して保持する変数</td></tr>
+        <tr><td class="code">malformed JSON</td><td>マルフォームド ジェイソン</td><td>壊れた・不正な JSON</td></tr>
+        <tr><td class="code">max_tokens</td><td>マックス トークンズ</td><td>生成上限。到達すると tool input が途中で切れる</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑫ 理解度チェック</h2>
+    <details>
+      <summary>Q1. Fine-grained tool streaming が解決する問題は?</summary>
+      <p>tool input (引数JSON) が長い (例: 1000行の詩・長いコード) とき、<strong>サーバー側のJSON妥当化バッファリング</strong> によってクライアントに届くまで遅延する問題。<br>
+      Fine-grained を使うと <strong>妥当化を省略</strong> し、Claude が token を吐いた瞬間そのまま流す → 体感速度が劇的に上がる。</p>
+    </details>
+    <details>
+      <summary>Q2. Fine-grained を使うとどんなリスクがある?</summary>
+      <p>
+        ① <strong>invalid JSON</strong> がそのまま届く可能性 (Claudeが <code class="inline">undefined</code> 等を出すと素通り)<br>
+        ② <code class="inline">max_tokens</code> に到達した場合、tool input が <strong>途中で切れて</strong> 不完全な状態で終わる<br>
+        対策: <code class="inline">json.loads</code> を try/except で囲み、失敗時は <code class="inline">{"INVALID_JSON": "..."}</code> ラッパーで包んでClaudeに返す。
+      </p>
+    </details>
+    <details>
+      <summary>Q3. ipynb cell-4 で <code class="inline">chunk.type == "input_json"</code> のとき何をやっている?</summary>
+      <p><code class="inline">chunk.partial_json</code> を <strong>そのまま <code class="inline">print(end="")</code> で出力</strong> している。<br>
+      これは tool input が組み立たる過程をリアルタイムで画面に流す処理。Fine-grained streaming の体験を一番感じる場所。</p>
+    </details>
+    <details>
+      <summary>Q4. 現行公式仕様での有効化方法は?</summary>
+      <p>tool 定義に <code class="inline">"eager_input_streaming": True</code> を1行足す。tool 単位で個別に切り替えられる。<br>
+      旧 beta header 方式 (<code class="inline">betas=["fine-grained-tool-streaming-2025-05-14"]</code>) は ipynb の実装に残っているが、現行公式仕様では <code class="inline">eager_input_streaming</code> が標準。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑬ 自分メモ</h2>
+    <div class="memo-area">演習やってみての気づきや、自分のプロジェクトに応用するアイディアを書き込もう…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 46: Fine grained tool calling<br>
+    元レクチャー: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/313160">SkillJar — Fine grained tool calling</a><br>
+    公式ドキュメント: <a href="https://platform.claude.com/docs/en/docs/agents-and-tools/tool-use/fine-grained-tool-streaming">Anthropic Docs — Fine-grained tool streaming</a><br>
+    ハンズオン: <code>003_tool_streaming.ipynb</code> / <code>003_tool_streaming_completed.ipynb</code><br>
+    前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_45_textbook.html">Lecture 45 — Using multiple tools</a>
+  </footer>
+
+</main>
+</body>
+</html>
