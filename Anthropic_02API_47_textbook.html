@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 47: The text editor tool — Claudeに直接ファイルを編集させる | Anthropic Academy 教科書</title>
+<style>
+:root {
+  --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a;
+  --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028;
+  --soft-blue: #cfe7ef; --soft-yellow: #fdf0c8; --soft-mint: #d8ecd6; --soft-pink: #f6dcdc;
+  --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04);
+  --exercise-bg: #fff9ec; --exercise-border: #e6c97a;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+.card.blue { background: var(--soft-blue); border-left: 4px solid #4a8aa3; }
+.card.warning { background: var(--soft-pink); border-left: 4px solid #c66b6b; }
+.exercise-box { background: var(--exercise-bg); border: 2px solid var(--exercise-border); border-radius: var(--radius); padding: 20px 24px; margin: 18px 0; }
+.exercise-box h3 { color: #8a6a1c; margin-bottom: 12px; font-size: 17px; }
+.problem-section { background: #fff; border-left: 4px solid #c8a93a; padding: 12px 16px; border-radius: 6px; margin: 10px 0; }
+.hint-section { background: #f4e9c4; padding: 10px 14px; border-radius: 6px; margin-top: 10px; font-size: 14px; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+table.vocab td.code { font-family: "Consolas","Menlo",monospace; color: var(--accent); font-weight: 700; white-space: nowrap; }
+pre { background: #f4eedb; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: "Consolas","Menlo",monospace; font-size: 14px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--border); }
+code.inline { background: #f4eedb; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Menlo",monospace; font-size: 0.92em; color: #a85200; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+.illustration { text-align: center; margin: 24px 0; }
+.illustration svg { max-width: 100%; height: auto; }
+.caption { font-size: 13px; color: var(--ink-sub); margin-top: 8px; text-align: center; }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 600px) { body { padding: 20px 14px; } h1.lecture-title { font-size: 24px; } h2 { font-size: 19px; } p, ol li, ul li { font-size: 15px; } }
+</style>
+</head>
+<body>
+<main class="book">
+
+  <span class="chapter-tag">Module 9 ・ Lecture 47 ・ 解説回</span>
+  <h1 class="lecture-title">The text editor tool<span class="ja-sub">— Claudeに直接ファイルを編集させるAnthropic組み込みツール</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① まず結論 — 何の話?</h2>
+    <p>Claude に「ファイル名を渡す」だけで、Claude が <strong>自分でファイルを開いて、読んで、書き換える</strong> ことができる Anthropic 公式のビルトインツール。スキーマレス (input_schema を書かない) なのが特徴。</p>
+
+    <div class="card accent">
+      <strong>ツール名:</strong> <code class="inline">str_replace_based_edit_tool</code> (Claude 4.x 用) /<br>
+      <strong>type:</strong> <code class="inline">text_editor_20250728</code> (最新版) <br>
+      → <strong>4つのコマンド</strong> <code class="inline">view</code> / <code class="inline">str_replace</code> / <code class="inline">create</code> / <code class="inline">insert</code> でファイル操作。
+    </div>
+  </section>
+
+  <section>
+    <h2>② スキーマレス = 入力スキーマを書かない</h2>
+    <p>これまでの自前ツール (<code class="inline">get_current_datetime</code> 等) では <code class="inline">input_schema</code> を JSON で詳しく書いていた。Text editor tool は <strong>Claude のモデル内部にスキーマが組み込まれている</strong>。</p>
+
+<pre><code># 自前ツール (スキーマ自分で書く)
+tools=[{
+    "name": "get_current_datetime",
+    "description": "...",
+    "input_schema": { "type": "object", "properties": {...}, "required": [...] }
+}]
+
+# Text editor tool (スキーマレス・2行だけ)
+tools=[{
+    "type": "text_editor_20250728",
+    "name": "str_replace_based_edit_tool"
+}]</code></pre>
+
+    <div class="card mint">
+      <strong>核心:</strong> Anthropic 提供のビルトインツールはモデル側がスキーマを既知。あなたは「type + name」だけ書けばいい。<br>
+      <strong>裏返し:</strong> input_schema を変更・拡張できない。決められたコマンド・引数しか使えない。
+    </div>
+  </section>
+
+  <section>
+    <h2>③ 4つのコマンド</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 18%;">command</th><th style="width: 30%;">必須引数</th><th>役割</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="code">view</td>
+          <td><code class="inline">path</code> + <code class="inline">view_range?</code></td>
+          <td>ファイル内容を読む or ディレクトリ一覧。行番号付きで返す</td>
+        </tr>
+        <tr>
+          <td class="code">str_replace</td>
+          <td><code class="inline">path</code>, <code class="inline">old_str</code>, <code class="inline">new_str</code></td>
+          <td>old_str を new_str に置換。<strong>完全一致1箇所のみ</strong>(複数マッチはエラー)</td>
+        </tr>
+        <tr>
+          <td class="code">create</td>
+          <td><code class="inline">path</code>, <code class="inline">file_text</code></td>
+          <td>新規ファイル作成。既存ファイルがあればエラー</td>
+        </tr>
+        <tr>
+          <td class="code">insert</td>
+          <td><code class="inline">path</code>, <code class="inline">insert_line</code>, <code class="inline">insert_text</code></td>
+          <td>指定行の後に挿入(0なら先頭)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="card warning">
+      <strong>注意:</strong> <code class="inline">undo_edit</code> コマンドは <strong>Claude 4.x 用 (text_editor_20250728 / 20250429) では削除</strong>。Sonnet 3.5/3.7 系の旧版 (text_editor_20241022 / 20250124) のみ存在。バックアップ→復元は自前で実装する。
+    </div>
+  </section>
+
+  <section>
+    <h2>④ アプリ側の責任 — Claude は呼ぶだけ、実装は自分</h2>
+    <p>Text editor tool は <strong>Claude が「こうしてほしい」と要請する仕組み</strong> だけ。実際にファイルを開いて、読んで、書き換えるのは <strong>あなたのコード</strong>。</p>
+
+    <p>ipynb (005_text_editor_tool.ipynb) cell-2 では <code class="inline">TextEditorTool</code> クラスを200行以上で実装している:</p>
+
+<pre><code>class TextEditorTool:
+    def __init__(self, base_dir: str = "", backup_dir: str = ""):
+        self.base_dir = base_dir or os.getcwd()
+        self.backup_dir = backup_dir or os.path.join(self.base_dir, ".backups")
+        os.makedirs(self.backup_dir, exist_ok=True)
+
+    def _validate_path(self, file_path: str) -&gt; str:
+        # ディレクトリトラバーサル攻撃を防ぐパス検証
+        abs_path = os.path.normpath(os.path.join(self.base_dir, file_path))
+        if not abs_path.startswith(self.base_dir):
+            raise ValueError(f"Access denied: outside the allowed directory")
+        return abs_path
+
+    def _backup_file(self, file_path: str) -&gt; str:
+        # 編集前に必ずバックアップ
+        ...
+
+    def view(self, file_path, view_range=None) -&gt; str: ...
+    def str_replace(self, file_path, old_str, new_str) -&gt; str: ...
+    def create(self, file_path, file_text) -&gt; str: ...
+    def insert(self, file_path, insert_line, new_str) -&gt; str: ...</code></pre>
+
+    <div class="card accent">
+      <strong>必須要素 (公式推奨):</strong>
+      <ul>
+        <li>① <strong>パス検証</strong> — Claude が <code class="inline">../../etc/passwd</code> を view しようとしても拒否</li>
+        <li>② <strong>編集前バックアップ</strong> — 重要ファイルは編集前にコピーしておく</li>
+        <li>③ <strong>マッチ数チェック</strong> — str_replace は1箇所のみ。0箇所/複数箇所はエラー</li>
+        <li>④ <strong>エラーは <code class="inline">is_error: true</code> で返す</strong> — Claude に「失敗した」と伝えて再試行させる</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>⑤ run_tool ハンドラの分岐パターン</h2>
+    <p>ipynb cell-3 の <code class="inline">run_tool</code> は command 別に分岐:</p>
+
+<pre><code>def run_tool(tool_name, tool_input):
+    if tool_name == "str_replace_based_edit_tool":
+        command = tool_input["command"]
+        if command == "view":
+            return text_editor_tool.view(tool_input["path"], tool_input.get("view_range"))
+        elif command == "str_replace":
+            return text_editor_tool.str_replace(
+                tool_input["path"], tool_input["old_str"], tool_input["new_str"]
+            )
+        elif command == "create":
+            return text_editor_tool.create(tool_input["path"], tool_input["file_text"])
+        elif command == "insert":
+            return text_editor_tool.insert(
+                tool_input["path"], tool_input["insert_line"], tool_input["new_str"]
+            )
+        else:
+            raise Exception(f"Unknown text editor command: {command}")</code></pre>
+
+    <div class="card blue">
+      <strong>新ポイント:</strong> 自前ツールは「1ツール = 1関数」だったのに対し、ビルトイン Text editor は <strong>「1ツール = 4コマンド」</strong>。<code class="inline">tool_input["command"]</code> で内部分岐する設計。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑥ 典型的なフロー — 「primes.py のシンタックスエラー直して」</h2>
+    <div class="illustration">
+      <svg width="640" height="380" viewBox="0 0 640 380" xmlns="http://www.w3.org/2000/svg">
+        <rect x="20" y="20" width="600" height="44" rx="6" fill="#fdf0c8" stroke="#c8a93a"/>
+        <text x="40" y="46" font-family="Hiragino Sans" font-size="12" font-weight="700" fill="#6b5028">Turn 0: ユーザー入力</text>
+        <text x="220" y="46" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">「primes.py のシンタックスエラー直して」</text>
+
+        <rect x="20" y="76" width="600" height="44" rx="6" fill="#fdebde" stroke="#d97757"/>
+        <text x="40" y="100" font-family="Hiragino Sans" font-size="12" font-weight="700" fill="#a04500">Turn 1: Claude → view コマンド要請</text>
+        <text x="290" y="100" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">{command: "view", path: "primes.py"}</text>
+
+        <rect x="20" y="132" width="600" height="44" rx="6" fill="#d8ecd6" stroke="#67a061"/>
+        <text x="40" y="156" font-family="Hiragino Sans" font-size="12" font-weight="700" fill="#2b6e2e">App: ファイル内容を行番号付きで返す</text>
+        <text x="320" y="156" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">"1: def is_prime(n):\n2: ...\n19: for num in range..."</text>
+
+        <rect x="20" y="188" width="600" height="44" rx="6" fill="#fdebde" stroke="#d97757"/>
+        <text x="40" y="212" font-family="Hiragino Sans" font-size="12" font-weight="700" fill="#a04500">Turn 2: Claude → str_replace 要請</text>
+        <text x="40" y="226" font-family="Hiragino Sans" font-size="10" fill="#2b2b2b">{command: "str_replace", old_str: "range(2, limit + 1)", new_str: "range(2, limit + 1):"}</text>
+
+        <rect x="20" y="244" width="600" height="44" rx="6" fill="#d8ecd6" stroke="#67a061"/>
+        <text x="40" y="270" font-family="Hiragino Sans" font-size="12" font-weight="700" fill="#2b6e2e">App: 置換実行 + バックアップ</text>
+        <text x="310" y="270" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">"Successfully replaced text at exactly one location."</text>
+
+        <rect x="20" y="300" width="600" height="44" rx="6" fill="#cfe7ef" stroke="#4a8aa3"/>
+        <text x="40" y="326" font-family="Hiragino Sans" font-size="12" font-weight="700" fill="#2a5a73">Turn 3: Claude 最終応答</text>
+        <text x="40" y="340" font-family="Hiragino Sans" font-size="10" fill="#2b2b2b">「19行目の for ループにコロンが抜けてました。直しました。」(end_turn)</text>
+      </svg>
+      <p class="caption">図 view → str_replace → 説明、の3ターン構造</p>
+    </div>
+
+    <div class="card mint">
+      <strong>Claude の知能の見せ所:</strong> エラーメッセージなしで「シンタックスエラー」とだけ言われて、自分で view してコード読んで、19行目の <code class="inline">:</code> 不足を発見して、修正する。これがエージェント。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑦ tool バージョン履歴</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 26%;">バージョン</th><th style="width: 18%;">対応モデル</th><th>変更点</th></tr></thead>
+      <tbody>
+        <tr><td class="code">text_editor_20250728</td><td>Claude 4.x</td><td>最新版。<code class="inline">max_characters</code> パラメータ追加 (view時に長文を自動truncate)</td></tr>
+        <tr><td class="code">text_editor_20250429</td><td>Claude 4.x</td><td>Claude 4向け初版。<strong><code class="inline">undo_edit</code>コマンド削除</strong> / 名前が str_replace_based に変更</td></tr>
+        <tr><td class="code">text_editor_20250124</td><td>Sonnet 3.7</td><td>standalone documentation 整備版</td></tr>
+        <tr><td class="code">text_editor_20241022</td><td>Sonnet 3.5</td><td>初版。5コマンド全部入り (undo_edit 含む)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="card warning">
+      <strong>注意:</strong> tool version は <strong>モデルとセット</strong>。Claude 4.x で <code class="inline">text_editor_20241022</code> は使えない。逆もしかり。間違えると API エラー。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑧ オリジナル演習問題 (3問)</h2>
+
+    <div class="exercise-box">
+      <h3>問題1: 簡単なシンタックスエラーを直させる</h3>
+      <div class="problem-section">
+        <strong>課題:</strong> テストファイル <code class="inline">test.py</code> を1つ作る (<code class="inline">def hello(name)\n    return f"Hi {name}"</code> のように <code class="inline">:</code> 抜き)。cell-6 のプロンプトを「test.py のシンタックスエラー直して」に変えて実行。Claude が何ターンで直すか観察。
+      </div>
+      <div class="hint-section">
+        <strong>観察ポイント:</strong><br>
+        ・Claude が最初に <code class="inline">view</code> を呼ぶ → 行番号付きで返す<br>
+        ・行番号を見て該当箇所を <code class="inline">str_replace</code><br>
+        ・最後に「修正完了」と end_turn
+      </div>
+      <details>
+        <summary>期待される観察</summary>
+        <ul>
+          <li>典型は <strong>3ターン</strong> (view → str_replace → end_turn)</li>
+          <li>ファイルが大きいと view を複数回呼ぶこともある (view_range を使い分け)</li>
+          <li>old_str に空白・インデントを <strong>1文字違わず</strong> 入れる必要あり</li>
+        </ul>
+      </details>
+    </div>
+
+    <div class="exercise-box">
+      <h3>問題2: パス検証を破ろうとさせる</h3>
+      <div class="problem-section">
+        <strong>課題:</strong> Claude に <strong>「<code class="inline">/etc/passwd</code> を view して」</strong> と頼んでみる。<code class="inline">TextEditorTool._validate_path</code> が拒否することを確認する。
+      </div>
+      <div class="hint-section">
+        <strong>ヒント:</strong> Linux/Mac なら <code class="inline">../../../../etc/passwd</code>、Windows なら <code class="inline">..\..\..\..\Windows\System32\drivers\etc\hosts</code> 等で <code class="inline">os.path.normpath</code> 通った後に <code class="inline">base_dir.startswith()</code> 判定が効くか確認。
+      </div>
+      <details>
+        <summary>セキュリティ観点</summary>
+        <ul>
+          <li>パス検証なしだと Claude (or プロンプトインジェクション) で任意ファイル読み放題</li>
+          <li>本番アプリでは <strong>絶対パス allowlist</strong> + シンボリックリンク無効化も検討</li>
+          <li>Claude.ai の Computer Use 等はサンドボックス内で動かす</li>
+        </ul>
+      </details>
+    </div>
+
+    <div class="exercise-box">
+      <h3>問題3: 自前 undo 機能を作る</h3>
+      <div class="problem-section">
+        <strong>課題:</strong> Claude 4.x の text_editor は <code class="inline">undo_edit</code> がない。ipynb cell-2 の <code class="inline">_backup_file</code> / <code class="inline">_restore_backup</code> を使って、別の関数として「直前の編集を取り消す」をアプリ側に実装せよ。
+      </div>
+      <div class="hint-section">
+        <strong>ヒント:</strong> <code class="inline">backup_dir</code> 配下に <code class="inline">{filename}.{mtime}</code> の形式でバックアップが残る。最新の mtime のものを <code class="inline">shutil.copy2</code> で書き戻せばOK。
+      </div>
+      <details>
+        <summary>発展</summary>
+        <ul>
+          <li>業務アプリでは「アプリ側に取り消し履歴」を持って、tool以外の経路で UNDO 提供するのが安全</li>
+          <li>Claude Code (Anthropic公式CLI) もこれの強化版を内部で使っている</li>
+          <li>Git 統合 (各編集をコミット化) すると、より堅牢な undo が作れる</li>
+        </ul>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2>⑨ 中学生向けに例えると</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 44%;">学校の例え</th><th>tool の対応</th></tr></thead>
+      <tbody>
+        <tr><td>先生に「教科書を直して」と頼む</td><td>ユーザープロンプト</td></tr>
+        <tr><td>先生「まず教科書見せて」(view)</td><td>tool_use view</td></tr>
+        <tr><td>あなた: 教科書ページをスキャンして返す</td><td>tool_result (行番号付き)</td></tr>
+        <tr><td>先生「19ページ "範囲を" を "範囲を:" に書き換えて」(str_replace)</td><td>tool_use str_replace</td></tr>
+        <tr><td>あなた: 書き換える + コピー(バックアップ)</td><td>App側でファイル操作</td></tr>
+        <tr><td>先生「コロンが抜けてました。直しました」</td><td>最終応答 (end_turn)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="card accent">
+      <strong>核心:</strong> Claudeは「指示する役」、あなたのアプリは「実際にやる役」。<strong>2人で1つの仕事</strong> をする協調体制。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑩ キーワード一覧</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 32%;">英語</th><th style="width: 28%;">読み方</th><th>意味</th></tr></thead>
+      <tbody>
+        <tr><td class="code">text editor tool</td><td>テキストエディタ ツール</td><td>Anthropic組み込みファイル編集ツール</td></tr>
+        <tr><td class="code">str_replace_based_edit_tool</td><td>ストリプレース ベースド エディット ツール</td><td>Claude 4.x 用ツール名</td></tr>
+        <tr><td class="code">text_editor_20250728</td><td>テキストエディタ 20250728</td><td>type field の値(タイムスタンプ式バージョニング)</td></tr>
+        <tr><td class="code">schema-less tool</td><td>スキーマレス ツール</td><td>input_schema を書かないビルトインツール</td></tr>
+        <tr><td class="code">view_range</td><td>ビュー レンジ</td><td>view で読む行範囲指定(1-indexed)</td></tr>
+        <tr><td class="code">str_replace</td><td>ストリ リプレース</td><td>old_str→new_str 1箇所完全一致置換</td></tr>
+        <tr><td class="code">directory traversal</td><td>ディレクトリ トラバーサル</td><td>../../で許可外領域に出ようとする攻撃</td></tr>
+        <tr><td class="code">max_characters</td><td>マックス キャラクターズ</td><td>view 時の自動truncate文字数 (20250728〜)</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑪ 理解度チェック</h2>
+    <details>
+      <summary>Q1. なぜ Text editor tool は input_schema を書かなくていい?</summary>
+      <p>Anthropic 提供の <strong>ビルトインツール</strong> で、Claude のモデル内部にスキーマが組み込まれているから。あなたは <code class="inline">{"type": "text_editor_20250728", "name": "str_replace_based_edit_tool"}</code> の2行だけ書けば、4コマンド全部使える。</p>
+    </details>
+    <details>
+      <summary>Q2. Claude 4.x で undo_edit が削除されたのはなぜ?</summary>
+      <p>Claude 4 (2025年4月リリース) で削除。代わりに <strong>「アプリ側でバックアップ管理する」</strong> ことが期待される設計。Anthropic の意図は「undoは tool 経由ではなくアプリ機能として実装すべき」。<br>
+      旧版 (text_editor_20241022 / 20250124) では undo_edit あり (Sonnet 3.5/3.7 で利用可)。</p>
+    </details>
+    <details>
+      <summary>Q3. str_replace で複数マッチした時どうする?</summary>
+      <p>必ずエラーで返す: <code class="inline">"Error: Found 3 matches for replacement text. Please provide more context to make a unique match."</code> + <code class="inline">is_error: true</code><br>
+      → Claude は「文脈を増やしてユニーク化」して再試行する。意図しない箇所の改変を防ぐ安全機構。</p>
+    </details>
+    <details>
+      <summary>Q4. パス検証で気をつけることは?</summary>
+      <p>① <code class="inline">os.path.normpath</code> でパス正規化 → ② <code class="inline">abs_path.startswith(base_dir)</code> で許可ディレクトリ内か確認。<br>
+      Claude が <code class="inline">../../etc/passwd</code> 等を要請してきても拒否できる。プロンプトインジェクション対策の基本。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑫ 自分メモ</h2>
+    <div class="memo-area">自分のプロジェクトでどう使うか書き込もう…例: CSV修正自動化 / 設定ファイルの自動編集…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 47: The text editor tool<br>
+    元レクチャー: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287760">SkillJar — The text edit tool</a><br>
+    公式ドキュメント: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/text-editor-tool">Anthropic Docs — Text editor tool</a><br>
+    ハンズオン: <code>005_text_editor_tool.ipynb</code><br>
+    前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_46_textbook.html">Lecture 46 — Fine grained tool calling</a>
+  </footer>
+
+</main>
+</body>
+</html>
