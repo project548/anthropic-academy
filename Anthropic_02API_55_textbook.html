@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 55: Implementing the RAG flow — 003_vectordb.ipynb 完全実装 | Anthropic Academy 教科書</title>
+<style>
+:root { --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a; --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028; --soft-blue: #cfe7ef; --soft-yellow: #fdf0c8; --soft-mint: #d8ecd6; --soft-pink: #f6dcdc; --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+.card.blue { background: var(--soft-blue); border-left: 4px solid #4a8aa3; }
+.card.warning { background: var(--soft-pink); border-left: 4px solid #c66b6b; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+table.vocab td.code { font-family: "Consolas","Menlo",monospace; color: var(--accent); font-weight: 700; white-space: nowrap; }
+pre { background: #f4eedb; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: "Consolas","Menlo",monospace; font-size: 14px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--border); }
+code.inline { background: #f4eedb; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Menlo",monospace; font-size: 0.92em; color: #a85200; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 600px) { body { padding: 20px 14px; } h1.lecture-title { font-size: 24px; } h2 { font-size: 19px; } p, ol li, ul li { font-size: 15px; } }
+</style>
+</head>
+<body>
+<main class="book">
+  <span class="chapter-tag">Module 10 ・ Lecture 55 ・ 演習回</span>
+  <h1 class="lecture-title">Implementing the RAG flow<span class="ja-sub">— 003_vectordb.ipynb で完全実装する</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① 本章の目的</h2>
+    <p>#50-#54 で学んだ概念を <strong>全部つないで動くコード</strong> にする実装回。ipynb は <code class="inline">003/003_vectordb.ipynb</code>。</p>
+    <div class="card accent">
+      <strong>本ipynbの構成 (9セル):</strong>
+      <ol>
+        <li>cell-0: Voyage AI クライアントセットアップ</li>
+        <li>cell-1: <code class="inline">chunk_by_section</code> (#51)</li>
+        <li>cell-2: <code class="inline">generate_embedding</code> (#52)</li>
+        <li>cell-3: <code class="inline">VectorIndex</code> クラス (本章の主役)</li>
+        <li>cell-4: report.md を読み込み</li>
+        <li>cell-5: チャンク化</li>
+        <li>cell-6: embedding 生成</li>
+        <li>cell-7: VectorIndex に add</li>
+        <li>cell-8〜9: 質問 → 検索</li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <h2>② VectorIndex クラスの完全実装</h2>
+<pre><code>import math
+from typing import Optional, Any, List, Dict, Tuple
+
+
+class VectorIndex:
+    def __init__(self, distance_metric: str = "cosine", embedding_fn=None):
+        self.vectors: List[List[float]] = []
+        self.documents: List[Dict[str, Any]] = []
+        self._vector_dim: Optional[int] = None
+        if distance_metric not in ["cosine", "euclidean"]:
+            raise ValueError("distance_metric must be 'cosine' or 'euclidean'")
+        self._distance_metric = distance_metric
+        self._embedding_fn = embedding_fn
+
+    def add_document(self, document: Dict[str, Any]):
+        """1件追加: contentからembedding生成 → 保存"""
+        if not self._embedding_fn:
+            raise ValueError("Embedding function not provided")
+        if "content" not in document:
+            raise ValueError("Document must contain 'content' key")
+
+        vector = self._embedding_fn(document["content"])
+        self.add_vector(vector=vector, document=document)
+
+    def add_vector(self, vector, document):
+        """次元一貫性チェック + 追加"""
+        if not self.vectors:
+            self._vector_dim = len(vector)
+        elif len(vector) != self._vector_dim:
+            raise ValueError(f"Inconsistent vector dimension")
+        self.vectors.append(list(vector))
+        self.documents.append(document)
+
+    def search(self, query, k: int = 1) -&gt; List[Tuple[Dict, float]]:
+        """類似検索: クエリ → embedding → 全 vector と距離 → top-k"""
+        if not self.vectors:
+            return []
+
+        # クエリが string なら embedding 生成、リストならそのまま使う
+        if isinstance(query, str):
+            query_vector = self._embedding_fn(query)
+        else:
+            query_vector = query
+
+        if len(query_vector) != self._vector_dim:
+            raise ValueError("Query vector dimension mismatch")
+
+        dist_func = self._cosine_distance if self._distance_metric == "cosine" else self._euclidean_distance
+
+        distances = []
+        for i, stored_vector in enumerate(self.vectors):
+            distance = dist_func(query_vector, stored_vector)
+            distances.append((distance, self.documents[i]))
+
+        distances.sort(key=lambda item: item[0])  # 距離小さい順
+        return [(doc, dist) for dist, doc in distances[:k]]</code></pre>
+  </section>
+
+  <section>
+    <h2>③ 距離計算メソッド (cosine と euclidean)</h2>
+<pre><code>    def _cosine_distance(self, vec1, vec2) -&gt; float:
+        """Cosine距離: 1 - (内積 / (大きさ1 × 大きさ2))"""
+        mag1 = self._magnitude(vec1)
+        mag2 = self._magnitude(vec2)
+
+        if mag1 == 0 and mag2 == 0:
+            return 0.0
+        elif mag1 == 0 or mag2 == 0:
+            return 1.0
+
+        dot_prod = self._dot_product(vec1, vec2)
+        cosine_similarity = dot_prod / (mag1 * mag2)
+        cosine_similarity = max(-1.0, min(1.0, cosine_similarity))  # 数値誤差クランプ
+
+        return 1.0 - cosine_similarity
+
+    def _euclidean_distance(self, vec1, vec2) -&gt; float:
+        """ユークリッド距離: sqrt(Σ(p-q)²)"""
+        return math.sqrt(sum((p - q) ** 2 for p, q in zip(vec1, vec2)))
+
+    def _dot_product(self, vec1, vec2) -&gt; float:
+        return sum(p * q for p, q in zip(vec1, vec2))
+
+    def _magnitude(self, vec) -&gt; float:
+        return math.sqrt(sum(x * x for x in vec))</code></pre>
+    <div class="card mint">
+      <strong>cosine距離の使い分け:</strong> 距離 = 0 (完全一致) 〜 2 (正反対)。検索では <strong>小さい順</strong> にtop-k を取る。
+    </div>
+  </section>
+
+  <section>
+    <h2>④ 全フロー: report.md → 質問 → 検索 → 回答</h2>
+<pre><code># 1. report.md 読み込み
+with open("./report.md", "r") as f:
+    text = f.read()
+
+# 2. チャンク分割
+chunks = chunk_by_section(text)
+
+# 3. VectorIndex 初期化 (embedding_fn を渡す)
+store = VectorIndex(
+    distance_metric="cosine",
+    embedding_fn=lambda t: generate_embedding(t, input_type="document")
+)
+
+# 4. 全チャンクを add
+for chunk in chunks:
+    store.add_document({"content": chunk})
+
+print(store)  # VectorIndex(count=15, dim=1024, metric='cosine', has_embedding_fn='Yes')
+
+# 5. ユーザー質問で検索
+query = "Anthropicの2024年の主な進捗は何ですか?"
+results = store.search(query, k=2)  # top 2 関連chunk
+
+for doc, distance in results:
+    print(f"distance={distance:.4f}")
+    print(f"content={doc['content'][:200]}...")
+    print("---")</code></pre>
+  </section>
+
+  <section>
+    <h2>⑤ Claude に検索結果を渡して回答させる</h2>
+<pre><code># 6. プロンプト組み立て + Claude 呼び出し
+import anthropic
+
+client = anthropic.Anthropic()
+
+context_text = "\n---\n".join([doc["content"] for doc, _ in results])
+
+response = client.messages.create(
+    model="claude-sonnet-4-5",
+    max_tokens=1024,
+    messages=[{
+        "role": "user",
+        "content": f"""
+&lt;参考資料&gt;
+{context_text}
+&lt;/参考資料&gt;
+
+上記の参考資料に基づいて、以下の質問に答えてください。
+資料に書いていないことは推測せず、「情報なし」と答えてください。
+
+&lt;質問&gt;
+{query}
+&lt;/質問&gt;
+"""
+    }]
+)
+
+print(response.content[0].text)</code></pre>
+    <div class="card accent">
+      <strong>これで完成!</strong> ① chunk → ② embed → ③ store → ④ search → ⑤ generate の全工程が動く RAG パイプライン。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑥ バルク処理版 (大量データ向け)</h2>
+<pre><code>def add_documents(self, documents: List[Dict[str, Any]], batch_size: int = 50):
+    """大量データ用バルク処理 (Voyage AI レート制限回避)"""
+    for i in range(0, len(documents), batch_size):
+        batch = documents[i:i+batch_size]
+        contents = [d["content"] for d in batch]
+
+        # Voyage AI バッチembed (1回のAPI呼び出しで複数件)
+        result = self._embedding_fn(contents)  # List[List[float]]
+
+        for vec, doc in zip(result, batch):
+            self.add_vector(vec, doc)
+
+        time.sleep(0.5)  # レート制限回避</code></pre>
+    <div class="card warning">
+      <strong>本ipynb での注意 (cell-7コメント):</strong> 「rate limiting errors from VoyageAI を回避するため、bulk operation に変換した」。100万件のチャンクは1件ずつ処理せず、必ず batch + sleep。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑦ 検索結果の品質を見る</h2>
+<pre><code># 距離分布を見る
+for doc, distance in results:
+    print(f"{distance:.4f}: {doc['content'][:80]}...")
+
+# 期待値:
+# 0.05〜0.20: 非常に関連 (たぶん正解chunk)
+# 0.20〜0.40: 関連はする
+# 0.40〜0.60: 微妙
+# 0.60〜:      関連薄い (chunk が悪いか、関連chunkが存在しない)</code></pre>
+    <div class="card blue">
+      <strong>tips:</strong> 距離0.5以上のchunkを Claude に渡すと「無関係な情報を混ぜたClaudeが幻覚」を起こしやすい。閾値カットオフを入れると精度向上。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑧ 失敗時のトラブルシューティング</h2>
+    <details>
+      <summary>VectorIndex の search が空リストを返す</summary>
+      <p>① <code class="inline">add_document</code> がエラーで停止していないか確認 ② <code class="inline">store._vector_dim</code> が None でないか ③ embedding_fn が正しく動いているか単独テスト</p>
+    </details>
+    <details>
+      <summary>「Vector dimension mismatch」エラー</summary>
+      <p>異なる embedding model のベクトルが混ざっている可能性。store を破棄して再構築。同じ <code class="inline">model</code> + <code class="inline">input_type</code> で統一すること。</p>
+    </details>
+    <details>
+      <summary>VoyageAI rate limit エラー</summary>
+      <p>バッチ処理に変更 + <code class="inline">time.sleep(0.5)</code> 追加。paid プランに変更も検討。本ipynb cell-7 が参考実装。</p>
+    </details>
+    <details>
+      <summary>Claude が「資料に書いてない」と何でも答える</summary>
+      <p>検索結果が無関係なchunk ばかりの可能性。距離分布を確認 → chunkingやqueryの言い回し改善 → BM25併用 (#54)。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑨ オリジナル演習問題 (3問)</h2>
+    <div class="card blue">
+      <strong>問題1:</strong> 自分のドキュメント (社内Wiki / 議事録 / 過去メール) で RAG を試す。chunk数 / 距離分布 / Claude応答の質を観察。
+    </div>
+    <div class="card blue">
+      <strong>問題2:</strong> <code class="inline">distance_metric="euclidean"</code> に切り替えて精度比較。同じ質問で cosine と euclidean の top-k がどう変わるか観察。
+    </div>
+    <div class="card blue">
+      <strong>問題3:</strong> #54 の BM25Index と組み合わせて hybrid search を実装。Reciprocal Rank Fusion で結果マージ。embedding単独 vs hybrid で精度比較。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑩ キーワード一覧</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 32%;">英語</th><th style="width: 28%;">読み方</th><th>意味</th></tr></thead>
+      <tbody>
+        <tr><td class="code">VectorIndex</td><td>ベクトル インデックス</td><td>本コース実装のクラス名</td></tr>
+        <tr><td class="code">add_document</td><td>アド ドキュメント</td><td>1件追加メソッド</td></tr>
+        <tr><td class="code">add_documents</td><td>アド ドキュメンツ</td><td>バッチ追加メソッド</td></tr>
+        <tr><td class="code">distance_metric</td><td>ディスタンス メトリック</td><td>距離計算方式 (cosine/euclidean)</td></tr>
+        <tr><td class="code">embedding_fn</td><td>エンベディング エフエヌ</td><td>embedding 生成関数 (注入)</td></tr>
+        <tr><td class="code">vector_dim</td><td>ベクトル ディム</td><td>ベクトル次元数 (一貫性チェック)</td></tr>
+        <tr><td class="code">k (top-k)</td><td>ケー</td><td>取得する関連chunk数</td></tr>
+        <tr><td class="code">batch_size</td><td>バッチサイズ</td><td>バルク処理1回あたり件数</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑪ 理解度チェック</h2>
+    <details>
+      <summary>Q1. VectorIndex に必要な4つの内部状態は?</summary>
+      <p>① <code class="inline">self.vectors</code> (ベクトルのリスト) ② <code class="inline">self.documents</code> (元chunk) ③ <code class="inline">self._vector_dim</code> (次元数・一貫性チェック用) ④ <code class="inline">self._distance_metric</code> (cosine or euclidean)</p>
+    </details>
+    <details>
+      <summary>Q2. なぜ次元一貫性チェックが必要?</summary>
+      <p>異なる embedding model で生成したベクトル (例: voyage-3-large 1024次元 vs OpenAI 1536次元) が混ざると距離計算が壊れる。最初に <code class="inline">self._vector_dim</code> を記録し、以降は一致確認。</p>
+    </details>
+    <details>
+      <summary>Q3. search で距離が小さい順にソートする理由は?</summary>
+      <p>cosine距離・euclidean距離はどちらも <strong>0に近いほど似ている</strong>。<br>
+      cosine類似度 (sim) なら大きい順だが、距離 (1 - sim) を使うので小さい順。検索意図は「最も似たchunkトップk」。</p>
+    </details>
+    <details>
+      <summary>Q4. なぜバルク処理が必要?</summary>
+      <p>1チャンクずつ API呼び出しすると <strong>Voyage AI レート制限</strong> (3 RPM 無料枠) に引っかかる。<br>
+      <code class="inline">add_documents</code> でバッチ化 + <code class="inline">time.sleep(0.5)</code> 挿入。本ipynb cell-7 にバルク版実装あり。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑫ 自分メモ</h2>
+    <div class="memo-area">自分のRAG実装メモ…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 55: Implementing the RAG flow<br>
+    元レクチャー: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287761">SkillJar — Implementing the RAG flow</a><br>
+    ハンズオン: <code>003/003_vectordb.ipynb</code><br>
+    前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_54_textbook.html">Lecture 54 — BM25 lexical search</a>
+  </footer>
+</main>
+</body>
+</html>
