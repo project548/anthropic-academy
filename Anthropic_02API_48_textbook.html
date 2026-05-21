@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 48: The web search tool — Claudeに最新情報をリアルタイム検索させる | Anthropic Academy 教科書</title>
+<style>
+:root {
+  --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a;
+  --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028;
+  --soft-blue: #cfe7ef; --soft-yellow: #fdf0c8; --soft-mint: #d8ecd6; --soft-pink: #f6dcdc;
+  --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04);
+  --exercise-bg: #fff9ec; --exercise-border: #e6c97a;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+.card.blue { background: var(--soft-blue); border-left: 4px solid #4a8aa3; }
+.card.warning { background: var(--soft-pink); border-left: 4px solid #c66b6b; }
+.exercise-box { background: var(--exercise-bg); border: 2px solid var(--exercise-border); border-radius: var(--radius); padding: 20px 24px; margin: 18px 0; }
+.exercise-box h3 { color: #8a6a1c; margin-bottom: 12px; font-size: 17px; }
+.problem-section { background: #fff; border-left: 4px solid #c8a93a; padding: 12px 16px; border-radius: 6px; margin: 10px 0; }
+.hint-section { background: #f4e9c4; padding: 10px 14px; border-radius: 6px; margin-top: 10px; font-size: 14px; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+table.vocab td.code { font-family: "Consolas","Menlo",monospace; color: var(--accent); font-weight: 700; white-space: nowrap; }
+pre { background: #f4eedb; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: "Consolas","Menlo",monospace; font-size: 14px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--border); }
+code.inline { background: #f4eedb; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Menlo",monospace; font-size: 0.92em; color: #a85200; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+.illustration { text-align: center; margin: 24px 0; }
+.illustration svg { max-width: 100%; height: auto; }
+.caption { font-size: 13px; color: var(--ink-sub); margin-top: 8px; text-align: center; }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 600px) { body { padding: 20px 14px; } h1.lecture-title { font-size: 24px; } h2 { font-size: 19px; } p, ol li, ul li { font-size: 15px; } }
+</style>
+</head>
+<body>
+<main class="book">
+
+  <span class="chapter-tag">Module 9 ・ Lecture 48 ・ 解説回</span>
+  <h1 class="lecture-title">The web search tool<span class="ja-sub">— Claudeに最新情報をリアルタイム検索させる「サーバーサイドツール」</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① まず結論 — 何の話?</h2>
+    <p>Claude の学習データは <strong>カットオフ日</strong> までしか入っていない。「今日の天気」「最新のニュース」「直近の株価」等は答えられない。<br>
+    <strong>Web search tool</strong> を使うと、Claude が <strong>自分で検索クエリを作って → Anthropic がGoogle相当の検索を実行して → 結果を Claude に渡す</strong> という仕組みで <strong>リアルタイム情報</strong> を答えられるようになる。</p>
+
+    <div class="card accent">
+      <strong>ツール名:</strong> <code class="inline">web_search</code> /
+      <strong>type:</strong> <code class="inline">web_search_20250305</code> (基本版) または <code class="inline">web_search_20260209</code> (動的フィルタリング対応版)<br>
+      <strong>料金:</strong> 1,000検索あたり <strong>$10</strong> + 通常トークン料金
+    </div>
+  </section>
+
+  <section>
+    <h2>② Text editor tool との決定的な違い — サーバーサイドツール</h2>
+    <p>#47 の Text editor tool は <strong>「アプリ側」で実行</strong>。Claude が要請して、あなたのコードが実際にファイル操作した。<br>
+    Web search tool は違う。<strong>Anthropic のサーバー側で検索が実行される</strong>。あなたのコードは一切検索しない。</p>
+
+    <div class="card mint">
+      <strong>核心:</strong> <code class="inline">server_tool_use</code> ブロックが返ってきても、あなたは <strong>tool_result を返さなくていい</strong>。検索→結果取得→Claude 応答まで <strong>1回の API 呼び出し</strong> で全部完結。アプリ側のコードは「ただ tools=[web_search] と書くだけ」。
+    </div>
+  </section>
+
+  <section>
+    <h2>③ 最小コード — 3行で使える</h2>
+
+<pre><code>response = client.messages.create(
+    model="claude-opus-4-7",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "What is the weather in NYC?"}],
+    tools=[{"type": "web_search_20250305", "name": "web_search", "max_uses": 5}],
+)</code></pre>
+
+    <p>これだけで Claude は:</p>
+    <ol>
+      <li>「NYCの天気を知るには検索が必要」と判断</li>
+      <li><code class="inline">server_tool_use</code> で <code class="inline">{"query": "NYC weather today"}</code> を生成</li>
+      <li>Anthropic サーバーが検索実行 → 結果取得</li>
+      <li><code class="inline">web_search_tool_result</code> ブロックに結果が入る</li>
+      <li>Claude が結果を読んで、<strong>citation付き</strong> で最終応答</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>④ オプションパラメータ — 制御の細部</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 30%;">パラメータ</th><th>用途</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="code">max_uses</td>
+          <td>1リクエスト内の検索回数上限。コスト爆発防止 (例: 5)</td>
+        </tr>
+        <tr>
+          <td class="code">allowed_domains</td>
+          <td>このドメインのみ結果に含める (例: <code class="inline">["wikipedia.org", "nytimes.com"]</code>)</td>
+        </tr>
+        <tr>
+          <td class="code">blocked_domains</td>
+          <td>このドメインは結果から除外 (信頼できないソースを排除)</td>
+        </tr>
+        <tr>
+          <td class="code">user_location</td>
+          <td>地域に最適化した結果。<code class="inline">{type, city, region, country, timezone}</code></td>
+        </tr>
+      </tbody>
+    </table>
+
+<pre><code>tools=[{
+    "type": "web_search_20250305",
+    "name": "web_search",
+    "max_uses": 5,
+    "allowed_domains": ["wikipedia.org", "nytimes.com"],
+    "user_location": {
+        "type": "approximate",
+        "city": "Tokyo",
+        "region": "Tokyo",
+        "country": "JP",
+        "timezone": "Asia/Tokyo"
+    }
+}]</code></pre>
+
+    <div class="card warning">
+      <strong>注意:</strong> <code class="inline">allowed_domains</code> と <code class="inline">blocked_domains</code> は同時指定できない (どちらか一方)。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑤ レスポンス構造 — citation 必須</h2>
+    <p>Web search の応答には <strong>引用(citation)</strong> が含まれる。Anthropicは「ユーザーに出力を見せる時は citation を必ず表示せよ」と公式に求めている。</p>
+
+<pre><code># 応答 content blocks (順番に届く)
+[
+  # 1. Claude の判断テキスト
+  {"type": "text", "text": "I'll search for when Claude Shannon was born."},
+
+  # 2. Claude が作った検索クエリ
+  {"type": "server_tool_use", "name": "web_search",
+   "input": {"query": "claude shannon birth date"}},
+
+  # 3. 検索結果 (Anthropic 自動挿入)
+  {"type": "web_search_tool_result",
+   "content": [{
+     "type": "web_search_result",
+     "url": "https://en.wikipedia.org/wiki/Claude_Shannon",
+     "title": "Claude Shannon - Wikipedia",
+     "page_age": "April 30, 2025"
+   }]},
+
+  # 4. Claude の最終応答 + citation
+  {"type": "text",
+   "text": "Claude Shannon was born on April 30, 1916, in Petoskey, Michigan",
+   "citations": [{
+     "type": "web_search_result_location",
+     "url": "https://en.wikipedia.org/wiki/Claude_Shannon",
+     "title": "Claude Shannon - Wikipedia",
+     "cited_text": "Claude Elwood Shannon (April 30, 1916 – ..."
+   }]}
+]</code></pre>
+
+    <div class="card accent">
+      <strong>citation の3要素:</strong> url / title / cited_text (最大150文字)<br>
+      → UIには <strong>必ず</strong> リンク + 出典タイトル + 引用テキストを表示する。Perplexity 風UI が法的にも正しい実装。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑥ 動的フィルタリング (web_search_20260209)</h2>
+    <p>新版では Claude が <strong>コードを書いて検索結果を後処理</strong> できる。大量のHTML を context に読み込まずに、関連箇所だけ抽出。</p>
+
+    <table class="vocab">
+      <thead><tr><th style="width: 30%;">基本版 (20250305)</th><th>動的フィルタリング版 (20260209)</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>全HTML を context に読み込む</td>
+          <td>Claude が code execution でフィルタしてから読む</td>
+        </tr>
+        <tr>
+          <td>トークン消費が大きい</td>
+          <td>関連部分のみ取り込み → 効率的</td>
+        </tr>
+        <tr>
+          <td>全モデル対応</td>
+          <td>Opus 4.6/4.7 / Sonnet 4.6 のみ + code execution tool 同時必須</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="card blue">
+      <strong>使い分け:</strong> 軽い質問なら基本版 / 技術ドキュメント漁り・citation検証 → 動的フィルタリング版
+    </div>
+  </section>
+
+  <section>
+    <h2>⑦ エラーコード — 5パターン</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 30%;">error_code</th><th>意味</th></tr></thead>
+      <tbody>
+        <tr><td class="code">too_many_requests</td><td>レート制限超過</td></tr>
+        <tr><td class="code">invalid_input</td><td>検索クエリが不正</td></tr>
+        <tr><td class="code">max_uses_exceeded</td><td>max_uses 上限到達</td></tr>
+        <tr><td class="code">query_too_long</td><td>クエリ長すぎ</td></tr>
+        <tr><td class="code">unavailable</td><td>内部エラー</td></tr>
+      </tbody>
+    </table>
+
+    <div class="card mint">
+      <strong>エラー時は課金されない</strong> — 検索成功した分だけ $10/1,000検索が加算される。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑧ 料金とトークン管理</h2>
+    <ul>
+      <li><strong>検索コスト:</strong> 1,000検索 = $10 (1検索 = 1¢)</li>
+      <li><strong>トークンコスト:</strong> 検索結果も <code class="inline">input_tokens</code> としてカウント (Claude が読むので)</li>
+      <li><strong>citation の cited_text / title / url は無料</strong> (input_tokens に入らない)</li>
+    </ul>
+
+    <div class="card warning">
+      <strong>コスト感:</strong> 1検索 = 1¢ + 検索結果が数千〜数万トークン。max_uses=5 で1リクエスト約5¢ + トークン代。多用するアプリは <code class="inline">prompt caching</code> で結果を再利用するとコスト圧縮できる。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑨ オリジナル演習問題 (3問)</h2>
+
+    <div class="exercise-box">
+      <h3>問題1: 「最新ニュース要約」を作る</h3>
+      <div class="problem-section">
+        <strong>課題:</strong> ipynb 006 cell-2 のプロンプトを「今日のAI業界のニュースを3件要約して、各ソースのURLも添えて」に書き換える。<code class="inline">tools=[{"type": "web_search_20250305", "name": "web_search", "max_uses": 5}]</code> で実行。
+      </div>
+      <div class="hint-section">
+        <strong>確認ポイント:</strong><br>
+        ・<code class="inline">response.content</code> の中に <code class="inline">server_tool_use</code> と <code class="inline">web_search_tool_result</code> がどれだけ含まれるか<br>
+        ・<code class="inline">citations</code> 配列の中身を表示 (url / title / cited_text)<br>
+        ・<code class="inline">response.usage.server_tool_use.web_search_requests</code> でコスト計算
+      </div>
+      <details>
+        <summary>期待される観察</summary>
+        <ul>
+          <li>Claude が 1〜3回 検索する (3件要約のため複数クエリを作る)</li>
+          <li>各テキストブロックに citation が付く</li>
+          <li>page_age が最近の日付になっている (リアルタイム性確認)</li>
+        </ul>
+      </details>
+    </div>
+
+    <div class="exercise-box">
+      <h3>問題2: 地域限定検索</h3>
+      <div class="problem-section">
+        <strong>課題:</strong> <code class="inline">user_location</code> を <code class="inline">{type:"approximate", city:"Tokyo", country:"JP"}</code> と <code class="inline">{type:"approximate", city:"New York", country:"US"}</code> に切り替えて、同じ「今日のおすすめレストラン」プロンプトを投げる。結果がどう変わるか比較。
+      </div>
+      <div class="hint-section">
+        <strong>観察:</strong> 検索クエリ自体は同じでも、Anthropic 側の地域シグナルで結果が変わる。citation の url も地域別になる (.co.jp / .com 等)。
+      </div>
+      <details>
+        <summary>応用</summary>
+        <ul>
+          <li>ユーザーごとに location を設定すれば、パーソナライズされた検索結果を出せる</li>
+          <li>多言語アプリでは timezone も合わせて変える (「今日」の解釈が変わる)</li>
+        </ul>
+      </details>
+    </div>
+
+    <div class="exercise-box">
+      <h3>問題3: domain filter で「信頼できるソースだけ」</h3>
+      <div class="problem-section">
+        <strong>課題:</strong> 「コロナワクチンの最新情報」をプロンプトに、<code class="inline">allowed_domains=["who.int", "cdc.gov", "nih.gov", "mhlw.go.jp"]</code> で実行。出力の citation がすべて指定ドメイン内か確認。
+      </div>
+      <div class="hint-section">
+        <strong>業務応用:</strong> 法務・医療・金融など「ソースの権威性が重要」な領域で必須テクニック。逆に <code class="inline">blocked_domains</code> で「reddit.com / facebook.com / twitter.com」を除外すれば、SNS噂をフィルタできる。
+      </div>
+      <details>
+        <summary>注意点</summary>
+        <ul>
+          <li><code class="inline">allowed_domains</code> と <code class="inline">blocked_domains</code> は <strong>同時指定不可</strong></li>
+          <li>allowed 指定が厳しすぎると検索ヒット0件になる可能性</li>
+          <li>ドメインは末尾ドット無し・スキーマ無し (例: "wikipedia.org" のみ)</li>
+        </ul>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2>⑩ 中学生向けに例えると</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 44%;">学校の例え</th><th>tool の対応</th></tr></thead>
+      <tbody>
+        <tr><td>先生に「今の総理大臣は誰?」と聞く</td><td>ユーザープロンプト</td></tr>
+        <tr><td>先生「学校の図書館に行って調べてくる」</td><td>server_tool_use (検索要請)</td></tr>
+        <tr><td>図書館員(Anthropic)が本を持ってくる</td><td>Anthropic サーバーが検索実行</td></tr>
+        <tr><td>先生が本を読んで「○○さんです」と答える</td><td>citation付き最終応答</td></tr>
+        <tr><td>先生「○○新聞何月号の何ページに書いてあった」と出典明示</td><td>citation (url / title / cited_text)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="card accent">
+      <strong>核心:</strong> 自分で図書館に行かないで、先生に頼むだけ。図書館員(Anthropic)が代わりに調べてくる。<strong>あなた = アプリ開発者の手間ゼロ</strong>。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑪ キーワード一覧</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 32%;">英語</th><th style="width: 28%;">読み方</th><th>意味</th></tr></thead>
+      <tbody>
+        <tr><td class="code">web search tool</td><td>ウェブサーチ ツール</td><td>Anthropic組み込みリアルタイム検索ツール</td></tr>
+        <tr><td class="code">server tool</td><td>サーバー ツール</td><td>Anthropic側で実行される (client側不要)</td></tr>
+        <tr><td class="code">server_tool_use</td><td>サーバー ツール ユース</td><td>サーバー側ツール要請ブロック</td></tr>
+        <tr><td class="code">citation</td><td>サイテーション</td><td>引用 (url / title / cited_text)</td></tr>
+        <tr><td class="code">encrypted_content</td><td>暗号化コンテンツ</td><td>multi-turn 用に再投入する暗号化された検索結果</td></tr>
+        <tr><td class="code">max_uses</td><td>マックス ユーシーズ</td><td>1リクエスト内の検索回数上限</td></tr>
+        <tr><td class="code">allowed_domains</td><td>アラウド ドメインズ</td><td>許可ドメインリスト</td></tr>
+        <tr><td class="code">page_age</td><td>ページ エイジ</td><td>結果ページの最終更新日</td></tr>
+        <tr><td class="code">dynamic filtering</td><td>ダイナミック フィルタリング</td><td>20260209版の動的結果フィルタ機能</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑫ 理解度チェック</h2>
+    <details>
+      <summary>Q1. Web search tool と Text editor tool の決定的な違いは?</summary>
+      <p>Text editor は <strong>クライアントサイド</strong>: あなたのコードが実行 → tool_result を返す。<br>
+      Web search は <strong>サーバーサイド</strong>: Anthropic 側で完結。あなたは tool_result を返さない。1回の API 呼び出しで検索→結果取得→Claude応答まで全部終わる。</p>
+    </details>
+    <details>
+      <summary>Q2. citation が必須なのはなぜ?</summary>
+      <p>① 法的: Anthropic 公式が「ユーザーに出力を見せるなら citation を必ず表示せよ」と公式に求めている (著作権・情報源明示の責任分散)。<br>
+      ② UX: ユーザーが「この情報の出所は信頼できるか」を判断できる。Perplexity が成功した理由のひとつ。<br>
+      ③ Claude の判断ミス時に検証できる。</p>
+    </details>
+    <details>
+      <summary>Q3. 検索コストを抑える方法は?</summary>
+      <p>① <code class="inline">max_uses</code> を低めに設定 (例: 3-5)<br>
+      ② <code class="inline">allowed_domains</code> で信頼ドメインに絞る (関連性向上・無駄検索減)<br>
+      ③ <code class="inline">prompt caching</code> で過去の検索結果を再利用<br>
+      ④ ユーザー質問を <strong>事前にフィルタ</strong> して、本当に検索が必要か判定する system prompt にする</p>
+    </details>
+    <details>
+      <summary>Q4. allowed_domains と blocked_domains は同時に使える?</summary>
+      <p>いいえ、<strong>どちらか一方のみ</strong>。両方指定すると invalid_input エラー。設計時に「ホワイトリスト型 (allowed) / ブラックリスト型 (blocked)」のどちらかに決める。<br>
+      法務・医療等の高信頼性領域は allowed 型 / 一般用途で「SNS除外したい」程度なら blocked 型。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑬ 自分メモ</h2>
+    <div class="memo-area">自分のプロジェクトでどう使うか書き込もう…例: 顧客の最新ニュース要約 / 競合動向リアルタイム調査…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 48: The web search tool<br>
+    元レクチャー: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287755">SkillJar — The web search tool</a><br>
+    公式ドキュメント: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-search-tool">Anthropic Docs — Web search tool</a><br>
+    ハンズオン: <code>006_web_search.ipynb</code> / <code>006_web_search_complete.ipynb</code><br>
+    前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_47_textbook.html">Lecture 47 — The text editor tool</a>
+  </footer>
+
+</main>
+</body>
+</html>
