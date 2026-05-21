@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 50: Introducing Retrieval Augmented Generation — RAGとは何か | Anthropic Academy 教科書</title>
+<style>
+:root {
+  --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a;
+  --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028;
+  --soft-blue: #cfe7ef; --soft-yellow: #fdf0c8; --soft-mint: #d8ecd6; --soft-pink: #f6dcdc;
+  --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04);
+  --exercise-bg: #fff9ec; --exercise-border: #e6c97a;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+.card.blue { background: var(--soft-blue); border-left: 4px solid #4a8aa3; }
+.card.warning { background: var(--soft-pink); border-left: 4px solid #c66b6b; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+table.vocab td.code { font-family: "Consolas","Menlo",monospace; color: var(--accent); font-weight: 700; white-space: nowrap; }
+pre { background: #f4eedb; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: "Consolas","Menlo",monospace; font-size: 14px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--border); }
+code.inline { background: #f4eedb; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Menlo",monospace; font-size: 0.92em; color: #a85200; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+.illustration { text-align: center; margin: 24px 0; }
+.illustration svg { max-width: 100%; height: auto; }
+.caption { font-size: 13px; color: var(--ink-sub); margin-top: 8px; text-align: center; }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 600px) { body { padding: 20px 14px; } h1.lecture-title { font-size: 24px; } h2 { font-size: 19px; } p, ol li, ul li { font-size: 15px; } }
+</style>
+</head>
+<body>
+<main class="book">
+
+  <span class="chapter-tag">Module 10 ・ Lecture 50 ・ 解説回</span>
+  <h1 class="lecture-title">Introducing Retrieval Augmented Generation<span class="ja-sub">— RAG = LLMの「知らない情報」を外から渡す技法</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① まず結論 — RAGって何?</h2>
+    <p>Claude (LLM) は学習データの範囲内しか知らない。<br>
+    <strong>あなたの会社のドキュメント / 社内Wiki / 非公開資料 / 顧客データ</strong> — これらは絶対に知らない。</p>
+
+    <p>RAG (<strong>R</strong>etrieval <strong>A</strong>ugmented <strong>G</strong>eneration) = <strong>「外部資料を検索 → 該当箇所だけ取り出して → Claudeに見せる → 答えてもらう」</strong> のパターン。</p>
+
+    <div class="card accent">
+      <strong>3つの動詞:</strong> <strong>Retrieval</strong> (検索) → <strong>Augmented</strong> (拡張) → <strong>Generation</strong> (生成)<br>
+      → 「検索で材料を集めて、それを Claude のプロンプトに足して、生成させる」
+    </div>
+  </section>
+
+  <section>
+    <h2>② なぜ RAG が必要? — 4つの理由</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 24%;">理由</th><th>説明</th></tr></thead>
+      <tbody>
+        <tr><td><strong>① 知識カットオフ</strong></td><td>Claude は学習日以降を知らない (例: 今日のニュース)</td></tr>
+        <tr><td><strong>② 私的情報</strong></td><td>社内資料・顧客カルテ・社員名簿は学習されていない</td></tr>
+        <tr><td><strong>③ 大量資料</strong></td><td>10万件のFAQをcontextに入れるのはコスト爆発</td></tr>
+        <tr><td><strong>④ 出典明示</strong></td><td>「どの資料の何ページに書いてあるか」を返せる(法務・医療・金融で必須)</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>③ RAG の全体フロー — 5ステップ</h2>
+
+    <div class="illustration">
+      <svg width="640" height="380" viewBox="0 0 640 380" xmlns="http://www.w3.org/2000/svg">
+        <rect x="20" y="20" width="600" height="60" rx="8" fill="#fdf0c8" stroke="#c8a93a"/>
+        <text x="40" y="44" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#6b5028">[事前準備] STEP 1: Chunking (文書を小さく分割)</text>
+        <text x="40" y="64" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">100ページPDF → 数百個の section 単位チャンクに分ける</text>
+
+        <rect x="20" y="92" width="600" height="60" rx="8" fill="#fdebde" stroke="#d97757"/>
+        <text x="40" y="116" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#a04500">[事前準備] STEP 2: Embedding (チャンクをベクトル化)</text>
+        <text x="40" y="136" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">各チャンク → Voyage AI 等で1024次元ベクトル化 → 意味的距離が計算可能に</text>
+
+        <rect x="20" y="164" width="600" height="60" rx="8" fill="#d8ecd6" stroke="#67a061"/>
+        <text x="40" y="188" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#2b6e2e">[事前準備] STEP 3: Vector store に保存</text>
+        <text x="40" y="208" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">全チャンク+ベクトル を VectorIndex / Pinecone / Chroma 等に格納</text>
+
+        <rect x="20" y="236" width="600" height="60" rx="8" fill="#cfe7ef" stroke="#4a8aa3"/>
+        <text x="40" y="260" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#2a5a73">[実行時] STEP 4: 検索 (ユーザー質問もベクトル化 → 類似チャンク k個取得)</text>
+        <text x="40" y="280" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">cosine距離で近いトップk件 (例: k=2) を取得</text>
+
+        <rect x="20" y="308" width="600" height="60" rx="8" fill="#f6dcdc" stroke="#c66b6b"/>
+        <text x="40" y="332" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#a04040">[実行時] STEP 5: Claude のプロンプトに該当チャンクを差し込み → 生成</text>
+        <text x="40" y="352" font-family="Hiragino Sans" font-size="11" fill="#2b2b2b">"以下の資料を参考に答えて: [chunk1] [chunk2] / 質問: ..." → Claude 応答</text>
+      </svg>
+      <p class="caption">図① RAG の全工程 — 事前準備 3ステップ + 実行 2ステップ</p>
+    </div>
+
+    <div class="card mint">
+      <strong>核心:</strong> 事前準備 (1-3) は <strong>1回だけ</strong>。実行 (4-5) は <strong>ユーザー質問が来るたびに毎回</strong>。準備さえ済めば、検索+生成は1秒以内で動く。
+    </div>
+  </section>
+
+  <section>
+    <h2>④ RAG vs 他の選択肢 — どう選ぶ?</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 22%;">選択肢</th><th>適する場面</th><th>限界</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>① 全文をプロンプト</strong><br>(long context)</td>
+          <td>資料が <strong>10万トークン以下</strong> / 質問が幅広い</td>
+          <td>大量だとコスト・速度が爆発</td>
+        </tr>
+        <tr>
+          <td><strong>② RAG</strong></td>
+          <td>資料が <strong>大量</strong> / 関連部分だけ欲しい / 出典必要</td>
+          <td>chunking設計・検索精度の調整必要</td>
+        </tr>
+        <tr>
+          <td><strong>③ Fine-tuning</strong></td>
+          <td>応答パターンの調整 / 専門用語の語彙</td>
+          <td>知識更新できない / 訓練コスト高</td>
+        </tr>
+        <tr>
+          <td><strong>④ Tool use (検索)</strong></td>
+          <td>Web上の最新情報 / 動的データ</td>
+          <td>社内資料には使えない</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="card warning">
+      <strong>Anthropic公式の指針:</strong> 資料が <strong>20万トークン以下</strong> でClaude 4の long context で収まるなら、RAG より <strong>full context</strong> の方が精度高い。<br>
+      ただし <strong>100万トークン超の社内資料・大量FAQ</strong> なら RAG 必須。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑤ RAGの構成要素 — 4つのパーツ</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 28%;">パーツ</th><th>役割</th><th>本コースで学ぶ章</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Chunker</strong></td><td>長文を意味のある小単位に分割</td><td>#51 (chunking strategies)</td></tr>
+        <tr><td><strong>Embedder</strong></td><td>テキスト → 数値ベクトル (Voyage AI)</td><td>#52 (embeddings)</td></tr>
+        <tr><td><strong>Vector Store</strong></td><td>ベクトル + チャンクの保存・検索</td><td>#53 (full RAG flow) / #55 (実装)</td></tr>
+        <tr><td><strong>Lexical Search</strong></td><td>キーワード一致検索 (補完)</td><td>#54 (BM25)</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑥ よくある誤解 — Q&A</h2>
+    <details>
+      <summary>「RAGするなら fine-tuning は不要?」</summary>
+      <p>違う。<strong>役割が違う</strong>。<br>
+      RAG = 「知識を渡す」(事実情報の供給)<br>
+      Fine-tuning = 「振る舞いを変える」(応答スタイル・専門用語の使い方)<br>
+      → 両方併用するアプリも多い (例: 医療チャット = 医療RAG + 医療用語Fine-tuning)。</p>
+    </details>
+    <details>
+      <summary>「Vector store ってどれを使えばいい?」</summary>
+      <p>規模で選ぶ:<br>
+      ① 学習用・小規模 → 自前実装 (本コース ipynb の <code class="inline">VectorIndex</code> クラス)<br>
+      ② 中規模 (〜100万チャンク) → Chroma / Qdrant<br>
+      ③ 大規模 → Pinecone / Weaviate / pgvector<br>
+      ④ AWS統合 → OpenSearch / RDS pgvector<br>
+      → 本コースは ① で <strong>仕組みを理解</strong> することが目的。</p>
+    </details>
+    <details>
+      <summary>「Embedding model はどれを?」</summary>
+      <p>Anthropic は <strong>Voyage AI</strong> を公式推奨 (買収済み)。日本語含む多言語対応。<br>
+      無料枠あり (https://www.voyageai.com)。本コース ipynb 002 で API key 取得方法あり。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑦ 中学生向けに例えると</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 44%;">学校の例え</th><th>RAG の対応</th></tr></thead>
+      <tbody>
+        <tr><td>図書館にある百科事典を頭に丸暗記</td><td>Fine-tuning (大変・更新困難)</td></tr>
+        <tr><td>百科事典1冊を授業中に開きっぱなしで質問対応</td><td>Long context (全文プロンプト)</td></tr>
+        <tr><td>「○○について聞かれたら本棚の何巻何ページ見て答えて」</td><td>RAG (検索→該当ページ参照→回答)</td></tr>
+        <tr><td>図書館の目録カード(キーワード索引)</td><td>BM25 lexical search</td></tr>
+        <tr><td>図書館の意味検索 (似たトピックの本を探す)</td><td>Embedding + vector search</td></tr>
+      </tbody>
+    </table>
+
+    <div class="card accent">
+      <strong>核心:</strong> 全部を暗記しないで「どこに何が書いてあるか」と「<strong>該当ページを開いて確認する力</strong>」を持つ。これが RAG。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑧ キーワード一覧</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 32%;">英語</th><th style="width: 28%;">読み方</th><th>意味</th></tr></thead>
+      <tbody>
+        <tr><td class="code">RAG</td><td>ラグ</td><td>Retrieval Augmented Generation</td></tr>
+        <tr><td class="code">retrieval</td><td>リトリーバル</td><td>検索・取り出し</td></tr>
+        <tr><td class="code">augmented</td><td>オーグメンテッド</td><td>拡張された</td></tr>
+        <tr><td class="code">chunking</td><td>チャンキング</td><td>長文を小単位に分割</td></tr>
+        <tr><td class="code">embedding</td><td>エンベディング</td><td>テキスト → ベクトル化</td></tr>
+        <tr><td class="code">vector store</td><td>ベクトル ストア</td><td>ベクトル+チャンクの保存DB</td></tr>
+        <tr><td class="code">semantic search</td><td>セマンティック サーチ</td><td>意味検索 (ベクトル類似度)</td></tr>
+        <tr><td class="code">lexical search</td><td>レキシカル サーチ</td><td>語彙検索 (キーワード一致 / BM25)</td></tr>
+        <tr><td class="code">hybrid search</td><td>ハイブリッド サーチ</td><td>semantic + lexical を組合せ</td></tr>
+        <tr><td class="code">context window</td><td>コンテキスト ウィンドウ</td><td>1回のプロンプトに入れられる量</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑨ 理解度チェック</h2>
+    <details>
+      <summary>Q1. RAG の "R" "A" "G" は何の頭文字?</summary>
+      <p><strong>R</strong>etrieval (検索) + <strong>A</strong>ugmented (拡張) + <strong>G</strong>eneration (生成)。<br>
+      「検索で材料を集めて、プロンプトに足して、生成させる」を3単語に圧縮したもの。</p>
+    </details>
+    <details>
+      <summary>Q2. なぜ Fine-tuning ではなく RAG が選ばれるのか?</summary>
+      <p>① <strong>知識の更新</strong>: RAGはvector storeを更新するだけ。Fine-tuningは再訓練必要<br>
+      ② <strong>出典明示</strong>: 検索で取ったチャンクの url/page番号を引用できる<br>
+      ③ <strong>コスト</strong>: 訓練不要・小規模事業者でも使える<br>
+      ④ <strong>幻覚抑制</strong>: 「資料に書いてあること以外答えるな」と縛りやすい</p>
+    </details>
+    <details>
+      <summary>Q3. Long context (全文プロンプト) と RAG はどう使い分ける?</summary>
+      <p>資料サイズ・更新頻度・出典必要性で判定:<br>
+      ・10万トークン以下 + 全部読ませたい → <strong>Long context</strong> (シンプル・精度高)<br>
+      ・100万トークン超 / ピンポイントに該当部分が欲しい → <strong>RAG</strong> (コスト効率)<br>
+      ・出典必須 (法務・医療) → <strong>RAG</strong> (chunk url 付き)<br>
+      → 境界域なら両方試して精度・コスト比較する。</p>
+    </details>
+    <details>
+      <summary>Q4. RAGの構成要素4パーツは?</summary>
+      <p>① <strong>Chunker</strong> (分割) ② <strong>Embedder</strong> (ベクトル化) ③ <strong>Vector Store</strong> (保存+検索) ④ <strong>Lexical Search</strong> (補完的キーワード検索・BM25等)<br>
+      本コースでは #51-#55 で各パーツを順番に学ぶ。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑩ 自分メモ</h2>
+    <div class="memo-area">自分の業務でRAGを使いそうなケースを書き込もう…例: 顧客サポート / 社内Wiki検索 / 過去議事録漁り…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 50: Introducing Retrieval Augmented Generation<br>
+    元レクチャー: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287763">SkillJar — Introducing RAG</a><br>
+    前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_48_textbook.html">Lecture 48 — The web search tool</a> (#49 Quiz はスキップ)
+  </footer>
+
+</main>
+</body>
+</html>
