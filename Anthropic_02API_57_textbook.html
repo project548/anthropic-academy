@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 57: Image input — Claudeに画像を見せる | Anthropic Academy 教科書</title>
+<style>
+:root { --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a; --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028; --soft-blue: #cfe7ef; --soft-yellow: #fdf0c8; --soft-mint: #d8ecd6; --soft-pink: #f6dcdc; --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+.card.blue { background: var(--soft-blue); border-left: 4px solid #4a8aa3; }
+.card.warning { background: var(--soft-pink); border-left: 4px solid #c66b6b; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+table.vocab td.code { font-family: "Consolas","Menlo",monospace; color: var(--accent); font-weight: 700; white-space: nowrap; }
+pre { background: #f4eedb; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: "Consolas","Menlo",monospace; font-size: 14px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--border); }
+code.inline { background: #f4eedb; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Menlo",monospace; font-size: 0.92em; color: #a85200; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 600px) { body { padding: 20px 14px; } h1.lecture-title { font-size: 24px; } h2 { font-size: 19px; } p, ol li, ul li { font-size: 15px; } }
+</style>
+</head>
+<body>
+<main class="book">
+  <span class="chapter-tag">Module 11 ・ Lecture 57 ・ 解説回</span>
+  <h1 class="lecture-title">Image input<span class="ja-sub">— Claudeに画像を見せて、視覚情報から答えてもらう</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① まず結論 — 画像入力って何?</h2>
+    <p>Claude は <strong>マルチモーダル</strong> — テキストだけでなく画像も入力として受け取れる。スクショ・写真・図表・手書きメモ・OCR元の文書を「見せる」と、それを理解して答える。</p>
+    <div class="card accent">
+      <strong>対応モデル:</strong> Claude 3 Haiku 以降のすべてのモデル<br>
+      <strong>対応形式:</strong> JPEG / PNG / GIF / WebP<br>
+      <strong>サイズ上限:</strong> 5MB / 画像 (base64エンコード後 8MB)
+    </div>
+  </section>
+
+  <section>
+    <h2>② 2つの渡し方 — base64 と URL</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 26%;">方式</th><th>長所</th><th>短所</th></tr></thead>
+      <tbody>
+        <tr><td><strong>base64</strong></td><td>ローカル画像をそのまま送れる</td><td>大きい・トークン多い</td></tr>
+        <tr><td><strong>URL</strong></td><td>シンプル・小さい</td><td>公開URLが必要</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>③ 最小コード — base64で画像を渡す</h2>
+<pre><code>import base64
+import anthropic
+
+client = anthropic.Anthropic()
+
+with open("./photo.jpg", "rb") as f:
+    image_data = base64.standard_b64encode(f.read()).decode("utf-8")
+
+response = client.messages.create(
+    model="claude-opus-4-7",
+    max_tokens=1024,
+    messages=[{
+        "role": "user",
+        "content": [
+            {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": image_data}},
+            {"type": "text", "text": "この写真に何が写っているか説明してください"}
+        ],
+    }],
+)
+
+print(response.content[0].text)</code></pre>
+    <div class="card mint">
+      <strong>注目:</strong> <code class="inline">content</code> が <strong>リスト</strong> になっている。複数のブロック (image + text) を混ぜて1メッセージにできる。
+    </div>
+  </section>
+
+  <section>
+    <h2>④ URL方式 (推奨・シンプル)</h2>
+<pre><code>response = client.messages.create(
+    model="claude-opus-4-7",
+    max_tokens=1024,
+    messages=[{
+        "role": "user",
+        "content": [
+            {"type": "image", "source": {"type": "url", "url": "https://example.com/photo.jpg"}},
+            {"type": "text", "text": "この画像の感情は?"}
+        ],
+    }],
+)</code></pre>
+    <div class="card blue">
+      <strong>URL方式の制約:</strong> 公開URL必須・httpsのみ・Anthropic が取得できる必要あり。機密画像なら base64 一択。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑤ 用途別ベストプラクティス</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 28%;">用途</th><th>プロンプト例 + コツ</th></tr></thead>
+      <tbody>
+        <tr><td><strong>OCR (文字読取)</strong></td><td>「画像内の全テキストをそのまま書き出して」</td></tr>
+        <tr><td><strong>表データ抽出</strong></td><td>「表をMarkdownテーブルで再現して」</td></tr>
+        <tr><td><strong>UIスクショ分析</strong></td><td>「このUIに改善点を5つ提案して」</td></tr>
+        <tr><td><strong>図解・チャート理解</strong></td><td>「このグラフから読み取れる傾向は?」</td></tr>
+        <tr><td><strong>手書きメモ書き起こし</strong></td><td>「この手書きノートをテキスト化して」</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑥ 複数画像を一度に渡す</h2>
+<pre><code>content_blocks = []
+for image_path in ["before.jpg", "after.jpg"]:
+    with open(image_path, "rb") as f:
+        data = base64.standard_b64encode(f.read()).decode("utf-8")
+    content_blocks.append({
+        "type": "image",
+        "source": {"type": "base64", "media_type": "image/jpeg", "data": data}
+    })
+
+content_blocks.append({"type": "text", "text": "Before と After の違いを箇条書きで"})
+
+response = client.messages.create(
+    model="claude-opus-4-7",
+    max_tokens=2048,
+    messages=[{"role": "user", "content": content_blocks}]
+)</code></pre>
+    <div class="card accent">
+      <strong>応用:</strong> 比較分析・連続写真の動き解析・スライド全枚数読み込み等。<br>
+      <strong>上限:</strong> 1リクエストあたり 100枚。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑦ コスト計算</h2>
+    <p>画像も <strong>input tokens としてカウント</strong>される。サイズで決まる:</p>
+<pre><code>tokens = (width_px * height_px) / 750
+
+# 例:
+# 1024 × 1024 ピクセル → 約 1,400 tokens
+# 1920 × 1080 ピクセル → 約 2,765 tokens
+# 標準写真 (3000 × 2000) → 約 8,000 tokens</code></pre>
+    <div class="card warning">
+      <strong>節約テク:</strong>
+      <ul>
+        <li>解像度を <strong>1568px 以下</strong> に縮小してから送る</li>
+        <li>JPEG (圧縮率高) を選ぶ</li>
+        <li>Claude が必要としない領域はトリミング</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>⑧ 失敗パターン</h2>
+    <details>
+      <summary>「画像が読めない」エラー</summary>
+      <p>① media_type 間違い ② base64エンコード前の生バイナリを送ってしまった ③ 5MB超え → 元画像のサイズ・形式を確認</p>
+    </details>
+    <details>
+      <summary>Claude が画像内容を間違える</summary>
+      <p>① 画像解像度が低すぎる ② プロンプトが曖昧 (「これ何?」より「テキストを全部抽出して」が明確) → 高解像度版で再試行 + プロンプト具体化</p>
+    </details>
+    <details>
+      <summary>URL方式で取得失敗</summary>
+      <p>① URL が非公開 ② robots.txt で禁止 ③ Cookie認証必要なページ → base64方式に切り替え</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑨ 中学生向けに例えると</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 44%;">学校の例え</th><th>image input の対応</th></tr></thead>
+      <tbody>
+        <tr><td>「先生、この写真見て」と差し出す</td><td>type="image" の content block</td></tr>
+        <tr><td>「これ何が写ってる?」と聞く</td><td>type="text" の質問</td></tr>
+        <tr><td>写真を見ながら先生が説明する</td><td>Claude の応答</td></tr>
+        <tr><td>「Before と After 並べて違い教えて」</td><td>複数画像</td></tr>
+      </tbody>
+    </table>
+    <div class="card accent">
+      <strong>核心:</strong> テキストでは伝えにくい情報 (図・写真・表・UI) を <strong>そのまま見せて聞ける</strong>。説明する手間が消える。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑩ キーワード一覧</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 32%;">英語</th><th style="width: 28%;">読み方</th><th>意味</th></tr></thead>
+      <tbody>
+        <tr><td class="code">multimodal</td><td>マルチモーダル</td><td>複数形式の入出力対応</td></tr>
+        <tr><td class="code">vision</td><td>ヴィジョン</td><td>視覚理解能力</td></tr>
+        <tr><td class="code">base64</td><td>ベースろくじゅうよん</td><td>バイナリ → 文字列エンコード方式</td></tr>
+        <tr><td class="code">media_type</td><td>メディアタイプ</td><td>image/jpeg, image/png 等</td></tr>
+        <tr><td class="code">OCR</td><td>オーシーアール</td><td>Optical Character Recognition (文字認識)</td></tr>
+        <tr><td class="code">content block</td><td>コンテンツ ブロック</td><td>image / text 等のメッセージ部品</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑪ 理解度チェック</h2>
+    <details>
+      <summary>Q1. 画像入力で base64 と URL の使い分けは?</summary>
+      <p><strong>base64</strong>: ローカル画像・機密画像 / コードが少し複雑<br>
+      <strong>URL</strong>: 公開画像 (Wikipedia 等) / コードがシンプル</p>
+    </details>
+    <details>
+      <summary>Q2. 画像のトークン消費の計算式は?</summary>
+      <p>(width × height) / 750 = トークン数。1024×1024 ≈ 1,400 トークン。大きい画像はコスト増 → 1568px以下にリサイズ推奨。</p>
+    </details>
+    <details>
+      <summary>Q3. 複数画像を渡せる?</summary>
+      <p>はい、1リクエストあたり <strong>最大100枚</strong>。<code class="inline">content</code> に複数の <code class="inline">type="image"</code> ブロックを並べる。</p>
+    </details>
+    <details>
+      <summary>Q4. どんな用途で強い?</summary>
+      <p>OCR (文字読取)・表データ抽出・UIスクショ分析・図解理解・手書きノート書き起こし。「テキストで書くのが面倒なものを、見せて聞く」に強い。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑫ 自分メモ</h2>
+    <div class="memo-area">画像入力を使う場面メモ…例: 領収書OCR / スクショ要約 / 図表データ化…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 57: Image input<br>
+    公式ドキュメント: <a href="https://docs.claude.com/en/docs/build-with-claude/vision">Anthropic Docs — Vision</a><br>
+    前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_56_textbook.html">Lecture 56 — Extended thinking</a>
+  </footer>
+</main>
+</body>
+</html>
