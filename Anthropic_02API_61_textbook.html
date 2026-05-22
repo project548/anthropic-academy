@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 61: Files API — ファイルを事前アップロードして再利用 | Anthropic Academy 教科書</title>
+<style>
+:root { --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a; --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028; --soft-blue: #cfe7ef; --soft-yellow: #fdf0c8; --soft-mint: #d8ecd6; --soft-pink: #f6dcdc; --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+.card.blue { background: var(--soft-blue); border-left: 4px solid #4a8aa3; }
+.card.warning { background: var(--soft-pink); border-left: 4px solid #c66b6b; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+table.vocab td.code { font-family: "Consolas","Menlo",monospace; color: var(--accent); font-weight: 700; white-space: nowrap; }
+pre { background: #f4eedb; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: "Consolas","Menlo",monospace; font-size: 14px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--border); }
+code.inline { background: #f4eedb; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Menlo",monospace; font-size: 0.92em; color: #a85200; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 600px) { body { padding: 20px 14px; } h1.lecture-title { font-size: 24px; } h2 { font-size: 19px; } p, ol li, ul li { font-size: 15px; } }
+</style>
+</head>
+<body>
+<main class="book">
+  <span class="chapter-tag">Module 11 ・ Lecture 61 ・ 解説回</span>
+  <h1 class="lecture-title">Files API<span class="ja-sub">— ファイルを事前アップロードして message に何度も参照させる</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① まず結論 — Files API って何?</h2>
+    <p>ファイルを Anthropic サーバーに <strong>1回だけアップロード</strong> し、<strong>file_id を発行</strong>。以降の messages.create では「base64 を毎回送る」代わりに <strong>file_id を参照</strong> するだけでよい。</p>
+    <div class="card accent">
+      <strong>クイズ問題の答えはこれ:</strong> "Uploading files ahead of time and referencing them later instead of encoding them directly in messages"
+    </div>
+  </section>
+
+  <section>
+    <h2>② 何が嬉しい? — base64 直貼りとの違い</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 26%;">観点</th><th>base64直貼り (旧)</th><th>Files API (新)</th></tr></thead>
+      <tbody>
+        <tr><td>1回目のリクエスト</td><td>巨大なbase64文字列を含む</td><td>file_id だけ参照 (短い)</td></tr>
+        <tr><td>2回目以降</td><td>毎回base64を再送信</td><td>同じ file_id を再利用</td></tr>
+        <tr><td>ネットワーク</td><td>都度大量転送</td><td>1回だけ転送</td></tr>
+        <tr><td>レイテンシ</td><td>大ファイルでは遅い</td><td>低レイテンシ</td></tr>
+        <tr><td>同一ファイル複数質問</td><td>毎回課金</td><td>1回だけ + cache連携で90%OFF</td></tr>
+      </tbody>
+    </table>
+    <div class="card mint">
+      <strong>適する場面:</strong>
+      <ul>
+        <li>同じPDF/画像について <strong>複数回質問</strong> するチャットbot</li>
+        <li>巨大ファイル (30MB の PDF 等)</li>
+        <li>マルチターン会話で同じ参考資料を毎回参照</li>
+        <li>Batch API で同じファイルを大量処理</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>③ 使い方 — 3ステップ</h2>
+<pre><code># STEP 1: ファイルをアップロード (1回だけ)
+import anthropic
+
+client = anthropic.Anthropic()
+
+file_obj = client.beta.files.upload(
+    file=("report.pdf", open("./report.pdf", "rb"), "application/pdf"),
+)
+file_id = file_obj.id  # 例: "file_01ABC..." (永続)
+
+# STEP 2: メッセージ作成時に file_id で参照
+response = client.beta.messages.create(
+    model="claude-opus-4-7",
+    max_tokens=2048,
+    messages=[{
+        "role": "user",
+        "content": [
+            {
+                "type": "document",
+                "source": {
+                    "type": "file",
+                    "file_id": file_id  # ← ここ!
+                }
+            },
+            {"type": "text", "text": "このPDFの要約を5項目で"}
+        ],
+    }],
+    betas=["files-api-2025-04-14"]  # beta header 必要
+)
+
+# STEP 3: 何度でも同じ file_id で参照可能
+response2 = client.beta.messages.create(
+    model="claude-opus-4-7",
+    max_tokens=2048,
+    messages=[{
+        "role": "user",
+        "content": [
+            {"type": "document", "source": {"type": "file", "file_id": file_id}},
+            {"type": "text", "text": "今度は表データを抽出して"}
+        ],
+    }],
+    betas=["files-api-2025-04-14"]
+)</code></pre>
+  </section>
+
+  <section>
+    <h2>④ API メソッド一覧</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 30%;">メソッド</th><th>用途</th></tr></thead>
+      <tbody>
+        <tr><td class="code">client.beta.files.upload(...)</td><td>ファイルアップロード → file_id 取得</td></tr>
+        <tr><td class="code">client.beta.files.list()</td><td>アップロード済みファイル一覧</td></tr>
+        <tr><td class="code">client.beta.files.retrieve(file_id)</td><td>file_id でメタデータ取得</td></tr>
+        <tr><td class="code">client.beta.files.delete(file_id)</td><td>削除</td></tr>
+        <tr><td class="code">client.beta.files.content(file_id)</td><td>ファイル中身ダウンロード</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑤ 制約条件</h2>
+    <ul>
+      <li><strong>サイズ上限:</strong> 32MB / ファイル</li>
+      <li><strong>保存期間:</strong> 90日 (90日アクセスなしで自動削除)</li>
+      <li><strong>対応形式:</strong> PDF / JPEG / PNG / GIF / WebP / text/plain</li>
+      <li><strong>合計ストレージ:</strong> 100GB / 組織</li>
+      <li><strong>beta header 必要:</strong> <code class="inline">betas=["files-api-2025-04-14"]</code></li>
+    </ul>
+    <div class="card warning">
+      <strong>注意:</strong> Files API はまだ <strong>beta</strong>。本番運用前に最新仕様を確認。GA (一般公開) 時に API が変わる可能性。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑥ Prompt caching との組み合わせ</h2>
+    <p>Files API は <strong>prompt caching (Lecture 60) と組み合わせると最強</strong>:</p>
+<pre><code>messages=[{
+    "role": "user",
+    "content": [
+        {
+            "type": "document",
+            "source": {"type": "file", "file_id": file_id},
+            "cache_control": {"type": "ephemeral"}  # ← cache 化!
+        },
+        {"type": "text", "text": "[毎回違うユーザー質問]"}
+    ]
+}]
+# → 1回目: ファイル本体トークン (cache_creation)
+# → 2回目以降: cache_read (90%OFF) で実質ほぼ無料</code></pre>
+    <div class="card accent">
+      <strong>三重節約構造:</strong>
+      <ol>
+        <li>Files API: base64再送信なし → ネットワーク削減</li>
+        <li>Prompt caching: トークン料金 90%OFF</li>
+        <li>file_id 一度発行 → ストレージ料金は無料 (90日まで)</li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <h2>⑦ ユースケース別</h2>
+    <details>
+      <summary>1. ヘルプデスクbot (社内マニュアル100ページ)</summary>
+      <p>マニュアルPDFを Files API で1回アップロード → file_id を環境変数化。ユーザーが「○○のやり方は?」と聞くたびに file_id + prompt caching で即応答。90日に1回 file 更新 → upload 再実行 + file_id 入れ替え。</p>
+    </details>
+    <details>
+      <summary>2. 契約書レビュー service</summary>
+      <p>顧客の契約書PDFを Files API にアップロード → 「リスク条項抽出」「修正案提示」「比較分析」と複数の質問を同じ file_id で処理。30日後に自動削除 → プライバシー配慮 + ストレージ無駄なし。</p>
+    </details>
+    <details>
+      <summary>3. 画像分析パイプライン (Batch API 連携)</summary>
+      <p>1000枚の商品画像を Files API で一括アップロード → Batch API で「カテゴリ分類」「品質スコア」「商品説明文生成」を並列実行。base64再送信より圧倒的に高速。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑧ ファイル管理ベストプラクティス</h2>
+    <ul>
+      <li><strong>file_id を永続ストレージに記録</strong>: DB の <code class="inline">documents.anthropic_file_id</code> カラム等</li>
+      <li><strong>ハッシュ管理</strong>: 同じファイルの重複upload を避けるため、SHA256 ハッシュで既存file_idを再利用</li>
+      <li><strong>定期チェック</strong>: 90日制限のため、月1で <code class="inline">files.list()</code> 確認 + 期限切れ近い物を再upload</li>
+      <li><strong>削除ポリシー</strong>: 用途終了したファイルは <code class="inline">files.delete()</code> で即削除 (法令遵守・コスト)</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>⑨ 中学生向けに例えると</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 44%;">学校の例え</th><th>Files API の対応</th></tr></thead>
+      <tbody>
+        <tr><td>毎回先生に教科書のコピーを手渡す</td><td>base64直貼り</td></tr>
+        <tr><td>図書館に教科書を預けてカード番号で参照</td><td>Files API + file_id</td></tr>
+        <tr><td>カード番号だけ控えていれば毎回コピー不要</td><td>file_id 参照</td></tr>
+        <tr><td>「机に置きっぱ」と組み合わせると最速</td><td>Files API + Prompt caching</td></tr>
+      </tbody>
+    </table>
+    <div class="card accent">
+      <strong>核心:</strong> 「ファイルそのもの」を毎回送らない。<strong>「ファイルへの参照 (file_id)」</strong> だけを送って、Anthropic 側に永続保存させる。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑩ キーワード一覧</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 32%;">英語</th><th style="width: 28%;">読み方</th><th>意味</th></tr></thead>
+      <tbody>
+        <tr><td class="code">Files API</td><td>ファイル エーピーアイ</td><td>ファイル事前アップロード機能</td></tr>
+        <tr><td class="code">file_id</td><td>ファイル アイディー</td><td>アップロード済みファイルのID</td></tr>
+        <tr><td class="code">client.beta.files.upload</td><td>SDK メソッド</td><td>アップロードSDK呼び出し</td></tr>
+        <tr><td class="code">source.type="file"</td><td>ソース ファイル</td><td>document/image block で file_id 参照</td></tr>
+        <tr><td class="code">files-api-2025-04-14</td><td>ベータヘッダー</td><td>必須 beta header</td></tr>
+        <tr><td class="code">file metadata</td><td>ファイル メタデータ</td><td>name / size / mime_type / created_at</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑪ 理解度チェック</h2>
+    <details>
+      <summary>Q1. Files API は何のためにある?</summary>
+      <p><strong>「ファイルを事前にアップロードして、後で参照する」</strong> ため。base64エンコードを毎回 messages に含めずに、file_id だけ送れば良い。同じファイルを複数回使うとき効果絶大。</p>
+    </details>
+    <details>
+      <summary>Q2. 何と組み合わせると最強?</summary>
+      <p><strong>Prompt caching (Lecture 60)</strong>。Files API でファイル参照を軽量化 + caching でトークン料金90%OFF。ヘルプデスクbot等で「同じPDFについて1000回質問」のような用途では実質ほぼ無料化。</p>
+    </details>
+    <details>
+      <summary>Q3. ファイル保持期間は?</summary>
+      <p><strong>90日</strong>。最後のアクセスから90日経過で自動削除。継続利用するなら定期的にアクセス or 再アップロードが必要。用途終了したファイルは <code class="inline">files.delete()</code> で即削除推奨 (プライバシー)。</p>
+    </details>
+    <details>
+      <summary>Q4. beta header って何?</summary>
+      <p>Files API はまだ beta なので <code class="inline">betas=["files-api-2025-04-14"]</code> をリクエストに付ける必要あり。GA (一般公開) されると不要になる予定。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑫ 自分メモ</h2>
+    <div class="memo-area">Files API を使う場面メモ…例: ヘルプデスク / 契約書レビュー / 画像分析パイプライン…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 61: Files API<br>
+    公式ドキュメント: <a href="https://docs.claude.com/en/docs/build-with-claude/files">Anthropic Docs — Files API</a><br>
+    前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_60_textbook.html">Lecture 60 — Prompt caching</a><br>
+    <strong>Lecture 46-61 完走</strong>
+  </footer>
+</main>
+</body>
+</html>
