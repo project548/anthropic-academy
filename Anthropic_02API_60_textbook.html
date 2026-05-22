@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 60: Prompt caching — 同じプロンプト前置きを再利用してコスト90%削減 | Anthropic Academy 教科書</title>
+<style>
+:root { --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a; --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028; --soft-blue: #cfe7ef; --soft-yellow: #fdf0c8; --soft-mint: #d8ecd6; --soft-pink: #f6dcdc; --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+.card.blue { background: var(--soft-blue); border-left: 4px solid #4a8aa3; }
+.card.warning { background: var(--soft-pink); border-left: 4px solid #c66b6b; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+table.vocab td.code { font-family: "Consolas","Menlo",monospace; color: var(--accent); font-weight: 700; white-space: nowrap; }
+pre { background: #f4eedb; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: "Consolas","Menlo",monospace; font-size: 14px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--border); }
+code.inline { background: #f4eedb; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Menlo",monospace; font-size: 0.92em; color: #a85200; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 600px) { body { padding: 20px 14px; } h1.lecture-title { font-size: 24px; } h2 { font-size: 19px; } p, ol li, ul li { font-size: 15px; } }
+</style>
+</head>
+<body>
+<main class="book">
+  <span class="chapter-tag">Module 11 ・ Lecture 60 ・ 解説回</span>
+  <h1 class="lecture-title">Prompt caching<span class="ja-sub">— 同じ前置きを再利用してコスト90%削減・レイテンシも短縮</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① まず結論 — Prompt caching って何?</h2>
+    <p>同じ <strong>system prompt や長文ドキュメント</strong> を何度も使うとき、それを Anthropic 側でキャッシュして <strong>2回目以降は10%料金</strong> + <strong>低レイテンシ</strong> で再利用できる機能。</p>
+    <div class="card accent">
+      <strong>典型ケース:</strong>
+      <ul>
+        <li>100ページPDFについて何回も質問するチャットbot</li>
+        <li>長い指示・例示を含む system prompt</li>
+        <li>RAGで毎回同じ chunk を Top-K に入れるパターン</li>
+        <li>tool スキーマ定義が大きい</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>② コスト効果 — 90%削減の正体</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 24%;">トークン種別</th><th>料金倍率 (vs通常input)</th><th>説明</th></tr></thead>
+      <tbody>
+        <tr><td><strong>cache_creation</strong></td><td>1.25倍 (初回)</td><td>キャッシュ書き込み時</td></tr>
+        <tr><td><strong>cache_read</strong></td><td><strong>0.10倍 (= 90%OFF)</strong></td><td>キャッシュ読み出し時</td></tr>
+        <tr><td>通常input</td><td>1.0倍</td><td>キャッシュ非対象部分</td></tr>
+        <tr><td>output</td><td>変化なし</td><td>応答テキスト</td></tr>
+      </tbody>
+    </table>
+    <div class="card mint">
+      <strong>採算分岐点:</strong> 同じ chunk を <strong>2-3回</strong> 再利用すれば、cache_creation の +25% コストを cache_read の -90% で回収。回数が多いほど節約効果大。
+    </div>
+  </section>
+
+  <section>
+    <h2>③ 最小コード — cache_control を付ける</h2>
+<pre><code>response = client.messages.create(
+    model="claude-opus-4-7",
+    max_tokens=1024,
+    system=[
+        {
+            "type": "text",
+            "text": "あなたは社内ヘルプデスクです。以下のFAQに基づいて答えて。\n\n[FAQ 1000件...]",
+            "cache_control": {"type": "ephemeral"}  # ← ここ!
+        }
+    ],
+    messages=[{"role": "user", "content": "副業申請の手順は?"}],
+)
+
+print(response.usage)
+# 初回: cache_creation_input_tokens=50000 (1.25倍料金)
+# 2回目以降: cache_read_input_tokens=50000 (0.1倍料金 = 90%OFF)</code></pre>
+  </section>
+
+  <section>
+    <h2>④ どこにキャッシュを置く? — 階層構造</h2>
+    <p>キャッシュは <strong>プロンプトの前置き部分</strong> から始まる連続領域。途中で変わる箇所より <strong>前</strong> しかキャッシュできない。</p>
+<pre><code>system: [大きな指示 (cached)] [新情報なし]
+       ↓
+tools: [tool定義 (cached if before user msg)]
+       ↓
+messages[0..N-1]: [過去履歴 (cached)]
+       ↓
+messages[N]: [今回のユーザー質問 (毎回違う・cacheしない)]</code></pre>
+    <div class="card blue">
+      <strong>原則:</strong> 「<strong>変わらない長い部分</strong> をプロンプトの先頭に、<strong>変わる短い部分</strong> を末尾に」。アーキテクチャ設計から意識する。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑤ TTL (有効期限)</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 28%;">TTL</th><th>料金</th><th>用途</th></tr></thead>
+      <tbody>
+        <tr><td><strong>5分 (ephemeral・標準)</strong></td><td>cache_creation 1.25倍</td><td>連続するチャットセッション</td></tr>
+        <tr><td><strong>1時間 (extended)</strong></td><td>cache_creation 2.0倍</td><td>長時間アクティブなセッション</td></tr>
+      </tbody>
+    </table>
+    <div class="card warning">
+      <strong>注意:</strong> アクセスがあるとTTLが <strong>毎回リセット</strong>される。継続的に質問が来るチャットなら実質「永続キャッシュ」のように使える。<br>
+      非アクティブが TTL を超えると自動失効 → 再アクセスで cache_creation 発生。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑥ 複数の cache breakpoint</h2>
+    <p>1つのリクエストに最大 <strong>4個</strong> の <code class="inline">cache_control</code> を置ける。階層的キャッシュ:</p>
+<pre><code>system=[
+    {"type": "text", "text": "[組織共通の指示]",
+     "cache_control": {"type": "ephemeral"}},  # breakpoint 1
+    {"type": "text", "text": "[このエージェント固有の指示]",
+     "cache_control": {"type": "ephemeral"}}   # breakpoint 2
+],
+tools=[
+    {..., "cache_control": {"type": "ephemeral"}}  # breakpoint 3
+],
+messages=[
+    {"role": "user", "content": [
+        {"type": "text", "text": "[毎回同じドキュメント]",
+         "cache_control": {"type": "ephemeral"}},  # breakpoint 4
+        {"type": "text", "text": "[ユーザー質問]"}
+    ]}
+]</code></pre>
+    <div class="card accent">
+      <strong>メリット:</strong> 共通指示 + エージェント固有指示 + tool + ドキュメント — それぞれ別キャッシュ。1個だけ変えても他のキャッシュは生き残る。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑦ キャッシュ対象の最小サイズ</h2>
+    <ul>
+      <li><strong>Sonnet / Opus:</strong> 1024トークン以上</li>
+      <li><strong>Haiku:</strong> 2048トークン以上</li>
+      <li>これ以下はキャッシュされない (cache_creation_input_tokens=0)</li>
+    </ul>
+    <div class="card mint">
+      <strong>tips:</strong> 短い system prompt はキャッシュされない。長文 (FAQ・PDF・例示豊富な指示) を狙う。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑧ ユースケース別効果</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 28%;">ユースケース</th><th>キャッシュ対象</th><th>典型的なコスト削減</th></tr></thead>
+      <tbody>
+        <tr><td>100ページPDF + 連続質問</td><td>PDF全体</td><td>85-90%</td></tr>
+        <tr><td>Few-shot 例示豊富</td><td>例示部分</td><td>80-90%</td></tr>
+        <tr><td>会話履歴が長いチャット</td><td>過去メッセージ</td><td>70-85%</td></tr>
+        <tr><td>大量の tool 定義</td><td>tools 配列</td><td>60-80%</td></tr>
+        <tr><td>RAG のtop-K chunk</td><td>chunk部分</td><td>40-70% (chunk変動次第)</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑨ usage オブジェクトでモニタリング</h2>
+<pre><code>response = client.messages.create(...)
+
+print(response.usage)
+# Usage(
+#   input_tokens=12,
+#   cache_creation_input_tokens=0,
+#   cache_read_input_tokens=50000,
+#   output_tokens=120
+# )
+
+# 節約額の計算
+cached_savings = response.usage.cache_read_input_tokens * 0.9 * OPUS_INPUT_PRICE
+print(f"今回のキャッシュ節約: ${cached_savings:.4f}")</code></pre>
+    <div class="card blue">
+      <strong>運用tips:</strong> usage を毎回ログして、キャッシュヒット率を可視化。ヒット率が低いなら「変わらない部分」と「変わる部分」の境界を見直す。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑩ 中学生向けに例えると</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 44%;">学校の例え</th><th>prompt caching の対応</th></tr></thead>
+      <tbody>
+        <tr><td>毎回先生に教科書全部を渡し直す</td><td>通常input</td></tr>
+        <tr><td>先生の机に教科書を置きっぱなしにする</td><td>prompt caching</td></tr>
+        <tr><td>「教科書はもう手元にある」前提で質問だけ送る</td><td>cache_read</td></tr>
+        <tr><td>教科書を最初に置く手間 = +25%</td><td>cache_creation</td></tr>
+        <tr><td>2回目以降の質問は教科書部分のお代がほぼ無料</td><td>cache_read 0.1倍料金</td></tr>
+      </tbody>
+    </table>
+    <div class="card accent">
+      <strong>核心:</strong> 「変わらない部分」と「変わる部分」を分けて、変わらない部分を <strong>1回送って何度も使い回す</strong>。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑪ キーワード一覧</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 32%;">英語</th><th style="width: 28%;">読み方</th><th>意味</th></tr></thead>
+      <tbody>
+        <tr><td class="code">prompt caching</td><td>プロンプト キャッシング</td><td>プロンプト前置きの再利用機能</td></tr>
+        <tr><td class="code">cache_control</td><td>キャッシュ コントロール</td><td>キャッシュ境界マーカー</td></tr>
+        <tr><td class="code">ephemeral</td><td>イーフェメラル</td><td>5分TTL (デフォルト)</td></tr>
+        <tr><td class="code">extended</td><td>エクステンデッド</td><td>1時間TTL (有料)</td></tr>
+        <tr><td class="code">cache_creation</td><td>キャッシュ クリエーション</td><td>キャッシュ書き込み (1.25倍料金)</td></tr>
+        <tr><td class="code">cache_read</td><td>キャッシュ リード</td><td>キャッシュ読み出し (0.1倍料金)</td></tr>
+        <tr><td class="code">breakpoint</td><td>ブレークポイント</td><td>cache_control を置く位置 (最大4個)</td></tr>
+        <tr><td class="code">TTL</td><td>ティーティーエル</td><td>Time To Live (有効期限)</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑫ 理解度チェック</h2>
+    <details>
+      <summary>Q1. Prompt caching の経済効果は?</summary>
+      <p>cache_read は通常input の <strong>10%料金</strong> (90%OFF)。初回 cache_creation は 1.25倍 (25%増)。<br>
+      → 同じ chunk を <strong>2-3回</strong> 再利用すれば cache_creation の追加コストを回収。</p>
+    </details>
+    <details>
+      <summary>Q2. キャッシュはどこに置く?</summary>
+      <p>「変わらない長い部分」をプロンプトの <strong>前</strong> に、「変わる短い部分」を <strong>後</strong> に置く。キャッシュは前置きから連続する領域のみ可能。</p>
+    </details>
+    <details>
+      <summary>Q3. 何分間キャッシュは残る?</summary>
+      <p>デフォルト <strong>5分 (ephemeral)</strong>。アクセス毎にTTLリセット → 連続使用なら実質永続。長時間アクティブなら <strong>1時間 (extended)</strong> プラン。</p>
+    </details>
+    <details>
+      <summary>Q4. 最大いくつ cache_control 置ける?</summary>
+      <p><strong>4個</strong>。system / tools / messages の中で柔軟に階層化できる。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑬ 自分メモ</h2>
+    <div class="memo-area">prompt caching を使う場面メモ…例: 同じ就業規則PDFについて社員からの質問対応 / 大量FAQの問い合わせbot…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 60: Prompt caching<br>
+    公式ドキュメント: <a href="https://docs.claude.com/en/docs/build-with-claude/prompt-caching">Anthropic Docs — Prompt caching</a><br>
+    前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_59_textbook.html">Lecture 59 — Citations</a>
+  </footer>
+</main>
+</body>
+</html>
