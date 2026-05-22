@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 56: Extended thinking — Claudeに「考える時間」を与える | Anthropic Academy 教科書</title>
+<style>
+:root { --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a; --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028; --soft-blue: #cfe7ef; --soft-yellow: #fdf0c8; --soft-mint: #d8ecd6; --soft-pink: #f6dcdc; --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+.card.blue { background: var(--soft-blue); border-left: 4px solid #4a8aa3; }
+.card.warning { background: var(--soft-pink); border-left: 4px solid #c66b6b; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+table.vocab td.code { font-family: "Consolas","Menlo",monospace; color: var(--accent); font-weight: 700; white-space: nowrap; }
+pre { background: #f4eedb; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: "Consolas","Menlo",monospace; font-size: 14px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--border); }
+code.inline { background: #f4eedb; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Menlo",monospace; font-size: 0.92em; color: #a85200; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 600px) { body { padding: 20px 14px; } h1.lecture-title { font-size: 24px; } h2 { font-size: 19px; } p, ol li, ul li { font-size: 15px; } }
+</style>
+</head>
+<body>
+<main class="book">
+  <span class="chapter-tag">Module 11 ・ Lecture 56 ・ 解説回</span>
+  <h1 class="lecture-title">Extended thinking<span class="ja-sub">— Claudeに「考える時間」を与えて、難問の精度を上げる</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① まず結論 — Extended thinkingって何?</h2>
+    <p>通常 Claude は「質問を受けたらすぐ答え始める」。Extended thinking は <strong>応答を作る前に「内部で考える時間」を与える</strong> 機能。難しい数学・コーディング・推論で精度が大幅向上する。</p>
+    <div class="card accent">
+      <strong>2段階出力:</strong>
+      <ol>
+        <li><strong>thinking ブロック</strong>: Claude が内部で「ああでもないこうでもない」と考える内容</li>
+        <li><strong>text ブロック</strong>: 最終応答</li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <h2>② 何が変わる?</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 24%;">タスク</th><th>通常</th><th>Extended thinking</th></tr></thead>
+      <tbody>
+        <tr><td>数学・物理の難問</td><td>計算ミスが多い</td><td>段階的に検算する → 正確</td></tr>
+        <tr><td>長文の論理推論</td><td>結論が飛ぶ</td><td>前提を整理してから結論</td></tr>
+        <tr><td>コードリファクタ</td><td>表層的な変更</td><td>影響範囲を考慮した変更</td></tr>
+        <tr><td>創作・要約</td><td>同じ品質</td><td>大きな違いなし (オーバースペック)</td></tr>
+      </tbody>
+    </table>
+    <div class="card warning">
+      <strong>注意:</strong> 全質問で thinking を有効にすべきではない。<strong>難問だけ</strong> 有効にする。簡単な質問では thinking がコスト増・速度低下のデメリットになる。
+    </div>
+  </section>
+
+  <section>
+    <h2>③ 最小コード — thinking を有効化</h2>
+<pre><code>response = client.messages.create(
+    model="claude-opus-4-7",
+    max_tokens=16000,
+    thinking={
+        "type": "enabled",
+        "budget_tokens": 10000  # 最大10000トークン考える
+    },
+    messages=[{
+        "role": "user",
+        "content": "100以下の素数を全部列挙して、その合計を計算して"
+    }],
+)
+
+# response.content には2種類のブロックが入る
+for block in response.content:
+    if block.type == "thinking":
+        print(f"[内部思考] {block.thinking}")
+    elif block.type == "text":
+        print(f"[最終応答] {block.text}")</code></pre>
+    <div class="card mint">
+      <strong>thinking パラメータ:</strong>
+      <ul>
+        <li><code class="inline">type: "enabled"</code> で機能ON</li>
+        <li><code class="inline">budget_tokens</code>: 思考に使えるトークン上限 (max_tokens より小さく)</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>④ budget_tokens の調整目安</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 26%;">タスク難易度</th><th>budget_tokens</th><th>例</th></tr></thead>
+      <tbody>
+        <tr><td>軽量 (簡単な計算)</td><td>1,024〜2,000</td><td>小学校算数</td></tr>
+        <tr><td>中程度 (推論)</td><td>5,000〜10,000</td><td>論理パズル・要件整理</td></tr>
+        <tr><td>高難度 (数学・科学)</td><td>20,000〜32,000</td><td>大学レベル数学・複雑コーディング</td></tr>
+        <tr><td>超高難度 (研究)</td><td>32,000〜64,000</td><td>論文レビュー・大規模リファクタ</td></tr>
+      </tbody>
+    </table>
+    <div class="card blue">
+      <strong>tips:</strong> 最初は <code class="inline">budget_tokens=10000</code> で試す → 出力品質と所要時間を見て調整。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑤ thinking の中身を見る</h2>
+<pre><code>[内部思考]
+よし、100以下の素数を列挙していこう。素数は2以上で、1とそれ自身でしか割り切れない数。
+- 2, 3, 5, 7 (一桁の素数)
+- 11, 13, 17, 19 (10-19)
+- 23, 29 (20-29)
+...
+合計を計算: 2+3+5+7+11+13+...
+段階的に: 2+3=5, +5=10, +7=17, +11=28...
+
+[最終応答]
+100以下の素数は25個あり、合計は1060です。</code></pre>
+    <div class="card accent">
+      <strong>核心:</strong> 通常モデルは「いきなり答え」を出す。Extended thinking は <strong>「考えてから答える」</strong> という人間のような振る舞いを実現。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑥ Tool use と組み合わせ</h2>
+<pre><code>response = client.messages.create(
+    model="claude-opus-4-7",
+    max_tokens=16000,
+    thinking={"type": "enabled", "budget_tokens": 8000},
+    tools=[{"type": "web_search_20250305", "name": "web_search"}],
+    messages=[{
+        "role": "user",
+        "content": "最新のAI業界トレンドを3つ調べて、それぞれの相互関係を分析して"
+    }],
+)</code></pre>
+    <div class="card mint">
+      <strong>応用:</strong> Extended thinking + tool use = <strong>Claude が本当に賢いエージェント</strong> として振る舞う。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑦ コストへの影響</h2>
+    <ul>
+      <li>thinking トークンも <strong>output tokens としてカウント</strong>される</li>
+      <li>budget_tokens=10000 なら、output 料金が +10000 トークン分</li>
+      <li>Claude Opus 4.7 の場合: 1万トークン ≈ 約$0.15 追加</li>
+    </ul>
+    <div class="card warning">
+      <strong>判断軸:</strong> 「間違えたら高くつく」「再試行コストが高い」タスクで thinking を ON。チャットボットの雑談には不要。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑧ 中学生向けに例えると</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 44%;">学校の例え</th><th>Extended thinking の対応</th></tr></thead>
+      <tbody>
+        <tr><td>テスト中「すぐ答えを書く生徒」</td><td>通常モード</td></tr>
+        <tr><td>テスト中「下書きで計算してから清書する生徒」</td><td>Extended thinking</td></tr>
+        <tr><td>「下書きは採点対象外、本番答えだけ採点」</td><td>thinking ブロックは内部過程・text ブロックが最終応答</td></tr>
+        <tr><td>下書きの紙の量 = budget_tokens</td><td>思考に使える上限</td></tr>
+      </tbody>
+    </table>
+    <div class="card accent">
+      <strong>核心:</strong> 難問では「下書きあり」のほうが正答率が上がる。簡単な問題で下書きは要らない。タスクで使い分け。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑨ キーワード一覧</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 32%;">英語</th><th style="width: 28%;">読み方</th><th>意味</th></tr></thead>
+      <tbody>
+        <tr><td class="code">extended thinking</td><td>エクステンデッド シンキング</td><td>拡張思考機能</td></tr>
+        <tr><td class="code">thinking block</td><td>シンキング ブロック</td><td>内部思考のcontent block</td></tr>
+        <tr><td class="code">budget_tokens</td><td>バジェット トークンズ</td><td>思考に使えるトークン上限</td></tr>
+        <tr><td class="code">chain of thought</td><td>チェイン オブ ソート</td><td>思考連鎖 (Extended thinkingの理論背景)</td></tr>
+        <tr><td class="code">reasoning</td><td>リーズニング</td><td>推論</td></tr>
+        <tr><td class="code">deliberation</td><td>デリベレーション</td><td>熟考</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑩ 理解度チェック</h2>
+    <details>
+      <summary>Q1. Extended thinking が向くタスクは?</summary>
+      <p>① 数学・物理の難問 (段階的検算が必要) ② 長文の論理推論 (前提整理が必要) ③ 複雑なコードリファクタ (影響範囲考慮)。逆に向かない: 雑談・短文要約・FAQ応答などシンプル質問。</p>
+    </details>
+    <details>
+      <summary>Q2. thinking ブロックと text ブロックの違いは?</summary>
+      <p><strong>thinking</strong>: Claudeの内部思考 (下書き) — ユーザーに見せるか開発者判断。<br>
+      <strong>text</strong>: 最終応答 — ユーザーに見せる正式回答。</p>
+    </details>
+    <details>
+      <summary>Q3. budget_tokens の決め方は?</summary>
+      <p>タスク難易度に応じて 1,024 (簡単) 〜 64,000 (超難問)。最初は <strong>10,000</strong> で試して、出力品質と所要時間を見て調整。</p>
+    </details>
+    <details>
+      <summary>Q4. コストへの影響は?</summary>
+      <p>thinking トークンも output tokens としてカウントされ課金。「間違えたら再試行コストが高い」タスクで使うとROIが高い。雑談には不要。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑪ 自分メモ</h2>
+    <div class="memo-area">自分のプロジェクトで thinking が効きそうなタスクを書こう…例: 契約書の論点抽出 / 複雑な計算 / 障害原因分析…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 56: Extended thinking<br>
+    公式ドキュメント: <a href="https://docs.claude.com/en/docs/build-with-claude/extended-thinking">Anthropic Docs — Extended thinking</a><br>
+    前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_55_textbook.html">Lecture 55 — Implementing the RAG flow</a>
+  </footer>
+</main>
+</body>
+</html>
