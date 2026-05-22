@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 58: PDF input — Claudeに長文PDFを直接読ませる | Anthropic Academy 教科書</title>
+<style>
+:root { --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a; --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028; --soft-blue: #cfe7ef; --soft-yellow: #fdf0c8; --soft-mint: #d8ecd6; --soft-pink: #f6dcdc; --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+.card.blue { background: var(--soft-blue); border-left: 4px solid #4a8aa3; }
+.card.warning { background: var(--soft-pink); border-left: 4px solid #c66b6b; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+table.vocab td.code { font-family: "Consolas","Menlo",monospace; color: var(--accent); font-weight: 700; white-space: nowrap; }
+pre { background: #f4eedb; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: "Consolas","Menlo",monospace; font-size: 14px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--border); }
+code.inline { background: #f4eedb; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Menlo",monospace; font-size: 0.92em; color: #a85200; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 600px) { body { padding: 20px 14px; } h1.lecture-title { font-size: 24px; } h2 { font-size: 19px; } p, ol li, ul li { font-size: 15px; } }
+</style>
+</head>
+<body>
+<main class="book">
+  <span class="chapter-tag">Module 11 ・ Lecture 58 ・ 解説回</span>
+  <h1 class="lecture-title">PDF input<span class="ja-sub">— Claudeに長文PDFを直接読ませる (テキストと画像両方を理解)</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① まず結論 — PDF入力って何?</h2>
+    <p>Claude にPDFファイルをそのまま渡せる機能。<strong>テキスト抽出 + ページ画像認識</strong> の両方を Anthropic 側で自動処理。あなたは <code class="inline">type="document"</code> ブロックで PDF を投げるだけ。</p>
+    <div class="card accent">
+      <strong>強み:</strong>
+      <ul>
+        <li>テキスト + 図表 + スキャン画像 まで全部理解</li>
+        <li>OCR を別途使わなくて良い</li>
+        <li>レイアウトを保ったまま分析 (表・カラム・ヘッダー)</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>② 制約条件</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 32%;">項目</th><th>上限</th></tr></thead>
+      <tbody>
+        <tr><td>ファイルサイズ</td><td>32MB / PDF</td></tr>
+        <tr><td>ページ数</td><td>100ページ / PDF</td></tr>
+        <tr><td>形式</td><td>PDF のみ (.docx は要変換)</td></tr>
+        <tr><td>対応モデル</td><td>Claude 3.5 Sonnet 以降 + Claude 4.x</td></tr>
+      </tbody>
+    </table>
+    <div class="card warning">
+      <strong>100ページ超</strong>のPDFは分割して投げる。または <strong>Files API</strong> (Lecture 61) で事前アップロード + 大きいPDFを参照する方式に切り替え。
+    </div>
+  </section>
+
+  <section>
+    <h2>③ 最小コード — base64でPDFを渡す</h2>
+<pre><code>import base64
+import anthropic
+
+client = anthropic.Anthropic()
+
+with open("./report.pdf", "rb") as f:
+    pdf_data = base64.standard_b64encode(f.read()).decode("utf-8")
+
+response = client.messages.create(
+    model="claude-opus-4-7",
+    max_tokens=4096,
+    messages=[{
+        "role": "user",
+        "content": [
+            {
+                "type": "document",
+                "source": {
+                    "type": "base64",
+                    "media_type": "application/pdf",
+                    "data": pdf_data,
+                },
+            },
+            {"type": "text", "text": "このPDFの要約を5項目で教えて"}
+        ],
+    }],
+)
+
+print(response.content[0].text)</code></pre>
+    <div class="card mint">
+      <strong>注目:</strong> 画像と同じ pattern。<code class="inline">type="document"</code> + <code class="inline">media_type="application/pdf"</code>。複数 content block でテキスト質問と組合せ。
+    </div>
+  </section>
+
+  <section>
+    <h2>④ URL方式</h2>
+<pre><code>response = client.messages.create(
+    model="claude-opus-4-7",
+    max_tokens=4096,
+    messages=[{
+        "role": "user",
+        "content": [
+            {"type": "document", "source": {"type": "url", "url": "https://arxiv.org/pdf/2403.10131.pdf"}},
+            {"type": "text", "text": "この論文のkey contributionを3つ抽出"}
+        ],
+    }],
+)</code></pre>
+    <div class="card blue">
+      <strong>用途:</strong> arXiv論文・公開資料・公的レポート (政府刊行物等) の自動分析に最適。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑤ 何が読めるか — PDF入力で強い領域</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 28%;">用途</th><th>プロンプト例</th></tr></thead>
+      <tbody>
+        <tr><td><strong>論文要約</strong></td><td>「要約・key contribution・実験結果を抽出」</td></tr>
+        <tr><td><strong>契約書レビュー</strong></td><td>「リスク条項を5つ + 各々の影響度を分析」</td></tr>
+        <tr><td><strong>議事録抽出</strong></td><td>「決定事項・アクションアイテム・担当者を箇条書きに」</td></tr>
+        <tr><td><strong>請求書OCR</strong></td><td>「金額・宛先・支払期日をJSON形式で抽出」</td></tr>
+        <tr><td><strong>財務諸表分析</strong></td><td>「表からKPI抽出 + 前期比較」</td></tr>
+        <tr><td><strong>マニュアル理解</strong></td><td>「目次から該当章を選んで、操作手順を要約」</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑥ コスト感</h2>
+    <p>PDF も <strong>トークン換算</strong> される:</p>
+    <ul>
+      <li>1ページあたり <strong>約 1,500〜3,000 トークン</strong> (テキスト + 画像合算)</li>
+      <li>100ページPDFなら 150,000〜300,000 トークン (Claude Opus 4.7 input料金で約 $0.5〜$1)</li>
+      <li>同じPDFで複数回質問する場合は <strong>prompt caching</strong> (Lecture 60) で90%節約可能</li>
+    </ul>
+    <div class="card mint">
+      <strong>圧縮テク:</strong> 100ページ全部を毎回送らず、prompt caching で1回送って何度も質問するパターンが定石。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑦ よくある使い方パターン</h2>
+<pre><code># パターン1: 単発要約
+"このPDFの要約を300字で"
+
+# パターン2: 構造化抽出
+"以下JSONスキーマで抽出して: {title, authors[], publication_date, abstract}"
+
+# パターン3: 質問応答 (PDF をコンテキストにしてチャット)
+# システムprompt: "以下のPDF資料に基づいて質問に答えてください。
+#                資料に書いてない場合は推測せず『情報なし』と答えること"
+
+# パターン4: 複数PDF比較
+content_blocks = [
+    {"type": "document", "source": ... PDF_A ...},
+    {"type": "document", "source": ... PDF_B ...},
+    {"type": "text", "text": "両論文を比較して、主張の違いをまとめて"}
+]</code></pre>
+  </section>
+
+  <section>
+    <h2>⑧ Image input との違い</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 22%;">観点</th><th>Image input</th><th>PDF input</th></tr></thead>
+      <tbody>
+        <tr><td>type</td><td>"image"</td><td>"document"</td></tr>
+        <tr><td>media_type</td><td>image/jpeg, image/png等</td><td>application/pdf</td></tr>
+        <tr><td>最大サイズ</td><td>5MB</td><td>32MB</td></tr>
+        <tr><td>枚数/ページ</td><td>1画像 = 1要素</td><td>1PDF = 複数ページ</td></tr>
+        <tr><td>テキスト抽出</td><td>OCR的</td><td>テキスト+画像 自動分離</td></tr>
+        <tr><td>レイアウト保持</td><td>視覚情報のみ</td><td>テキスト構造も保つ</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑨ 失敗パターン</h2>
+    <details>
+      <summary>「100ページ超」エラー</summary>
+      <p>PDFを2分割・3分割して順次投げる。または <strong>Files API</strong> (Lecture 61) を使って事前アップロード → 部分参照。</p>
+    </details>
+    <details>
+      <summary>「32MB超」エラー</summary>
+      <p>PDFを圧縮 (画像解像度ダウン) または分割。スキャンPDFが大きくなりがち。</p>
+    </details>
+    <details>
+      <summary>スキャンPDF (画像のみ) で文字が読めない</summary>
+      <p>解像度が低すぎる可能性。元のPDFをより高解像度で再スキャン or OCRを先にかけてからテキスト化して送る。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑩ 中学生向けに例えると</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 44%;">学校の例え</th><th>PDF input の対応</th></tr></thead>
+      <tbody>
+        <tr><td>「先生、この教科書まるごと貸す」と渡す</td><td>PDF全部送信</td></tr>
+        <tr><td>「第3章の要約と図3の説明お願い」</td><td>特定箇所の質問</td></tr>
+        <tr><td>「2冊比べてどっちが正しいか」</td><td>複数PDF比較</td></tr>
+        <tr><td>「同じ教科書で何度も質問する」</td><td>prompt cachingで節約</td></tr>
+      </tbody>
+    </table>
+    <div class="card accent">
+      <strong>核心:</strong> 「テキスト + 図表 + スキャン画像」を <strong>分けずに丸ごと</strong> Claudeに見せられる。OCR + テキスト抽出 + レイアウト解析の3段階を1回で。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑪ キーワード一覧</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 32%;">英語</th><th style="width: 28%;">読み方</th><th>意味</th></tr></thead>
+      <tbody>
+        <tr><td class="code">document block</td><td>ドキュメント ブロック</td><td>type="document" のcontent block</td></tr>
+        <tr><td class="code">application/pdf</td><td>アプリケーション PDF</td><td>PDF の media_type</td></tr>
+        <tr><td class="code">PDF support</td><td>PDF サポート</td><td>Anthropic 公式PDF入力機能</td></tr>
+        <tr><td class="code">OCR</td><td>オーシーアール</td><td>Claude 内部で自動実行</td></tr>
+        <tr><td class="code">prompt caching</td><td>プロンプト キャッシング</td><td>同じPDFの再質問コスト圧縮 (#60)</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑫ 理解度チェック</h2>
+    <details>
+      <summary>Q1. PDF入力の制約は?</summary>
+      <p>サイズ <strong>32MB</strong> / ページ数 <strong>100ページ</strong> / 形式 <strong>PDF のみ</strong>。超える場合は分割 or Files API で対応。</p>
+    </details>
+    <details>
+      <summary>Q2. type="image" と type="document" の違いは?</summary>
+      <p>image は1枚の画像。document は <strong>複数ページのPDF</strong>。document は Anthropic 内部でテキスト抽出 + 画像認識を自動分離するため、表やレイアウトを保ったまま分析できる。</p>
+    </details>
+    <details>
+      <summary>Q3. PDF が100ページ超のときの対処は?</summary>
+      <p>① PDFを分割して順次投げる ② 重要な章だけ抜粋して送る ③ <strong>Files API</strong> (Lecture 61) で事前アップロード + 参照。</p>
+    </details>
+    <details>
+      <summary>Q4. 同じPDFで複数回質問する場合のコスト削減は?</summary>
+      <p><strong>Prompt caching</strong> (Lecture 60) を使う。1回目で PDF をキャッシュ → 2回目以降は <strong>cache_read 料金</strong> (通常の 10%) で再利用。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑬ 自分メモ</h2>
+    <div class="memo-area">PDF入力を使う場面メモ…例: 契約書レビュー / 議事録要約 / 論文サーベイ…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 58: PDF input<br>
+    公式ドキュメント: <a href="https://docs.claude.com/en/docs/build-with-claude/pdf-support">Anthropic Docs — PDF support</a><br>
+    前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_57_textbook.html">Lecture 57 — Image input</a>
+  </footer>
+</main>
+</body>
+</html>
