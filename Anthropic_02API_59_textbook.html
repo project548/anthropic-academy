@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 59: Citations — Claudeに出典付きで答えさせる | Anthropic Academy 教科書</title>
+<style>
+:root { --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a; --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028; --soft-blue: #cfe7ef; --soft-yellow: #fdf0c8; --soft-mint: #d8ecd6; --soft-pink: #f6dcdc; --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+.card.blue { background: var(--soft-blue); border-left: 4px solid #4a8aa3; }
+.card.warning { background: var(--soft-pink); border-left: 4px solid #c66b6b; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+table.vocab td.code { font-family: "Consolas","Menlo",monospace; color: var(--accent); font-weight: 700; white-space: nowrap; }
+pre { background: #f4eedb; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: "Consolas","Menlo",monospace; font-size: 14px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--border); }
+code.inline { background: #f4eedb; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Menlo",monospace; font-size: 0.92em; color: #a85200; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 600px) { body { padding: 20px 14px; } h1.lecture-title { font-size: 24px; } h2 { font-size: 19px; } p, ol li, ul li { font-size: 15px; } }
+</style>
+</head>
+<body>
+<main class="book">
+  <span class="chapter-tag">Module 11 ・ Lecture 59 ・ 解説回</span>
+  <h1 class="lecture-title">Citations<span class="ja-sub">— Claudeに「どこ書いてあった?」を機械的に返させる引用機能</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① まず結論 — Citations って何?</h2>
+    <p>Claude が <strong>「答えの根拠になった文書の場所」を自動で返す</strong> 機能。RAGや文書要約で「この情報の出所は?」を機械的に検証できる。</p>
+    <div class="card accent">
+      <strong>仕組み:</strong> document ブロックに <code class="inline">citations: {enabled: true}</code> を付けて投げる → Claude が応答テキストの各部分に <strong>cited_text と source location</strong> を自動付与。
+    </div>
+  </section>
+
+  <section>
+    <h2>② なぜ重要? — 4つの理由</h2>
+    <ul>
+      <li><strong>幻覚抑制</strong>: Claude が「文書になかった内容」を答えにくくなる</li>
+      <li><strong>検証可能性</strong>: ユーザーが「どの段落の何行目?」を即確認できる</li>
+      <li><strong>法的安全</strong>: 法務・医療・金融で出典必須の現場で必須機能</li>
+      <li><strong>信頼性</strong>: AI生成と引用を区別できる → Perplexity 風UX</li>
+    </ul>
+    <div class="card mint">
+      <strong>web_search tool (#48) の citation</strong> と同じコンセプトだが、こちらは <strong>あなたが渡した文書</strong> に対する引用。
+    </div>
+  </section>
+
+  <section>
+    <h2>③ 最小コード — Citations を有効化</h2>
+<pre><code>response = client.messages.create(
+    model="claude-opus-4-7",
+    max_tokens=1024,
+    messages=[{
+        "role": "user",
+        "content": [
+            {
+                "type": "document",
+                "source": {
+                    "type": "text",
+                    "media_type": "text/plain",
+                    "data": "Anthropic は2021年に設立された AI 企業。本社はサンフランシスコ。Claude シリーズを開発している。"
+                },
+                "title": "Anthropic 会社概要",
+                "context": "公式IR資料より",
+                "citations": {"enabled": True}  # ← これ!
+            },
+            {"type": "text", "text": "Anthropic はいつ設立?"}
+        ],
+    }],
+)
+
+for block in response.content:
+    if block.type == "text":
+        print(block.text)
+        if block.citations:
+            for c in block.citations:
+                print(f"  [引用] {c.cited_text} (from {c.document_title})")</code></pre>
+  </section>
+
+  <section>
+    <h2>④ 4種類の document source</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 28%;">source type</th><th>対応形式</th><th>citation 粒度</th></tr></thead>
+      <tbody>
+        <tr><td class="code">text</td><td>プレーンテキスト</td><td>文単位</td></tr>
+        <tr><td class="code">document (PDF)</td><td>application/pdf</td><td>ページ + 段落単位</td></tr>
+        <tr><td class="code">document (search_result)</td><td>RAG結果の構造化テキスト</td><td>chunk単位</td></tr>
+        <tr><td class="code">custom content</td><td>JSONで自分定義</td><td>任意のID単位</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑤ 応答の構造 — citation はどう返ってくる</h2>
+<pre><code>{
+  "content": [
+    {"type": "text", "text": "Anthropic は", "citations": null},
+    {
+      "type": "text",
+      "text": "2021年に設立された",
+      "citations": [{
+        "type": "char_location",
+        "cited_text": "Anthropic は2021年に設立された",
+        "document_index": 0,
+        "document_title": "Anthropic 会社概要",
+        "start_char_index": 0,
+        "end_char_index": 19
+      }]
+    },
+    {"type": "text", "text": " AI企業です。", "citations": null}
+  ]
+}</code></pre>
+    <div class="card accent">
+      <strong>核心:</strong> 応答が <strong>細かいtext block</strong> に分かれて、引用部分だけに <code class="inline">citations</code> 配列が付く。UI側ではこれを <strong>マーカー/ハイライト</strong> で可視化する。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑥ Citation の3つの location 型</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 28%;">location type</th><th>含まれる情報</th><th>用途</th></tr></thead>
+      <tbody>
+        <tr><td class="code">char_location</td><td>start_char_index / end_char_index</td><td>text source の文字位置</td></tr>
+        <tr><td class="code">page_location</td><td>start_page_number / end_page_number</td><td>PDF source のページ位置</td></tr>
+        <tr><td class="code">content_block_location</td><td>start_block_index / end_block_index</td><td>custom content の構造化単位</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑦ UI実装パターン — Perplexity 風</h2>
+<pre><code># React の例 (擬似コード)
+function MessageWithCitations({ blocks }) {
+  return (
+    &lt;div&gt;
+      {blocks.map((block, i) =&gt;
+        block.citations
+          ? &lt;mark
+              key={i}
+              data-tooltip={block.citations[0].cited_text}
+              data-source={block.citations[0].document_title}
+            &gt;{block.text}&lt;/mark&gt;
+          : &lt;span key={i}&gt;{block.text}&lt;/span&gt;
+      )}
+    &lt;/div&gt;
+  );
+}</code></pre>
+    <div class="card mint">
+      <strong>UX設計:</strong>
+      <ul>
+        <li>引用部分を <strong>下線 / 色変え</strong> でマーキング</li>
+        <li>ホバーで <strong>出典文書名 + 該当箇所</strong> をツールチップ表示</li>
+        <li>クリックで <strong>元文書の該当ページ</strong> にジャンプ (PDFビューア)</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>⑧ コスト</h2>
+    <ul>
+      <li>citation を有効にしても <strong>追加トークン料金は発生しない</strong></li>
+      <li>cited_text・title・url・location は <strong>無料</strong> (input/output tokensにカウントしない)</li>
+      <li>つまり citations: enabled は <strong>付けない理由がない</strong> → RAG/PDF処理ではデフォルトON推奨</li>
+    </ul>
+    <div class="card accent">
+      <strong>これ重要:</strong> Anthropic は citation を <strong>無料</strong> にしている。法的・倫理的に出典明示が望ましいから。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑨ よくある使い方</h2>
+    <details>
+      <summary>RAG + Citations</summary>
+      <p>RAGの search 結果を <code class="inline">type="document"</code> + <code class="inline">citations: enabled</code> で投げる → Claudeの応答に「どの chunk を根拠にしたか」が自動付与される。ユーザー画面では引用元のリンクと該当箇所をマーキング表示。</p>
+    </details>
+    <details>
+      <summary>長文要約 + Citations</summary>
+      <p>100ページPDFを要約させるとき、citation を有効にしておけば「要約の各文が原文の何ページに対応するか」が分かる。要約の質チェック・原文確認に便利。</p>
+    </details>
+    <details>
+      <summary>法務QA + Citations</summary>
+      <p>「契約書のこの条項についてどう解釈?」と聞いて、Claudeの回答に <strong>どの条項を引用したか</strong> が表示される。法的に「AIが言ったから」では済まない場面で、原文出典の明示は必須。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑩ 中学生向けに例えると</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 44%;">学校の例え</th><th>citations の対応</th></tr></thead>
+      <tbody>
+        <tr><td>レポートで「p.12 を参考に...」と引用元を書く</td><td>citation 付き応答</td></tr>
+        <tr><td>引用なしのレポートは0点</td><td>citation なしの回答は信頼度低</td></tr>
+        <tr><td>「教科書のどこに書いてあった?」と先生が確認</td><td>start_char_index / page_number</td></tr>
+        <tr><td>引用は短く・原文ママ・出典明示</td><td>cited_text + document_title</td></tr>
+      </tbody>
+    </table>
+    <div class="card accent">
+      <strong>核心:</strong> AI生成と引用を明確に区別。<strong>「AIが言った」と「資料に書いてあった」を分ける</strong> ことで、ユーザーが情報の信頼性を判断できる。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑪ キーワード一覧</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 32%;">英語</th><th style="width: 28%;">読み方</th><th>意味</th></tr></thead>
+      <tbody>
+        <tr><td class="code">citations</td><td>サイテーションズ</td><td>引用機能</td></tr>
+        <tr><td class="code">cited_text</td><td>サイテッド テキスト</td><td>引用された原文 (最大150文字)</td></tr>
+        <tr><td class="code">char_location</td><td>キャラ ロケーション</td><td>テキスト内の文字位置</td></tr>
+        <tr><td class="code">page_location</td><td>ページ ロケーション</td><td>PDFのページ位置</td></tr>
+        <tr><td class="code">document_index</td><td>ドキュメント インデックス</td><td>複数doc投入時の何番目か</td></tr>
+        <tr><td class="code">document_title</td><td>ドキュメント タイトル</td><td>出典文書名</td></tr>
+        <tr><td class="code">hallucination</td><td>ハルシネーション</td><td>幻覚 (citation で抑制)</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑫ 理解度チェック</h2>
+    <details>
+      <summary>Q1. Citations の主な効果は?</summary>
+      <p>① 幻覚抑制 (Claudeが資料外を答えにくくなる) ② 検証可能性 (ユーザーが出典を確認できる) ③ 法的安全 (出典必須の現場で必要) ④ 信頼性向上 (AI生成と引用の区別)</p>
+    </details>
+    <details>
+      <summary>Q2. どう有効化する?</summary>
+      <p>document ブロックに <code class="inline">"citations": {"enabled": true}</code> を追加するだけ。あとは Claude が自動的に応答テキストに引用情報を埋め込む。</p>
+    </details>
+    <details>
+      <summary>Q3. citation 部分のトークン料金は?</summary>
+      <p><strong>無料</strong>。cited_text・title・location は input/output tokens にカウントされない。→ RAG/PDF処理では citations: enabled を <strong>デフォルトON</strong> 推奨。</p>
+    </details>
+    <details>
+      <summary>Q4. 3つの location 型の使い分けは?</summary>
+      <p><strong>char_location</strong>: テキスト文書 (文字位置)<br>
+      <strong>page_location</strong>: PDF (ページ位置)<br>
+      <strong>content_block_location</strong>: 構造化custom content (block index)<br>
+      → Claude が source type に応じて自動選択。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑬ 自分メモ</h2>
+    <div class="memo-area">Citations を使う場面メモ…例: 法務QA / 医療AI / 学術アシスタント…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 59: Citations<br>
+    公式ドキュメント: <a href="https://docs.claude.com/en/docs/build-with-claude/citations">Anthropic Docs — Citations</a><br>
+    前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_58_textbook.html">Lecture 58 — PDF input</a>
+  </footer>
+</main>
+</body>
+</html>
