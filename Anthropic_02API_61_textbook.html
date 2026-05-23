@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lecture 61: Files API — ファイルを事前アップロードして再利用 | Anthropic Academy 教科書</title>
+<title>Lecture 61: Rules of prompt caching — キャッシュが効く条件と無効化ルール | Anthropic Academy 教科書</title>
 <style>
 :root { --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a; --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028; --soft-blue: #cfe7ef; --soft-yellow: #fdf0c8; --soft-mint: #d8ecd6; --soft-pink: #f6dcdc; --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04); }
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -43,228 +43,313 @@ footer a:hover { text-decoration: underline; }
 <body>
 <main class="book">
   <span class="chapter-tag">Module 11 ・ Lecture 61 ・ 解説回</span>
-  <h1 class="lecture-title">Files API<span class="ja-sub">— ファイルを事前アップロードして message に何度も参照させる</span></h1>
+  <h1 class="lecture-title">Rules of prompt caching<span class="ja-sub">— キャッシュが効く条件・無効化ルール・落とし穴まとめ</span></h1>
   <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
 
   <section>
-    <h2>① まず結論 — Files API って何?</h2>
-    <p>ファイルを Anthropic サーバーに <strong>1回だけアップロード</strong> し、<strong>file_id を発行</strong>。以降の messages.create では「base64 を毎回送る」代わりに <strong>file_id を参照</strong> するだけでよい。</p>
+    <h2>① まず結論 — このレクチャーで覚えるルール</h2>
+    <p>#60 (Prompt caching) で機能の輪郭はわかった。本章は <strong>「キャッシュ命中する条件」と「無効化の条件」</strong> を厳密に押さえる回。本番運用ではここを知らないと「思ったよりキャッシュが効かない」事故が起きる。</p>
     <div class="card accent">
-      <strong>クイズ問題の答えはこれ:</strong> "Uploading files ahead of time and referencing them later instead of encoding them directly in messages"
-    </div>
-  </section>
-
-  <section>
-    <h2>② 何が嬉しい? — base64 直貼りとの違い</h2>
-    <table class="vocab">
-      <thead><tr><th style="width: 26%;">観点</th><th>base64直貼り (旧)</th><th>Files API (新)</th></tr></thead>
-      <tbody>
-        <tr><td>1回目のリクエスト</td><td>巨大なbase64文字列を含む</td><td>file_id だけ参照 (短い)</td></tr>
-        <tr><td>2回目以降</td><td>毎回base64を再送信</td><td>同じ file_id を再利用</td></tr>
-        <tr><td>ネットワーク</td><td>都度大量転送</td><td>1回だけ転送</td></tr>
-        <tr><td>レイテンシ</td><td>大ファイルでは遅い</td><td>低レイテンシ</td></tr>
-        <tr><td>同一ファイル複数質問</td><td>毎回課金</td><td>1回だけ + cache連携で90%OFF</td></tr>
-      </tbody>
-    </table>
-    <div class="card mint">
-      <strong>適する場面:</strong>
-      <ul>
-        <li>同じPDF/画像について <strong>複数回質問</strong> するチャットbot</li>
-        <li>巨大ファイル (30MB の PDF 等)</li>
-        <li>マルチターン会話で同じ参考資料を毎回参照</li>
-        <li>Batch API で同じファイルを大量処理</li>
-      </ul>
-    </div>
-  </section>
-
-  <section>
-    <h2>③ 使い方 — 3ステップ</h2>
-<pre><code># STEP 1: ファイルをアップロード (1回だけ)
-import anthropic
-
-client = anthropic.Anthropic()
-
-file_obj = client.beta.files.upload(
-    file=("report.pdf", open("./report.pdf", "rb"), "application/pdf"),
-)
-file_id = file_obj.id  # 例: "file_01ABC..." (永続)
-
-# STEP 2: メッセージ作成時に file_id で参照
-response = client.beta.messages.create(
-    model="claude-opus-4-7",
-    max_tokens=2048,
-    messages=[{
-        "role": "user",
-        "content": [
-            {
-                "type": "document",
-                "source": {
-                    "type": "file",
-                    "file_id": file_id  # ← ここ!
-                }
-            },
-            {"type": "text", "text": "このPDFの要約を5項目で"}
-        ],
-    }],
-    betas=["files-api-2025-04-14"]  # beta header 必要
-)
-
-# STEP 3: 何度でも同じ file_id で参照可能
-response2 = client.beta.messages.create(
-    model="claude-opus-4-7",
-    max_tokens=2048,
-    messages=[{
-        "role": "user",
-        "content": [
-            {"type": "document", "source": {"type": "file", "file_id": file_id}},
-            {"type": "text", "text": "今度は表データを抽出して"}
-        ],
-    }],
-    betas=["files-api-2025-04-14"]
-)</code></pre>
-  </section>
-
-  <section>
-    <h2>④ API メソッド一覧</h2>
-    <table class="vocab">
-      <thead><tr><th style="width: 30%;">メソッド</th><th>用途</th></tr></thead>
-      <tbody>
-        <tr><td class="code">client.beta.files.upload(...)</td><td>ファイルアップロード → file_id 取得</td></tr>
-        <tr><td class="code">client.beta.files.list()</td><td>アップロード済みファイル一覧</td></tr>
-        <tr><td class="code">client.beta.files.retrieve(file_id)</td><td>file_id でメタデータ取得</td></tr>
-        <tr><td class="code">client.beta.files.delete(file_id)</td><td>削除</td></tr>
-        <tr><td class="code">client.beta.files.content(file_id)</td><td>ファイル中身ダウンロード</td></tr>
-      </tbody>
-    </table>
-  </section>
-
-  <section>
-    <h2>⑤ 制約条件</h2>
-    <ul>
-      <li><strong>サイズ上限:</strong> 32MB / ファイル</li>
-      <li><strong>保存期間:</strong> 90日 (90日アクセスなしで自動削除)</li>
-      <li><strong>対応形式:</strong> PDF / JPEG / PNG / GIF / WebP / text/plain</li>
-      <li><strong>合計ストレージ:</strong> 100GB / 組織</li>
-      <li><strong>beta header 必要:</strong> <code class="inline">betas=["files-api-2025-04-14"]</code></li>
-    </ul>
-    <div class="card warning">
-      <strong>注意:</strong> Files API はまだ <strong>beta</strong>。本番運用前に最新仕様を確認。GA (一般公開) 時に API が変わる可能性。
-    </div>
-  </section>
-
-  <section>
-    <h2>⑥ Prompt caching との組み合わせ</h2>
-    <p>Files API は <strong>prompt caching (Lecture 60) と組み合わせると最強</strong>:</p>
-<pre><code>messages=[{
-    "role": "user",
-    "content": [
-        {
-            "type": "document",
-            "source": {"type": "file", "file_id": file_id},
-            "cache_control": {"type": "ephemeral"}  # ← cache 化!
-        },
-        {"type": "text", "text": "[毎回違うユーザー質問]"}
-    ]
-}]
-# → 1回目: ファイル本体トークン (cache_creation)
-# → 2回目以降: cache_read (90%OFF) で実質ほぼ無料</code></pre>
-    <div class="card accent">
-      <strong>三重節約構造:</strong>
+      <strong>5つの大原則:</strong>
       <ol>
-        <li>Files API: base64再送信なし → ネットワーク削減</li>
-        <li>Prompt caching: トークン料金 90%OFF</li>
-        <li>file_id 一度発行 → ストレージ料金は無料 (90日まで)</li>
+        <li><strong>階層順序</strong> = tools → system → messages (この順で前方一致)</li>
+        <li><strong>ハッシュ完全一致</strong> = 1文字違うとミス</li>
+        <li><strong>breakpoint 最大4個</strong> / 1リクエスト</li>
+        <li><strong>lookback 20ブロック</strong> / breakpoint</li>
+        <li><strong>最小トークン</strong>: Opus 4.5+ = 4096 / Sonnet 4.6+ = 1024 / Haiku 4.5 = 4096</li>
       </ol>
     </div>
   </section>
 
   <section>
-    <h2>⑦ ユースケース別</h2>
-    <details>
-      <summary>1. ヘルプデスクbot (社内マニュアル100ページ)</summary>
-      <p>マニュアルPDFを Files API で1回アップロード → file_id を環境変数化。ユーザーが「○○のやり方は?」と聞くたびに file_id + prompt caching で即応答。90日に1回 file 更新 → upload 再実行 + file_id 入れ替え。</p>
-    </details>
-    <details>
-      <summary>2. 契約書レビュー service</summary>
-      <p>顧客の契約書PDFを Files API にアップロード → 「リスク条項抽出」「修正案提示」「比較分析」と複数の質問を同じ file_id で処理。30日後に自動削除 → プライバシー配慮 + ストレージ無駄なし。</p>
-    </details>
-    <details>
-      <summary>3. 画像分析パイプライン (Batch API 連携)</summary>
-      <p>1000枚の商品画像を Files API で一括アップロード → Batch API で「カテゴリ分類」「品質スコア」「商品説明文生成」を並列実行。base64再送信より圧倒的に高速。</p>
-    </details>
-  </section>
-
-  <section>
-    <h2>⑧ ファイル管理ベストプラクティス</h2>
-    <ul>
-      <li><strong>file_id を永続ストレージに記録</strong>: DB の <code class="inline">documents.anthropic_file_id</code> カラム等</li>
-      <li><strong>ハッシュ管理</strong>: 同じファイルの重複upload を避けるため、SHA256 ハッシュで既存file_idを再利用</li>
-      <li><strong>定期チェック</strong>: 90日制限のため、月1で <code class="inline">files.list()</code> 確認 + 期限切れ近い物を再upload</li>
-      <li><strong>削除ポリシー</strong>: 用途終了したファイルは <code class="inline">files.delete()</code> で即削除 (法令遵守・コスト)</li>
-    </ul>
-  </section>
-
-  <section>
-    <h2>⑨ 中学生向けに例えると</h2>
+    <h2>② キャッシュ対象になる/ならない</h2>
     <table class="vocab">
-      <thead><tr><th style="width: 44%;">学校の例え</th><th>Files API の対応</th></tr></thead>
+      <thead><tr><th style="width: 50%;">キャッシュOK</th><th>キャッシュNG</th></tr></thead>
       <tbody>
-        <tr><td>毎回先生に教科書のコピーを手渡す</td><td>base64直貼り</td></tr>
-        <tr><td>図書館に教科書を預けてカード番号で参照</td><td>Files API + file_id</td></tr>
-        <tr><td>カード番号だけ控えていれば毎回コピー不要</td><td>file_id 参照</td></tr>
-        <tr><td>「机に置きっぱ」と組み合わせると最速</td><td>Files API + Prompt caching</td></tr>
+        <tr>
+          <td>
+            <ul>
+              <li><code class="inline">tools</code> 配列内のtool定義</li>
+              <li><code class="inline">system</code> 配列内のtextブロック</li>
+              <li><code class="inline">messages.content</code> のtext</li>
+              <li><code class="inline">messages.content</code> の image / document (userのみ)</li>
+              <li>tool_use と tool_result ブロック</li>
+            </ul>
+          </td>
+          <td>
+            <ul>
+              <li>thinking blocks に <code class="inline">cache_control</code> 直接指定不可</li>
+              <li>sub-content blocks (citations等) を直接キャッシュ不可</li>
+              <li>空のtext block</li>
+            </ul>
+          </td>
+        </tr>
       </tbody>
     </table>
-    <div class="card accent">
-      <strong>核心:</strong> 「ファイルそのもの」を毎回送らない。<strong>「ファイルへの参照 (file_id)」</strong> だけを送って、Anthropic 側に永続保存させる。
+  </section>
+
+  <section>
+    <h2>③ 階層順序 — tools → system → messages</h2>
+<pre><code>[tools 定義]      ← 最初に評価
+   ↓
+[system messages] ← 次に評価
+   ↓
+[messages 配列]   ← 最後に評価 (時系列順)
+   ↓
+[breakpoint]</code></pre>
+    <div class="card warning">
+      <strong>核心:</strong> 後段が変わると後段だけミスする。<strong>前段が変わると後段も全部ミス</strong>。<br>
+      → 「変わらないもの」を <strong>前段</strong> に置くアーキテクチャ設計が必要。
     </div>
   </section>
 
   <section>
-    <h2>⑩ キーワード一覧</h2>
+    <h2>④ ハッシュベース完全一致</h2>
+<pre><code># キャッシュ書き込みは breakpoint の位置のみ
+# 「breakpoint までのプレフィックスのハッシュ」が1個記録される
+
+# 一致判定:
+# 次回リクエストで同じプレフィックスハッシュなら HIT
+# 1文字でも違えば MISS</code></pre>
+    <div class="card warning">
+      <strong>「ほとんど同じ」では効かない:</strong>
+      <ul>
+        <li>system promptに「今日は2026-05-23」など <strong>毎回変わる文字</strong> を入れる → 毎回MISS</li>
+        <li>絵文字・空白・改行コード(LF/CRLF)の違い → MISS</li>
+        <li>tool_choiceの設定変更 → MISS</li>
+        <li>JSONキーの順番が違う (一部言語のSDK)→ MISS</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>⑤ Lookback の20ブロック制約</h2>
+<pre><code>Turn 1: 10ブロック + breakpoint → block 10 にキャッシュ書込
+Turn 2: 15ブロック + breakpoint → block 10 を発見 (lookback 5) → HIT
+                                  → block 15 にも新キャッシュ書込
+Turn 3: 35ブロック + breakpoint → 35-16=19ブロックさかのぼる → 範囲外 → MISS!
+                                  → 解決策: block 15 にも追加 breakpoint</code></pre>
+    <div class="card mint">
+      <strong>解決策:</strong> 長い会話履歴では <strong>中間に breakpoint を追加</strong> して、20ブロック範囲内にcache を保持する。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑥ 無効化マトリクス — 何が変わると何が壊れる?</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 32%;">変更内容</th><th>tools cache</th><th>system cache</th><th>messages cache</th></tr></thead>
+      <tbody>
+        <tr><td>tool 定義変更</td><td>✘</td><td>✘</td><td>✘</td></tr>
+        <tr><td>web_search トグル</td><td>✓</td><td>✘</td><td>✘</td></tr>
+        <tr><td>citations トグル</td><td>✓</td><td>✘</td><td>✘</td></tr>
+        <tr><td>Speed設定 (fast/standard)</td><td>✓</td><td>✘</td><td>✘</td></tr>
+        <tr><td>tool_choice パラメータ</td><td>✓</td><td>✓</td><td>✘</td></tr>
+        <tr><td>image 追加/削除</td><td>✓</td><td>✓</td><td>✘</td></tr>
+        <tr><td>thinking パラメータ</td><td>✓</td><td>✓</td><td>✘</td></tr>
+      </tbody>
+    </table>
+    <div class="card accent">
+      <strong>読み方:</strong> ✓ = キャッシュ生存 / ✘ = 無効化。上層 (tools) を変えると下層 (system / messages) も全部死ぬ。これが <strong>階層の波及</strong>。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑦ 最小キャッシュサイズ — モデル別</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 60%;">モデル</th><th>最小</th></tr></thead>
+      <tbody>
+        <tr><td>Claude Opus 4.7 / 4.6 / 4.5 / Mythos Preview</td><td><strong>4,096 tokens</strong></td></tr>
+        <tr><td>Sonnet 4.6 / 4.5 / Opus 4.1</td><td>1,024 tokens</td></tr>
+        <tr><td>Haiku 4.5</td><td>4,096 tokens</td></tr>
+        <tr><td>Haiku 3.5 (Vertex/Bedrock のみ)</td><td>2,048 tokens</td></tr>
+      </tbody>
+    </table>
+    <div class="card warning">
+      <strong>注意:</strong> 最小未満は <strong>エラーなくキャッシュされない</strong>。<code class="inline">cache_creation_input_tokens=0</code> で気づく。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑧ TTL ルール — 5分 vs 1時間</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 30%;">設定</th><th>TTL</th><th>cache_creation 料金</th></tr></thead>
+      <tbody>
+        <tr><td><code class="inline">{"type":"ephemeral"}</code></td><td>5分</td><td>1.25倍 (標準)</td></tr>
+        <tr><td><code class="inline">{"type":"ephemeral","ttl":"1h"}</code></td><td>1時間</td><td>2.0倍 (extended)</td></tr>
+      </tbody>
+    </table>
+    <p><strong>混在ルール:</strong> 同じリクエスト内で TTL を混ぜる場合、<strong>1時間が先・5分が後</strong> の順で並べる必要あり。</p>
+    <div class="card mint">
+      <strong>TTLは毎アクセスでリセット</strong>: 5分以内に次のリクエスト来る → cache 生き続ける (実質永続)。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑨ Pre-warming (事前ウォームアップ)</h2>
+<pre><code># ユーザーが来る前にキャッシュを温める
+prewarm = client.messages.create(
+    model="claude-opus-4-7",
+    max_tokens=0,  # 出力ゼロ (放棄)
+    system=[
+        {
+            "type": "text",
+            "text": "あなたのsystem prompt...",
+            "cache_control": {"type": "ephemeral"},
+        }
+    ],
+    messages=[{"role": "user", "content": "warmup"}],
+)
+# → stop_reason="max_tokens", content=[]
+# → cache_creation 料金は発生 (キャッシュ書込のみ)</code></pre>
+    <div class="card accent">
+      <strong>使い所:</strong> 毎日朝にユーザーが来る前にcache 温めておく。最初のユーザーが「初回 cache_creation 料金 + 待ち時間」を払わなくて済む。<br>
+      <strong>NG:</strong> stream=true / extended thinking / structured outputs / 特定の tool_choice / Message Batches では pre-warm 不可。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑩ 並行リクエストの罠</h2>
+<pre><code># NG: 並行5本
+[req1] [req2] [req3] [req4] [req5]  ← 同時起動
+↓
+全部 cache_creation 発生 (5倍課金!)
+
+# OK: 順次1本目を待つ
+[req1] → 完了 → cache 完成 → [req2,3,4,5] 並行 → 全部 cache_read</code></pre>
+    <div class="card warning">
+      <strong>解決:</strong> 大量並行処理する場合は、<strong>1リクエストだけ先行</strong> → 完了確認後に残りを並列。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑪ Workspace / Organization 分離</h2>
+    <ul>
+      <li>キャッシュは <strong>組織レベルで分離</strong> (他社とは絶対共有しない)</li>
+      <li>2026-02-05以降: Claude API / AWS / Microsoft Foundry で <strong>Workspaceレベル分離</strong></li>
+      <li>Bedrock / Vertex AI: 組織レベル分離のみ</li>
+    </ul>
+    <div class="card blue">
+      <strong>セキュリティ的意味:</strong> 同じプロンプトを複数組織が使ってもキャッシュは絶対共有されない。プロンプト本文が漏れることはない。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑫ Usage オブジェクトでデバッグ</h2>
+<pre><code>"usage": {
+  "cache_creation_input_tokens": 5120,
+  "cache_read_input_tokens": 100000,
+  "input_tokens": 50,
+  "cache_creation": {
+    "ephemeral_5m_input_tokens": 5000,
+    "ephemeral_1h_input_tokens": 120
+  }
+}
+
+# 計算式:
+# 総 input tokens = cache_read + cache_creation + input_tokens
+
+# デバッグ判定:
+# cache_creation=0 かつ cache_read=0 → 全くキャッシュされていない
+# → minimum tokens を満たしてない / breakpoint 配置間違い等を疑う</code></pre>
+  </section>
+
+  <section>
+    <h2>⑬ よくある落とし穴 (運用前に潰す)</h2>
+    <details>
+      <summary>落とし穴1: timestamp を system に入れる</summary>
+      <p>「現在時刻: 2026-05-23 14:30」をsystem promptに含めると毎リクエストMISS。<br>
+      → 時刻は<strong>messages 末尾</strong>のuserメッセージに含めて、systemは時刻無しに。</p>
+    </details>
+    <details>
+      <summary>落とし穴2: breakpoint を変わる箇所に置く</summary>
+      <p>毎回違うユーザー質問の直前に breakpoint を置く → そこにキャッシュ書込が発生するが、毎回ハッシュ違うので絶対HITしない。<br>
+      → breakpoint は <strong>「変わらない最後のブロック」</strong> に置く。</p>
+    </details>
+    <details>
+      <summary>落とし穴3: JSONキー順番の非決定性</summary>
+      <p>Swift・Goは dict iteration がランダム → 毎回キー順が違うと cache MISS。<br>
+      → <code class="inline">sort_keys=True</code> 相当 or 明示的にOrderedDictで安定化。</p>
+    </details>
+    <details>
+      <summary>落とし穴4: 20ブロック超え</summary>
+      <p>会話履歴が20ブロック超えると lookback 範囲外 → MISS。<br>
+      → 10ブロックごとに自動 breakpoint を追加するロジックを書く (最大4個まで)。</p>
+    </details>
+    <details>
+      <summary>落とし穴5: image 追加で messages cache 死亡</summary>
+      <p>画像を1枚追加するだけで messages cache 全死。<br>
+      → 画像入りのリクエストは別ルーティング / image-only セッションを切り出す。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑭ 中学生向けに例えると</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 44%;">学校の例え</th><th>caching rules の対応</th></tr></thead>
+      <tbody>
+        <tr><td>机に「全く同じ教科書」が置いてあれば借りずに使える</td><td>ハッシュ完全一致が必要</td></tr>
+        <tr><td>1文字違うだけで「別の本」扱い</td><td>1byte違いで MISS</td></tr>
+        <tr><td>「本」「ノート」「メモ」の順番でしか積めない</td><td>tools→system→messages 階層</td></tr>
+        <tr><td>「本」を変えるとノートもメモも置き直し</td><td>上層変更が下層を全死</td></tr>
+        <tr><td>机に置いとけるのは20冊まで</td><td>lookback 20ブロック</td></tr>
+        <tr><td>付箋は4枚まで貼れる</td><td>breakpoint 最大4個</td></tr>
+      </tbody>
+    </table>
+    <div class="card accent">
+      <strong>核心:</strong> 「同じ」の定義が厳密。バイト単位で揃えるアーキテクチャ設計が必要。デバッグは usage オブジェクトで <strong>cache_read を見る</strong>。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑮ キーワード一覧</h2>
     <table class="vocab">
       <thead><tr><th style="width: 32%;">英語</th><th style="width: 28%;">読み方</th><th>意味</th></tr></thead>
       <tbody>
-        <tr><td class="code">Files API</td><td>ファイル エーピーアイ</td><td>ファイル事前アップロード機能</td></tr>
-        <tr><td class="code">file_id</td><td>ファイル アイディー</td><td>アップロード済みファイルのID</td></tr>
-        <tr><td class="code">client.beta.files.upload</td><td>SDK メソッド</td><td>アップロードSDK呼び出し</td></tr>
-        <tr><td class="code">source.type="file"</td><td>ソース ファイル</td><td>document/image block で file_id 参照</td></tr>
-        <tr><td class="code">files-api-2025-04-14</td><td>ベータヘッダー</td><td>必須 beta header</td></tr>
-        <tr><td class="code">file metadata</td><td>ファイル メタデータ</td><td>name / size / mime_type / created_at</td></tr>
+        <tr><td class="code">prefix matching</td><td>プレフィックス マッチング</td><td>ハッシュ前方一致</td></tr>
+        <tr><td class="code">lookback window</td><td>ルックバック ウィンドウ</td><td>20ブロックの遡及範囲</td></tr>
+        <tr><td class="code">cache invalidation</td><td>キャッシュ インバリデーション</td><td>キャッシュ無効化</td></tr>
+        <tr><td class="code">cache prefix</td><td>キャッシュ プレフィックス</td><td>キャッシュ対象の連続領域</td></tr>
+        <tr><td class="code">tools / system / messages</td><td>階層順序</td><td>キャッシュ評価順</td></tr>
+        <tr><td class="code">pre-warming</td><td>プリウォーミング</td><td>事前にキャッシュ温める</td></tr>
+        <tr><td class="code">workspace isolation</td><td>ワークスペース 分離</td><td>キャッシュ共有範囲</td></tr>
+        <tr><td class="code">cache_creation / cache_read</td><td>キャッシュ クリエーション/リード</td><td>書込/読込トークン数</td></tr>
       </tbody>
     </table>
   </section>
 
   <section>
-    <h2>⑪ 理解度チェック</h2>
+    <h2>⑯ 理解度チェック</h2>
     <details>
-      <summary>Q1. Files API は何のためにある?</summary>
-      <p><strong>「ファイルを事前にアップロードして、後で参照する」</strong> ため。base64エンコードを毎回 messages に含めずに、file_id だけ送れば良い。同じファイルを複数回使うとき効果絶大。</p>
+      <summary>Q1. キャッシュの階層順序は?</summary>
+      <p><strong>tools → system → messages</strong>。この順で前方一致 (prefix matching) が評価される。上層が変わると下層全部MISSになる。</p>
     </details>
     <details>
-      <summary>Q2. 何と組み合わせると最強?</summary>
-      <p><strong>Prompt caching (Lecture 60)</strong>。Files API でファイル参照を軽量化 + caching でトークン料金90%OFF。ヘルプデスクbot等で「同じPDFについて1000回質問」のような用途では実質ほぼ無料化。</p>
+      <summary>Q2. breakpoint はいくつまで?</summary>
+      <p><strong>1リクエスト最大4個</strong>。長い会話履歴では中間にも breakpoint を置いて lookback 20ブロック制限を回避する。</p>
     </details>
     <details>
-      <summary>Q3. ファイル保持期間は?</summary>
-      <p><strong>90日</strong>。最後のアクセスから90日経過で自動削除。継続利用するなら定期的にアクセス or 再アップロードが必要。用途終了したファイルは <code class="inline">files.delete()</code> で即削除推奨 (プライバシー)。</p>
+      <summary>Q3. Opus 4.7 の最小キャッシュサイズは?</summary>
+      <p><strong>4,096トークン</strong>。これ未満はキャッシュされず、エラーも出ない (silent fail)。<code class="inline">cache_creation_input_tokens=0</code> で気づく必要あり。</p>
     </details>
     <details>
-      <summary>Q4. beta header って何?</summary>
-      <p>Files API はまだ beta なので <code class="inline">betas=["files-api-2025-04-14"]</code> をリクエストに付ける必要あり。GA (一般公開) されると不要になる予定。</p>
+      <summary>Q4. 一番ハマる落とし穴は?</summary>
+      <p><strong>system promptに timestamp 等の毎回変わる文字を入れる</strong>こと。1文字でも違うと完全MISS。時刻情報は messages 末尾 (breakpoint より後ろ) に置くのが鉄則。</p>
+    </details>
+    <details>
+      <summary>Q5. 並行リクエストの罠は?</summary>
+      <p>キャッシュは <strong>最初のレスポンス開始後</strong> に利用可能になる。同時に5本投げると全部 cache_creation 発生 → 5倍課金。1本目完了を待ってから残りを並列実行する。</p>
     </details>
   </section>
 
   <section>
-    <h2>⑫ 自分メモ</h2>
-    <div class="memo-area">Files API を使う場面メモ…例: ヘルプデスク / 契約書レビュー / 画像分析パイプライン…</div>
+    <h2>⑰ 自分メモ</h2>
+    <div class="memo-area">自分のRAGアプリで caching rules チェック…例: system に timestamp 入れてないか / breakpoint は固定部分に置いているか…</div>
   </section>
 
   <footer>
-    Anthropic Academy 教科書版 ・ Lecture 61: Files API<br>
-    公式ドキュメント: <a href="https://docs.claude.com/en/docs/build-with-claude/files">Anthropic Docs — Files API</a><br>
-    前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_60_textbook.html">Lecture 60 — Prompt caching</a><br>
-    <strong>Lecture 46-61 完走</strong>
+    Anthropic Academy 教科書版 ・ Lecture 61: Rules of prompt caching<br>
+    公式ドキュメント: <a href="https://platform.claude.com/docs/en/docs/build-with-claude/prompt-caching">Anthropic Docs — Prompt caching</a><br>
+    前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_60_textbook.html">Lecture 60 — Prompt caching</a>
   </footer>
 </main>
 </body>
