@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 68: Defining tools with MCP — @mcp.tool() で関数をtool化する | Anthropic Academy 教科書</title>
+<style>
+:root { --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a; --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028; --soft-blue: #cfe7ef; --soft-yellow: #fdf0c8; --soft-mint: #d8ecd6; --soft-pink: #f6dcdc; --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+.card.blue { background: var(--soft-blue); border-left: 4px solid #4a8aa3; }
+.card.warning { background: var(--soft-pink); border-left: 4px solid #c66b6b; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+table.vocab td.code { font-family: "Consolas","Menlo",monospace; color: var(--accent); font-weight: 700; white-space: nowrap; }
+pre { background: #f4eedb; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: "Consolas","Menlo",monospace; font-size: 14px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--border); }
+code.inline { background: #f4eedb; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Menlo",monospace; font-size: 0.92em; color: #a85200; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 600px) { body { padding: 20px 14px; } h1.lecture-title { font-size: 24px; } h2 { font-size: 19px; } p, ol li, ul li { font-size: 15px; } }
+</style>
+</head>
+<body>
+<main class="book">
+  <span class="chapter-tag">Module 12 ・ Lecture 68 ・ 演習回</span>
+  <h1 class="lecture-title">Defining tools with MCP<span class="ja-sub">— @mcp.tool() デコレータでPython関数を tool 化する</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① まず結論 — どう書く?</h2>
+    <p>FastMCP で tool を定義するのは <strong>関数1つに <code class="inline">@mcp.tool()</code> を付けるだけ</strong>。type hints と docstring から自動的に JSON schema が生成され、Claude が読み取って活用できる。</p>
+    <div class="card accent">
+      <strong>魔法は3要素:</strong>
+      <ol>
+        <li><code class="inline">@mcp.tool()</code> デコレータ</li>
+        <li>型ヒント (引数・返り値の型)</li>
+        <li>docstring (Claudeに伝える説明)</li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <h2>② 最小例 — 1分で書ける tool</h2>
+<pre><code>from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("weather")
+
+@mcp.tool()
+def get_weather(city: str) -&gt; str:
+    """Get the current weather for a specific city.
+
+    Args:
+        city: The city name, e.g. "Tokyo", "New York"
+
+    Returns:
+        A short string describing current weather.
+    """
+    return f"{city}: Sunny, 22°C"
+
+if __name__ == "__main__":
+    mcp.run(transport="stdio")</code></pre>
+    <div class="card mint">
+      <strong>これだけで動く:</strong> Claude Desktop に登録すれば、ユーザーが「東京の天気は?」と聞いたとき Claude が <code class="inline">get_weather(city="Tokyo")</code> を呼んでくれる。
+    </div>
+  </section>
+
+  <section>
+    <h2>③ 自動生成される JSON schema</h2>
+<pre><code>{
+  "name": "get_weather",
+  "description": "Get the current weather for a specific city.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "city": {
+        "type": "string",
+        "description": "The city name, e.g. \"Tokyo\", \"New York\""
+      }
+    },
+    "required": ["city"]
+  }
+}</code></pre>
+    <div class="card blue">
+      <strong>自動化のポイント:</strong>
+      <ul>
+        <li>関数名 → <code class="inline">name</code></li>
+        <li>docstring 1行目 → <code class="inline">description</code></li>
+        <li>引数の型ヒント → <code class="inline">inputSchema.properties</code></li>
+        <li>Args ブロック → 各プロパティの <code class="inline">description</code></li>
+        <li>デフォルト値なし → <code class="inline">required</code></li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>④ 複雑な型 — Pydantic で構造化</h2>
+<pre><code>from pydantic import BaseModel, Field
+from typing import Literal
+
+class ReminderInput(BaseModel):
+    content: str = Field(description="リマインダーの内容")
+    timestamp: str = Field(description="ISO 8601形式の日時")
+    priority: Literal["high", "medium", "low"] = "medium"
+
+@mcp.tool()
+def set_reminder(input: ReminderInput) -&gt; dict:
+    """Set a reminder.
+
+    Returns:
+        Dict with status and created reminder id.
+    """
+    return {"status": "ok", "id": "rem_001"}</code></pre>
+    <div class="card accent">
+      <strong>Pydantic の威力:</strong> 複雑な構造化引数も型安全に定義。Claude が「priority」が "high"/"medium"/"low" のいずれかしか取れないことを理解して、それに沿った呼び出しをする。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑤ 非同期 tool (async)</h2>
+<pre><code>import httpx
+
+@mcp.tool()
+async def fetch_url(url: str) -&gt; str:
+    """Fetch the content of a URL.
+
+    Args:
+        url: HTTP(S) URL to fetch
+
+    Returns:
+        Response body as text (max 50KB).
+    """
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url, timeout=10.0)
+        return response.text[:50000]</code></pre>
+    <div class="card mint">
+      <strong>async が使える:</strong> FastMCP は async 関数も認識。外部API呼び出し・DB問い合わせ等 I/O待ちが多い tool は async で書くべき。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑥ Tool の返り値型 — どう返すか</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 28%;">返り値の型</th><th>用途</th><th>例</th></tr></thead>
+      <tbody>
+        <tr><td><code class="inline">str</code></td><td>シンプルなテキスト応答</td><td>"Tokyo: Sunny"</td></tr>
+        <tr><td><code class="inline">dict</code></td><td>構造化レスポンス</td><td>{"temp": 22, "condition": "Sunny"}</td></tr>
+        <tr><td><code class="inline">list</code></td><td>複数項目</td><td>[{...}, {...}]</td></tr>
+        <tr><td><code class="inline">BaseModel</code></td><td>Pydantic 構造化</td><td>WeatherResponse(...)</td></tr>
+        <tr><td><code class="inline">Image</code></td><td>画像 (PNG/JPEG)</td><td>matplotlib 図 等</td></tr>
+      </tbody>
+    </table>
+<pre><code># 画像を返す例
+from mcp.server.fastmcp.utilities.types import Image
+from PIL import Image as PILImage
+
+@mcp.tool()
+def create_chart(data: list[float]) -&gt; Image:
+    """Generate a bar chart from data values."""
+    img = PILImage.new("RGB", (400, 300), "white")
+    # ... draw chart ...
+    return Image(data=img_bytes, format="png")</code></pre>
+  </section>
+
+  <section>
+    <h2>⑦ エラーハンドリング</h2>
+<pre><code>from mcp.server.fastmcp.exceptions import ToolError
+
+@mcp.tool()
+def divide(a: float, b: float) -&gt; float:
+    """Divide a by b.
+
+    Raises:
+        ToolError: when b is zero.
+    """
+    if b == 0:
+        raise ToolError("Cannot divide by zero. Please provide a non-zero divisor.")
+    return a / b</code></pre>
+    <div class="card warning">
+      <strong>ToolError を投げる:</strong> Claude が「失敗した」と認識して、ユーザーに人間語で説明したり、別の方法を試せる。<br>
+      <strong>普通のExceptionは:</strong> Claude には「内部エラー」とだけ伝わる → デバッグ困難。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑧ tool 名・description の書き方</h2>
+    <div class="card accent">
+      <strong>Claude にとっての「使いやすい tool」の条件:</strong>
+      <ul>
+        <li><strong>name:</strong> 動詞_目的 形式 (例: <code class="inline">get_weather</code>, <code class="inline">send_email</code>, <code class="inline">create_calendar_event</code>)</li>
+        <li><strong>description:</strong> 「いつ使うべきか」を明示</li>
+        <li><strong>引数説明:</strong> 例示を入れる (例: "Tokyo, New York")</li>
+        <li><strong>返り値説明:</strong> Claude が次のアクションを判断できる形</li>
+      </ul>
+    </div>
+<pre><code># ❌ 悪い例
+@mcp.tool()
+def fn1(x: str) -&gt; str:
+    """Function 1"""
+    return "..."
+
+# ✅ 良い例
+@mcp.tool()
+def search_customer(query: str) -&gt; list[dict]:
+    """顧客データベースを検索する。
+
+    ユーザーが特定の顧客を探したいとき、または顧客リストの
+    フィルタリングが必要なときに使う。最大50件返す。
+
+    Args:
+        query: 顧客名・メール・電話番号の部分一致検索クエリ
+               例: "山田", "yamada@example.com"
+
+    Returns:
+        顧客レコードのリスト。各レコード = {id, name, email, phone, plan}
+    """
+    ...</code></pre>
+  </section>
+
+  <section>
+    <h2>⑨ tools/list と動的更新</h2>
+<pre><code># 接続時に Claude が要請するリクエスト
+# Client → Server: tools/list
+# Server → Client: 登録された全 tool のスキーマ
+
+# 動的に tool を追加・削除した場合
+# mcp.send_tools_list_changed_notification()
+# → Client に「tool一覧変わったから再取得して」と通知</code></pre>
+    <div class="card mint">
+      <strong>応用:</strong> ユーザー権限に応じて tool を出し分ける etc。capability negotiation で <code class="inline">listChanged: true</code> 合意してれば、動的更新が可能。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑩ 完全なサーバー例 — Weather MCP</h2>
+<pre><code>from mcp.server.fastmcp import FastMCP
+import httpx
+
+mcp = FastMCP("weather")
+NWS_API = "https://api.weather.gov"
+
+@mcp.tool()
+async def get_forecast(latitude: float, longitude: float) -&gt; str:
+    """米国気象庁(NWS)から天気予報を取得する。
+
+    Args:
+        latitude: 緯度 (例: 40.7128 = NYC)
+        longitude: 経度 (例: -74.0060 = NYC)
+
+    Returns:
+        次の5期間の天気予報テキスト
+    """
+    async with httpx.AsyncClient() as client:
+        points = await client.get(f"{NWS_API}/points/{latitude},{longitude}")
+        forecast_url = points.json()["properties"]["forecast"]
+        forecast = await client.get(forecast_url)
+        periods = forecast.json()["properties"]["periods"][:5]
+        return "\n\n".join([
+            f"{p['name']}: {p['detailedForecast']}" for p in periods
+        ])
+
+@mcp.tool()
+async def get_alerts(state: str) -&gt; str:
+    """米国指定州の気象警報を取得する。
+
+    Args:
+        state: 2文字の州コード (例: "CA", "NY")
+
+    Returns:
+        現在発令中の警報一覧
+    """
+    async with httpx.AsyncClient() as client:
+        response = await client.get(f"{NWS_API}/alerts?area={state}")
+        alerts = response.json()["features"]
+        if not alerts:
+            return f"{state}州に現在の警報はありません"
+        return "\n\n".join([
+            f"[{a['properties']['severity']}] {a['properties']['headline']}"
+            for a in alerts[:5]
+        ])
+
+if __name__ == "__main__":
+    mcp.run(transport="stdio")</code></pre>
+    <div class="card blue">
+      <strong>このコードだけで:</strong> Claude Desktop で「ニューヨークの天気予報教えて」と聞くと、Claude が自動で <code class="inline">get_forecast(40.7128, -74.0060)</code> を呼んで応答する。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑪ tool 設計のベストプラクティス</h2>
+    <details>
+      <summary>原則1: 1 tool = 1責任 (Single Responsibility)</summary>
+      <p>「天気取得 + 通知送信 + DB保存」を1つの tool にしない。<strong>3つに分ける</strong> → Claude が組合せ自由に。</p>
+    </details>
+    <details>
+      <summary>原則2: idempotent (べき等) に設計</summary>
+      <p>同じ引数で何度呼んでも同じ結果が返るように。Claude がリトライしても安全。<br>
+      副作用 (DB更新等) は <code class="inline">create_xxx</code> / <code class="inline">update_xxx</code> と名前で明示。</p>
+    </details>
+    <details>
+      <summary>原則3: トークン経済を意識</summary>
+      <p>tool の返り値は <strong>Claude が読むトークン</strong>。長大なJSONを返すと context食う。「最大N件」「要約付き」等で制御。</p>
+    </details>
+    <details>
+      <summary>原則4: エラーメッセージは人間語で</summary>
+      <p><code class="inline">ToolError("API rate limit exceeded. Please retry in 60 seconds.")</code> のように、<strong>Claude が次のアクションを判断できる</strong> 形で返す。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑫ 中学生向けに例えると</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 44%;">学校の例え</th><th>tool 定義の対応</th></tr></thead>
+      <tbody>
+        <tr><td>「天気係」「給食係」と役割を貼る</td><td>@mcp.tool() で関数に役割付与</td></tr>
+        <tr><td>役割カードに「何屋さん」「何を聞かれたら答える」と書く</td><td>name + description</td></tr>
+        <tr><td>「都市名教えてくれたら答えるよ」と引数指定</td><td>type hints (city: str)</td></tr>
+        <tr><td>「答えは『東京: 晴れ22度』のような形式」</td><td>返り値型 + docstring</td></tr>
+        <tr><td>「複数の係を組み合わせて使えるよ」</td><td>1 tool = 1責任の原則</td></tr>
+      </tbody>
+    </table>
+    <div class="card accent">
+      <strong>核心:</strong> Python関数1個 + <code class="inline">@mcp.tool()</code> 1行 = Claude が使える tool。<strong>面倒なJSON schema 書きは不要</strong>。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑬ キーワード一覧</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 32%;">英語</th><th style="width: 28%;">読み方</th><th>意味</th></tr></thead>
+      <tbody>
+        <tr><td class="code">@mcp.tool()</td><td>アット エムシーピー ツール</td><td>関数を tool 化するデコレータ</td></tr>
+        <tr><td class="code">type hints</td><td>タイプ ヒンツ</td><td>引数・返り値の型 (Python annotations)</td></tr>
+        <tr><td class="code">docstring</td><td>ドックストリング</td><td>関数の説明文 (description)</td></tr>
+        <tr><td class="code">inputSchema</td><td>インプットスキーマ</td><td>自動生成されるJSON schema</td></tr>
+        <tr><td class="code">Pydantic BaseModel</td><td>パイダンティック ベースモデル</td><td>構造化引数定義</td></tr>
+        <tr><td class="code">ToolError</td><td>ツール エラー</td><td>Claude に意味のあるエラー</td></tr>
+        <tr><td class="code">idempotent</td><td>べき等</td><td>何度呼んでも同じ結果</td></tr>
+        <tr><td class="code">tools/list</td><td>ツールズ リスト</td><td>tool一覧取得リクエスト</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑭ 理解度チェック</h2>
+    <details>
+      <summary>Q1. 関数を tool 化する最低限の作業は?</summary>
+      <p>① <code class="inline">@mcp.tool()</code> デコレータを付ける ② 引数に型ヒント ③ docstring に説明<br>
+      この3つで自動的に JSON schema が生成され、Claude が呼べる tool になる。</p>
+    </details>
+    <details>
+      <summary>Q2. async 関数も tool 化できる?</summary>
+      <p><strong>できる</strong>。FastMCP は async 関数を認識して、await チェーンを管理してくれる。外部API呼び出し・DBアクセス等 I/O待ちが多い tool は async で書く。</p>
+    </details>
+    <details>
+      <summary>Q3. ToolError と普通のException の違いは?</summary>
+      <p><strong>ToolError:</strong> Claude にエラーメッセージが伝わる → 次のアクション判断できる<br>
+      <strong>Exception:</strong> Claude には「内部エラー」だけ → デバッグ困難<br>
+      → 業務ロジックエラーは ToolError、想定外バグは普通のException で分ける。</p>
+    </details>
+    <details>
+      <summary>Q4. tool 設計の4原則は?</summary>
+      <p>① 1 tool = 1責任 ② idempotent ③ トークン経済 ④ 人間語エラー<br>
+      → これを守ると Claude が組み合わせやすい・誤動作しにくい tool が作れる。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑮ 自分メモ</h2>
+    <div class="memo-area">自分が作りたい tool 候補…例: lark_search_doc / freee_invoice_create / discord_send_message…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 68: Defining tools with MCP<br>
+    元レクチャー: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287797">SkillJar — Defining tools with MCP</a><br>
+    公式: <a href="https://modelcontextprotocol.io/quickstart/server">MCP Server Quickstart</a> / <a href="https://github.com/modelcontextprotocol/python-sdk">Python SDK</a><br>
+    前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_67_textbook.html">Lecture 67 — Project setup</a>
+  </footer>
+</main>
+</body>
+</html>
