@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 13: Chat exercise | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}pre{background:#f4eedb;border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:"Consolas","Menlo",monospace;font-size:14px;line-height:1.7;margin:12px 0;border:1px solid var(--border)}code.inline{background:#f4eedb;padding:2px 6px;border-radius:4px;font-family:"Consolas","Menlo",monospace;font-size:.92em;color:#a85200}details{background:var(--paper-2);border-radius:var(--radius);padding:14px 22px;margin:10px 0;box-shadow:var(--shadow);border-left:4px solid var(--tag-bg)}details summary{cursor:pointer;font-weight:700;font-size:15px;outline:none}details[open]{border-left-color:var(--accent)}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 2 ・ Lecture 13 ・ 演習回</span>
+  <h1 class="lecture-title">Chat exercise<span class="ja-sub">— Multi-Turn 実装の演習</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section><h2>① 演習ゴール</h2>
+  <p>#12 で学んだ multi-turn パターンを <strong>動くチャットbot</strong> として実装する。ターミナルで対話できる最小チャットアプリ。</p>
+  <div class="card accent"><strong>達成基準:</strong>
+    <ul><li>ユーザーが何度でも質問できる</li><li>Claude が過去の会話を覚えている</li><li>"exit" で終了</li></ul></div></section>
+
+  <section><h2>② リファレンス実装</h2>
+<pre><code>from dotenv import load_dotenv
+from anthropic import Anthropic
+
+load_dotenv()
+client = Anthropic()
+messages = []
+
+def chat(user_input):
+    messages.append({"role": "user", "content": user_input})
+    response = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=1024,
+        messages=messages
+    )
+    reply = response.content[0].text
+    messages.append({"role": "assistant", "content": reply})
+    return reply
+
+print("Claude チャット (exit で終了)")
+while True:
+    user = input("You: ")
+    if user.strip().lower() == "exit":
+        break
+    print("Claude:", chat(user))</code></pre></section>
+
+  <section><h2>③ チャレンジ課題</h2>
+  <ol>
+    <li><strong>会話履歴の保存</strong>: JSONファイルに保存して、次回起動時に読み込む</li>
+    <li><strong>システム指示</strong>: <code class="inline">system=</code> パラメータで Claude の役割を設定</li>
+    <li><strong>履歴削減</strong>: 20ターン超えたら古い10ターンを要約して圧縮</li>
+    <li><strong>ストリーミング</strong>: 応答を1文字ずつ表示</li>
+  </ol></section>
+
+  <section><h2>④ よくあるバグ</h2>
+  <details><summary>1. messages の role が連続</summary><p>「user → user」になっていないか確認。append のタイミングを見直す。</p></details>
+  <details><summary>2. 過去履歴が膨れすぎてエラー</summary><p>context length 超過。古い履歴削除 or 要約圧縮。</p></details>
+  <details><summary>3. 応答テキストが取れない</summary><p><code class="inline">response.content[0].text</code>。content は配列だが、tool使用時は他のブロックも混じる。</p></details></section>
+
+  <section><h2>⑤ 自分メモ</h2><div class="memo-area">演習試行メモ・実装の気づき…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 13: Chat exercise<br>元: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287727">SkillJar</a></footer>
+</main></body></html>

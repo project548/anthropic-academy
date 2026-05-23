@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 12: Multi-Turn conversations | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}pre{background:#f4eedb;border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:"Consolas","Menlo",monospace;font-size:14px;line-height:1.7;margin:12px 0;border:1px solid var(--border)}code.inline{background:#f4eedb;padding:2px 6px;border-radius:4px;font-family:"Consolas","Menlo",monospace;font-size:.92em;color:#a85200}details{background:var(--paper-2);border-radius:var(--radius);padding:14px 22px;margin:10px 0;box-shadow:var(--shadow);border-left:4px solid var(--tag-bg)}details summary{cursor:pointer;font-weight:700;font-size:15px;outline:none}details[open]{border-left-color:var(--accent)}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 2 ・ Lecture 12 ・ 解説回</span>
+  <h1 class="lecture-title">Multi-Turn conversations<span class="ja-sub">— 会話履歴を持たせるパターン</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section><h2>① まず結論 — Claude API は無状態</h2>
+  <p>Claude API は <strong>毎リクエスト独立</strong>。前回の会話を覚えていない。会話履歴を持たせるには <strong>毎回 messages に過去全部を入れて</strong> 送る必要がある。</p>
+  <div class="card accent"><strong>これが分かれば全部わかる:</strong> 1ターン目だけ user。2ターン目以降は user → assistant → user → assistant... と交互に積む。</div></section>
+
+  <section><h2>② 実装パターン</h2>
+<pre><code>messages = []
+
+def chat(user_msg):
+    messages.append({"role": "user", "content": user_msg})
+
+    response = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=1024,
+        messages=messages
+    )
+
+    assistant_msg = response.content[0].text
+    messages.append({"role": "assistant", "content": assistant_msg})
+    return assistant_msg
+
+chat("私の名前はアビです")
+chat("私の名前は?")  # → "アビさんです" (履歴に基づく)</code></pre>
+  <div class="card mint">2回目の chat で Claude が「アビ」を覚えているのは、<strong>messages 配列に履歴が全部入っている</strong> から。</div></section>
+
+  <section><h2>③ ロールの順番ルール</h2>
+  <ul>
+    <li>最初は必ず <strong>user</strong></li>
+    <li>その後 user / assistant が <strong>交互</strong></li>
+    <li>連続して同じ role が来てはいけない</li>
+    <li>最後は user で終わる (assistant 応答がこれから返ってくるので)</li>
+  </ul></section>
+
+  <section><h2>④ コンテキスト長の限界</h2>
+  <p>会話を続けると messages がどんどん長くなる → 200K トークン (Opus 4.7 は 1M) 上限に達する。対策:</p>
+  <ul>
+    <li>古い履歴を要約して圧縮</li>
+    <li>最新N件だけ保持 (スライディングウィンドウ)</li>
+    <li>長期記憶を別DB (RAG) で管理</li>
+  </ul></section>
+
+  <section><h2>⑤ 中学生向けに例えると</h2>
+  <p>Claude は記憶喪失の天才。毎回「これまでの会話メモ」を渡さないと前の話を覚えていない。あなたが「メモ係」になって、user/assistant 交互に書き積むのが multi-turn の本質。</p></section>
+
+  <section><h2>⑥ 理解度チェック</h2>
+  <details><summary>Q1. Claude API は会話履歴を覚える?</summary><p><strong>覚えない (無状態)</strong>。毎リクエストごとに <code class="inline">messages</code> に全履歴を入れて送る必要がある。</p></details>
+  <details><summary>Q2. ロール順番のルールは?</summary><p>① 最初は user ② user/assistant 交互 ③ 連続同 role NG ④ 最後は user</p></details></section>
+
+  <section><h2>⑦ 自分メモ</h2><div class="memo-area">multi-turn 試行メモ…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 12: Multi-Turn conversations<br>元: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287735">SkillJar</a></footer>
+</main></body></html>
