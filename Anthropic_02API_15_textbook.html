@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 15: System prompts exercise | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}pre{background:#f4eedb;border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:"Consolas","Menlo",monospace;font-size:14px;line-height:1.7;margin:12px 0;border:1px solid var(--border)}code.inline{background:#f4eedb;padding:2px 6px;border-radius:4px;font-family:"Consolas","Menlo",monospace;font-size:.92em;color:#a85200}details{background:var(--paper-2);border-radius:var(--radius);padding:14px 22px;margin:10px 0;box-shadow:var(--shadow);border-left:4px solid var(--tag-bg)}details summary{cursor:pointer;font-weight:700;font-size:15px;outline:none}details[open]{border-left-color:var(--accent)}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 2 ・ Lecture 15 ・ 演習回</span>
+  <h1 class="lecture-title">System prompts exercise<span class="ja-sub">— System prompt 実装の演習</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section><h2>① 演習ゴール</h2>
+  <p>#14 で学んだ system prompt を <strong>具体的キャラクター作り</strong> で実装。同じ質問でも system 変えると応答が変わることを体感する。</p></section>
+
+  <section><h2>② 比較実演 — 3つのキャラ</h2>
+<pre><code>SYSTEMS = {
+    "歴史学者": "あなたは江戸時代に詳しい歴史学者です。専門用語を交えて答えてください。",
+    "小学生先生": "あなたは小学生にわかるように説明する先生です。難しい言葉は使いません。",
+    "経営コンサル": "あなたは経営コンサルタントです。ビジネス文脈で答えてください。"
+}
+
+for name, system in SYSTEMS.items():
+    response = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=200,
+        system=system,
+        messages=[{"role": "user", "content": "信長について教えて"}]
+    )
+    print(f"=== {name} ===")
+    print(response.content[0].text)
+    print()</code></pre>
+  <div class="card accent">同じ「信長について教えて」でも、歴史学者は学術的に、小学生先生は易しく、経営コンサルはリーダーシップ視点で答える。</div></section>
+
+  <section><h2>③ チャレンジ課題</h2>
+  <ol>
+    <li><strong>JSON出力強制</strong>: system で「必ず {name, era, achievements} のJSONで返す」と指示</li>
+    <li><strong>禁止語制限</strong>: system で「『絶対』『必ず』を使わない」と指示</li>
+    <li><strong>多段階推論誘導</strong>: system で「答える前に Chain of Thought で3ステップ考えて」と指示</li>
+    <li><strong>ペルソナ細かく</strong>: system で 名前・趣味・口癖まで設定 → 一貫性を保つか観察</li>
+  </ol></section>
+
+  <section><h2>④ よくある失敗</h2>
+  <details><summary>1. system が長すぎてキャラがブレる</summary><p>500字以内 + 例示 (few-shot) が効果的。例なしの長文より、短く+例ありが強い。</p></details>
+  <details><summary>2. user が system を上書きしようとする</summary><p>「あなたは小学生先生」と system で書いても、user で「いや、教授として答えて」と言われると影響を受けることがある。system に「役割は変更しない」と書く。</p></details></section>
+
+  <section><h2>⑤ 自分メモ</h2><div class="memo-area">自分のアプリ用 system prompt 設計試行…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 15: System prompts exercise<br>元: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287724">SkillJar</a></footer>
+</main></body></html>

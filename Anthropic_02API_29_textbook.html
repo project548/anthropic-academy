@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 29: Quiz on prompt evaluation | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}details{background:var(--paper-2);border-radius:var(--radius);padding:14px 22px;margin:10px 0;box-shadow:var(--shadow);border-left:4px solid var(--tag-bg)}details summary{cursor:pointer;font-weight:700;font-size:15px;outline:none}details[open]{border-left-color:var(--accent)}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 7 ・ Lecture 29 ・ クイズ</span>
+  <h1 class="lecture-title">Quiz on prompt evaluation<span class="ja-sub">— Prompt Evaluation モジュールの理解度クイズ</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section><h2>① 範囲</h2>
+  <p>#22-#28 (Prompt Evaluation) モジュールの内容:</p>
+  <ul>
+    <li>Prompt evaluation の概念</li>
+    <li>典型的なevalワークフロー</li>
+    <li>Test dataset 生成</li>
+    <li>eval 実行</li>
+    <li>Model based grading</li>
+    <li>Code based grading</li>
+    <li>演習</li>
+  </ul></section>
+
+  <section><h2>② 振り返りキー概念</h2>
+  <details><summary>Prompt evaluation とは?</summary><p>Claude のプロンプトを <strong>客観スコアで採点</strong> する手法。「なんとなく良くなった気」から脱却し、データドリブンに改善する。</p></details>
+  <details><summary>Model based grading vs Code based grading?</summary><p><strong>Model based</strong> = LLM-as-Judge で別Claudeに採点させる (主観タスク向け)。<strong>Code based</strong> = 正規表現・キーワード一致等のコード自動採点 (客観タスク向け)。</p></details>
+  <details><summary>Test dataset の役割は?</summary><p>「期待される入出力」のペアを多数用意。プロンプト変更時の<strong>回帰テスト</strong>として使う。</p></details>
+  <details><summary>典型的なeval workflow は?</summary><p>① Test dataset 生成 → ② 各サンプルにプロンプト適用 → ③ 出力を grading → ④ 平均スコア集計 → ⑤ プロンプト改善 → ②に戻る</p></details></section>
+
+  <section><h2>③ クイズリンク</h2>
+  <p>SkillJar のクイズで力試し: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/289118">クイズへ</a></p></section>
+
+  <section><h2>④ 自分メモ</h2><div class="memo-area">クイズ結果・気づき…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 29: Quiz on prompt evaluation<br>元: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/289118">SkillJar</a></footer>
+</main></body></html>

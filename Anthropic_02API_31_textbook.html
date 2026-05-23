@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 31: Being clear and direct | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}pre{background:#f4eedb;border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:"Consolas","Menlo",monospace;font-size:14px;line-height:1.7;margin:12px 0;border:1px solid var(--border)}code.inline{background:#f4eedb;padding:2px 6px;border-radius:4px;font-family:"Consolas","Menlo",monospace;font-size:.92em;color:#a85200}details{background:var(--paper-2);border-radius:var(--radius);padding:14px 22px;margin:10px 0;box-shadow:var(--shadow);border-left:4px solid var(--tag-bg)}details summary{cursor:pointer;font-weight:700;font-size:15px;outline:none}details[open]{border-left-color:var(--accent)}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 8 ・ Lecture 31 ・ 解説回</span>
+  <h1 class="lecture-title">Being clear and direct<span class="ja-sub">— 「明確かつ直接的に」指示する</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section><h2>① 原則の核心</h2>
+  <p>Claude に <strong>「何をやってほしいか」を曖昧さなく書く</strong>。人間の同僚に指示するときと同じ。曖昧 = 結果も曖昧。</p>
+  <div class="card accent"><strong>核心:</strong> 「察してくれ」NG。Claude は<strong>書かれた通り</strong>に動く。何も書かれていないなら何もしない (または推測で勝手な方向に行く)。</div></section>
+
+  <section><h2>② Before / After 例</h2>
+<pre><code># ❌ 曖昧
+"Anthropic について教えて"
+→ 何を? どこまで? 何字で? どんなトーンで?
+
+# ✅ 明確
+"Anthropic 社の設立年・本社・主力製品・従業員数を箇条書きで300字以内で教えて。
+ビジネス記者向けのトーンで。"
+→ 完璧</code></pre></section>
+
+  <section><h2>③ 5つのチェックポイント</h2>
+  <ol>
+    <li><strong>目的</strong>: 何のために (why)</li>
+    <li><strong>内容</strong>: 何を (what)</li>
+    <li><strong>形式</strong>: どう出力 (箇条書き / JSON / 文章)</li>
+    <li><strong>長さ</strong>: どれくらい (300字 / 5項目)</li>
+    <li><strong>トーン</strong>: どんな雰囲気 (フォーマル / カジュアル / 子供向け)</li>
+  </ol></section>
+
+  <section><h2>④ 否定形より肯定形</h2>
+<pre><code># ❌ 否定形が多い
+"絵文字を使わないで、長すぎず、専門用語を避けて、敬語じゃなくて..."
+# Claude は「使わない」「避ける」より「使う」「採用する」を理解しやすい
+
+# ✅ 肯定形
+"プレーンテキストで、200字以内、平易な日本語で、カジュアルなタメ口で"</code></pre></section>
+
+  <section><h2>⑤ 理解度チェック</h2>
+  <details><summary>Q1. 「明確」の5要素は?</summary><p>目的・内容・形式・長さ・トーン</p></details>
+  <details><summary>Q2. 否定形と肯定形どちらが効果的?</summary><p><strong>肯定形</strong>。「○○しない」より「△△する」が効きやすい。</p></details></section>
+
+  <section><h2>⑥ 自分メモ</h2><div class="memo-area">曖昧プロンプト → 明確プロンプト改善メモ…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 31: Being clear and direct<br>元: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287744">SkillJar</a></footer>
+</main></body></html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 30: Prompt engineering | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}table.vocab{width:100%;background:var(--paper-2);border-collapse:collapse;margin:16px 0;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}table.vocab th,table.vocab td{border:1px solid var(--border);padding:10px 14px;text-align:left;font-size:15px}table.vocab th{background:var(--tag-bg);color:var(--tag-text);font-weight:700}details{background:var(--paper-2);border-radius:var(--radius);padding:14px 22px;margin:10px 0;box-shadow:var(--shadow);border-left:4px solid var(--tag-bg)}details summary{cursor:pointer;font-weight:700;font-size:15px;outline:none}details[open]{border-left-color:var(--accent)}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 8 ・ Lecture 30 ・ 解説回</span>
+  <h1 class="lecture-title">Prompt engineering<span class="ja-sub">— プロンプト工学の全体像 (このモジュールの導入)</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section><h2>① Prompt engineering って何?</h2>
+  <p>LLM に <strong>「期待した結果を出させる」プロンプトを設計する技術</strong>。同じClaudeでも、プロンプトの書き方で精度が10倍変わる。</p>
+  <div class="card accent"><strong>Fine-tuning との違い:</strong> fine-tuning はモデル自体を訓練 (高コスト)。prompt engineering は<strong>テキストの書き方</strong>だけで挙動を変える (低コスト・即時効果)。</div></section>
+
+  <section><h2>② Anthropic 公式7原則</h2>
+  <table class="vocab"><thead><tr><th style="width: 28%;">原則</th><th>意味</th><th>本コース該当章</th></tr></thead><tbody>
+    <tr><td>1. Clear &amp; direct</td><td>明確かつ直接的に指示</td><td>#31</td></tr>
+    <tr><td>2. Specific</td><td>具体的に</td><td>#32</td></tr>
+    <tr><td>3. XML tags</td><td>構造化に XMLタグ使用</td><td>#33</td></tr>
+    <tr><td>4. Examples</td><td>例を示す (few-shot)</td><td>#34</td></tr>
+    <tr><td>5. Chain of Thought</td><td>段階思考を誘導</td><td>—</td></tr>
+    <tr><td>6. Role prompting</td><td>役割を与える</td><td>#14 system</td></tr>
+    <tr><td>7. Prefill response</td><td>応答の出だしを与える</td><td>—</td></tr>
+  </tbody></table></section>
+
+  <section><h2>③ 改善サイクル</h2>
+  <ol>
+    <li><strong>初期プロンプト</strong>を書く</li>
+    <li><strong>eval (#22-#28)</strong> で客観スコア測定</li>
+    <li><strong>7原則を1つずつ適用</strong>して改善</li>
+    <li>再evalで効果確認</li>
+    <li>改善があれば採用、なければ元に戻す</li>
+  </ol>
+  <div class="card mint">「直感で改善」ではなく「eval スコアで改善」する習慣をつける。</div></section>
+
+  <section><h2>④ 中学生向けに例えると</h2>
+  <p>家庭教師に質問するときの「聞き方」を工夫する技術。「教えて」より「○ページの問題を中学生にわかるように2文で説明して」のほうが良い答えが返ってくる。それがprompt engineering。</p></section>
+
+  <section><h2>⑤ 理解度チェック</h2>
+  <details><summary>Q1. Prompt engineering と Fine-tuning の違いは?</summary><p>fine-tuning = モデル自体を再訓練 (高コスト)。prompt engineering = テキスト書き方だけで挙動制御 (低コスト・即時)。</p></details>
+  <details><summary>Q2. 7原則は?</summary><p>Clear & direct / Specific / XML tags / Examples / Chain of Thought / Role / Prefill response</p></details></section>
+
+  <section><h2>⑥ 自分メモ</h2><div class="memo-area">自分のプロンプト改善試行…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 30: Prompt engineering<br>元: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287745">SkillJar</a></footer>
+</main></body></html>
