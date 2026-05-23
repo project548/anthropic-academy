@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 67: Project setup — MCP server を作るための初期設定 | Anthropic Academy 教科書</title>
+<style>
+:root { --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a; --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028; --soft-blue: #cfe7ef; --soft-yellow: #fdf0c8; --soft-mint: #d8ecd6; --soft-pink: #f6dcdc; --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+.card.blue { background: var(--soft-blue); border-left: 4px solid #4a8aa3; }
+.card.warning { background: var(--soft-pink); border-left: 4px solid #c66b6b; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+table.vocab td.code { font-family: "Consolas","Menlo",monospace; color: var(--accent); font-weight: 700; white-space: nowrap; }
+pre { background: #f4eedb; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: "Consolas","Menlo",monospace; font-size: 14px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--border); }
+code.inline { background: #f4eedb; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Menlo",monospace; font-size: 0.92em; color: #a85200; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 600px) { body { padding: 20px 14px; } h1.lecture-title { font-size: 24px; } h2 { font-size: 19px; } p, ol li, ul li { font-size: 15px; } }
+</style>
+</head>
+<body>
+<main class="book">
+  <span class="chapter-tag">Module 12 ・ Lecture 67 ・ 演習回</span>
+  <h1 class="lecture-title">Project setup<span class="ja-sub">— MCP サーバーを自作する前の環境構築 (Python uv + MCP SDK)</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① 本章の目的</h2>
+    <p>#66 でクライアント側を理解した。今度は <strong>自分でMCPサーバーを書く</strong> 番。本章は <strong>実装に入る前のプロジェクトセットアップ</strong> を体系化する。</p>
+    <div class="card accent">
+      <strong>セットアップで揃えるもの:</strong>
+      <ol>
+        <li>Python 3.10+ (推奨は 3.11)</li>
+        <li><strong>uv</strong> (Anthropic公式推奨のPythonパッケージマネージャ)</li>
+        <li><strong>mcp[cli]</strong> パッケージ (公式SDK + CLI)</li>
+        <li>プロジェクトディレクトリ + main.py の雛形</li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <h2>② なぜ uv なのか?</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 22%;">観点</th><th>pip / venv (従来)</th><th>uv (推奨)</th></tr></thead>
+      <tbody>
+        <tr><td>速度</td><td>遅い</td><td><strong>10〜100倍速い</strong> (Rust製)</td></tr>
+        <tr><td>セットアップ</td><td>venv 作成 + activate + pip install</td><td><code class="inline">uv init</code> で1発</td></tr>
+        <tr><td>依存解決</td><td>requirements.txt 手動</td><td><code class="inline">pyproject.toml</code> 自動</td></tr>
+        <tr><td>Python本体</td><td>事前インストール必要</td><td>uv が自動取得</td></tr>
+        <tr><td>Anthropic推奨</td><td>—</td><td>公式採用</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>③ uv のインストール</h2>
+<pre><code># macOS / Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows (PowerShell)
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# 確認
+uv --version</code></pre>
+    <div class="card mint">
+      <strong>インストール後:</strong> シェルを再起動すると <code class="inline">uv</code> コマンドが使えるようになる。
+    </div>
+  </section>
+
+  <section>
+    <h2>④ プロジェクト初期化 (4ステップ)</h2>
+<pre><code># 1. プロジェクトフォルダ作成
+mkdir weather-mcp
+cd weather-mcp
+
+# 2. uv プロジェクト初期化 (Python 3.11)
+uv init --python 3.11
+# → pyproject.toml, .python-version, README.md, main.py 等が生成
+
+# 3. MCP SDK インストール
+uv add "mcp[cli]" httpx
+# pyproject.toml に依存追加 + uv.lock に固定 + .venv 作成
+
+# 4. main.py を MCP サーバー雛形に書き換え</code></pre>
+    <div class="card blue">
+      <strong>uv add の威力:</strong> 数秒で依存解決完了。<code class="inline">[cli]</code> extras を付けることで <code class="inline">mcp dev</code> 等のCLIコマンドも入る。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑤ MCP サーバーの最小雛形 (main.py)</h2>
+<pre><code>from mcp.server.fastmcp import FastMCP
+
+# サーバーインスタンス (この名前がクライアントに表示される)
+mcp = FastMCP("weather")
+
+# ここに後で tool を追加する (#68)
+# @mcp.tool()
+# def get_weather(city: str) -&gt; str:
+#     return f"{city} の天気: 晴れ"
+
+if __name__ == "__main__":
+    # stdio で起動 (デフォルト)
+    mcp.run(transport="stdio")</code></pre>
+    <div class="card accent">
+      <strong>FastMCP:</strong> 公式SDK内の <strong>高レベルAPI</strong>。デコレータ <code class="inline">@mcp.tool()</code> で関数を tool 化するだけで、type hints から JSON schema を自動生成してくれる。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑥ ローカルで起動・動作確認</h2>
+<pre><code># 開発モード起動 (MCP Inspector付き・#69で詳述)
+uv run mcp dev main.py
+# → ブラウザに http://localhost:5173 等のURLが表示される
+# → Inspector UI でtool一覧 / 実行 / response 確認
+
+# 通常起動 (Claude Desktop等から呼ばれる用)
+uv run python main.py</code></pre>
+    <div class="card mint">
+      <strong>uv run の利点:</strong> <code class="inline">.venv</code> を activate しなくていい。<code class="inline">uv run xxx</code> で勝手に隔離環境で実行される。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑦ Claude Desktop に登録する</h2>
+<pre><code>// ~/Library/Application Support/Claude/claude_desktop_config.json
+{
+  "mcpServers": {
+    "weather": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/Users/abi/work/weather-mcp",
+        "run",
+        "python",
+        "main.py"
+      ]
+    }
+  }
+}</code></pre>
+    <div class="card warning">
+      <strong>絶対パス必須:</strong> Claude Desktop は CWD が違うので、<code class="inline">--directory</code> でプロジェクトパスを指定する。設定保存後 Claude Desktop 再起動。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑧ pyproject.toml の見方</h2>
+<pre><code>[project]
+name = "weather-mcp"
+version = "0.1.0"
+requires-python = "&gt;=3.11"
+dependencies = [
+    "mcp[cli]&gt;=1.2.0",
+    "httpx&gt;=0.27.0",
+]
+
+[tool.uv]
+dev-dependencies = []</code></pre>
+    <div class="card blue">
+      <strong>dependencies:</strong> 通常依存 (本番でも必要) /
+      <strong>dev-dependencies:</strong> 開発用 (pytest等)。<br>
+      <code class="inline">uv add pytest --dev</code> で dev-dependencies に追加可能。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑨ Git 管理 — 何を含める/除外する</h2>
+<pre><code># .gitignore に含めるもの
+.venv/           # 仮想環境 (ローカル固有)
+__pycache__/
+*.pyc
+.env             # secrets
+
+# Git に含めるもの (重要)
+pyproject.toml   # 依存定義
+uv.lock          # 依存固定 (バージョン再現性)
+main.py
+README.md</code></pre>
+    <div class="card accent">
+      <strong>uv.lock を含める:</strong> npm の package-lock.json 相当。<strong>必ず git に commit</strong>。チーム全員が同じバージョンを使えるようにするため。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑩ TypeScript / Node.js での選択肢</h2>
+<pre><code># Node.js MCP サーバー
+npm init -y
+npm install @modelcontextprotocol/sdk zod
+
+# minimal server (index.ts)
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+
+const server = new McpServer({ name: "weather", version: "0.1.0" });
+const transport = new StdioServerTransport();
+await server.connect(transport);</code></pre>
+    <div class="card mint">
+      <strong>言語の選び方:</strong> AI界の標準は Python だが、Node/TypeScript のほうが既存資産と組み合わせやすい場面も多い。本章以降は Python (FastMCP) で進めるが、TypeScript でも同じコンセプト。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑪ プロジェクト構造の推奨</h2>
+<pre><code>weather-mcp/
+├── .venv/                    # uv が自動作成
+├── .gitignore
+├── .python-version           # 3.11
+├── pyproject.toml            # 依存定義
+├── uv.lock                   # 依存固定
+├── README.md
+├── main.py                   # MCP サーバーエントリポイント
+├── src/
+│   ├── tools/                # tool 定義 (関数群)
+│   │   ├── __init__.py
+│   │   ├── weather.py        # get_weather, get_forecast 等
+│   │   └── alerts.py
+│   ├── resources/            # 静的データ提供
+│   │   └── docs.py
+│   └── prompts/              # プロンプトテンプレ
+│       └── report.py
+└── tests/
+    └── test_tools.py</code></pre>
+    <div class="card blue">
+      <strong>原則:</strong> <strong>tool / resource / prompt を別フォルダ</strong> に分けて、main.py からimportする構成。3本柱と整合。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑫ 失敗パターン</h2>
+    <details>
+      <summary>1. Python バージョン違い</summary>
+      <p>Python 3.10未満では <code class="inline">mcp</code> が動かない場合あり。<code class="inline">uv init --python 3.11</code> で明示。</p>
+    </details>
+    <details>
+      <summary>2. Claude Desktop で「server not connecting」</summary>
+      <p>config の絶対パスが間違っているか、uv が PATH 通っていない。ターミナルで <code class="inline">which uv</code> で絶対パス確認 → config に絶対パスを書く。</p>
+    </details>
+    <details>
+      <summary>3. 環境変数が読まれない</summary>
+      <p><code class="inline">.env</code> を読みたいなら <code class="inline">python-dotenv</code> 追加 → main.py で <code class="inline">load_dotenv()</code>。または Claude Desktop config の <code class="inline">env</code> フィールドで明示。</p>
+    </details>
+    <details>
+      <summary>4. uv が遅い時</summary>
+      <p>Pythonバイナリ初回取得は時間かかる (数十MB)。2回目以降は超速。キャッシュは <code class="inline">~/.cache/uv/</code>。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑬ 中学生向けに例えると</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 44%;">学校の例え</th><th>project setup の対応</th></tr></thead>
+      <tbody>
+        <tr><td>自分の作業机を整える</td><td>プロジェクトフォルダ作成</td></tr>
+        <tr><td>道具箱(uv)を用意</td><td>uv install</td></tr>
+        <tr><td>使う道具をリスト化</td><td>pyproject.toml の dependencies</td></tr>
+        <tr><td>道具の入手バージョンも書いておく</td><td>uv.lock</td></tr>
+        <tr><td>「天気サーバー」と名札をつける</td><td>FastMCP("weather")</td></tr>
+        <tr><td>学校(Claude Desktop)に「うちの机が weather サーバーです」と登録</td><td>claude_desktop_config.json</td></tr>
+      </tbody>
+    </table>
+    <div class="card accent">
+      <strong>核心:</strong> 「サーバー本体を書く前の準備」を <strong>uv で5分で整える</strong>。Pythonの面倒なvenv管理から解放される。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑭ キーワード一覧</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 32%;">英語</th><th style="width: 28%;">読み方</th><th>意味</th></tr></thead>
+      <tbody>
+        <tr><td class="code">uv</td><td>ユーブイ</td><td>Astral社製Pythonパッケージマネージャ</td></tr>
+        <tr><td class="code">pyproject.toml</td><td>パイプロジェクト トムル</td><td>依存定義ファイル</td></tr>
+        <tr><td class="code">uv.lock</td><td>ユーブイ ロック</td><td>依存固定ファイル (commit必須)</td></tr>
+        <tr><td class="code">FastMCP</td><td>ファストエムシーピー</td><td>MCP高レベルAPI (Python)</td></tr>
+        <tr><td class="code">mcp[cli]</td><td>エムシーピー シーエルアイ</td><td>SDK + CLI 同梱パッケージ</td></tr>
+        <tr><td class="code">mcp dev</td><td>エムシーピー デブ</td><td>開発モード起動 (Inspector付き)</td></tr>
+        <tr><td class="code">claude_desktop_config.json</td><td>設定ファイル</td><td>Claude Desktop のMCP登録場所</td></tr>
+        <tr><td class="code">stdio transport</td><td>スタジオ トランスポート</td><td>ローカル子プロセス通信</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑮ 理解度チェック</h2>
+    <details>
+      <summary>Q1. uv を使う理由は?</summary>
+      <p>① <strong>10〜100倍速い</strong> (Rust製) ② venv 管理不要 (<code class="inline">uv run</code> で自動隔離) ③ Python本体も uv が取得 ④ Anthropic公式推奨。pip+venv より圧倒的にDX良い。</p>
+    </details>
+    <details>
+      <summary>Q2. uv.lock は git に commit する?</summary>
+      <p><strong>Yes・必須</strong>。npm の package-lock.json と同じ役割。チーム全員が同じバージョンを再現できるようにするため。</p>
+    </details>
+    <details>
+      <summary>Q3. FastMCP とは?</summary>
+      <p>公式 mcp Python SDK 内の <strong>高レベルAPI</strong>。<code class="inline">@mcp.tool()</code> デコレータで関数を tool 化するだけ。type hints から自動的に JSON schema 生成。</p>
+    </details>
+    <details>
+      <summary>Q4. Claude Desktop に登録するとき何に気をつける?</summary>
+      <p>① <strong>絶対パス</strong> 必須 (Claude Desktopの CWD は違う) ② <code class="inline">uv</code> 自体も PATH or 絶対パス指定 ③ <code class="inline">--directory</code> でプロジェクトパス明示 ④ 保存後 Claude Desktop 再起動。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑯ 自分メモ</h2>
+    <div class="memo-area">自分が作りたいMCPサーバー案…例: Lark API MCP / 社内DB MCP / Outlook MCP…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 67: Project setup<br>
+    元レクチャー: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287785">SkillJar — Project setup</a><br>
+    公式: <a href="https://docs.astral.sh/uv/">uv docs</a> / <a href="https://modelcontextprotocol.io/quickstart/server">MCP Server Quickstart</a><br>
+    前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_66_textbook.html">Lecture 66 — MCP clients</a>
+  </footer>
+</main>
+</body>
+</html>
