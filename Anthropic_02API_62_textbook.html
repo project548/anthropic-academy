@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 62: Prompt caching in action — 実コード例で完全に動かす | Anthropic Academy 教科書</title>
+<style>
+:root { --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a; --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028; --soft-blue: #cfe7ef; --soft-yellow: #fdf0c8; --soft-mint: #d8ecd6; --soft-pink: #f6dcdc; --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+.card.blue { background: var(--soft-blue); border-left: 4px solid #4a8aa3; }
+.card.warning { background: var(--soft-pink); border-left: 4px solid #c66b6b; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+table.vocab td.code { font-family: "Consolas","Menlo",monospace; color: var(--accent); font-weight: 700; white-space: nowrap; }
+pre { background: #f4eedb; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: "Consolas","Menlo",monospace; font-size: 14px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--border); }
+code.inline { background: #f4eedb; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Menlo",monospace; font-size: 0.92em; color: #a85200; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 600px) { body { padding: 20px 14px; } h1.lecture-title { font-size: 24px; } h2 { font-size: 19px; } p, ol li, ul li { font-size: 15px; } }
+</style>
+</head>
+<body>
+<main class="book">
+  <span class="chapter-tag">Module 11 ・ Lecture 62 ・ 演習回</span>
+  <h1 class="lecture-title">Prompt caching in action<span class="ja-sub">— 実コード例で動かして、usage の数字を観察する</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① 本章の目的</h2>
+    <p>#60 (機能) と #61 (ルール) を学んだあと、いよいよ <strong>実コード</strong> で動かして「キャッシュが効いている」 ことを確認する回。usage オブジェクトの読み方が中心。</p>
+    <div class="card accent">
+      <strong>3つの観察ポイント:</strong>
+      <ol>
+        <li><strong>1回目</strong>: cache_creation_input_tokens が大きい / cache_read=0</li>
+        <li><strong>2回目以降</strong>: cache_read_input_tokens が大きい / cache_creation=0</li>
+        <li><strong>レイテンシ</strong>: 2回目以降は応答開始が明らかに早い</li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <h2>② 実演用の前提</h2>
+<pre><code>import anthropic, time
+
+client = anthropic.Anthropic()
+model = "claude-opus-4-7"
+
+# 長文 system prompt (4096トークン以上必要)
+big_system = "あなたは社内ヘルプデスクです。以下のFAQに基づいて答えてください。\n\n"
+big_system += "[ここに 5000トークン以上の FAQ 本文を挿入]\n" * 100  # ダミー
+
+# キャッシュ対象として system prompt を構造化
+system_blocks = [
+    {
+        "type": "text",
+        "text": big_system,
+        "cache_control": {"type": "ephemeral"}
+    }
+]</code></pre>
+  </section>
+
+  <section>
+    <h2>③ 1回目の実行 — cache_creation を観測</h2>
+<pre><code>t0 = time.time()
+response1 = client.messages.create(
+    model=model,
+    max_tokens=512,
+    system=system_blocks,
+    messages=[{"role": "user", "content": "副業申請の手順は?"}]
+)
+elapsed1 = time.time() - t0
+
+print(f"1回目: {elapsed1:.2f}秒")
+print(response1.usage)
+# Usage(
+#   input_tokens=12,                          # 質問のみ
+#   cache_creation_input_tokens=50000,        # ← FAQ全文を新規キャッシュ
+#   cache_read_input_tokens=0,                # ← まだ何も読んでない
+#   output_tokens=120
+# )</code></pre>
+    <div class="card mint">
+      <strong>観察:</strong> 50,000トークンの FAQ を新規 cache_creation。料金は <strong>1.25倍</strong> だが、これは <strong>1度きり</strong>。
+    </div>
+  </section>
+
+  <section>
+    <h2>④ 2回目以降 — cache_read で爆速・90%OFF</h2>
+<pre><code>t0 = time.time()
+response2 = client.messages.create(
+    model=model,
+    max_tokens=512,
+    system=system_blocks,  # 完全に同じ
+    messages=[{"role": "user", "content": "有給休暇の取得方法は?"}]  # 質問だけ違う
+)
+elapsed2 = time.time() - t0
+
+print(f"2回目: {elapsed2:.2f}秒")
+print(response2.usage)
+# Usage(
+#   input_tokens=14,
+#   cache_creation_input_tokens=0,            # ← 新規キャッシュなし
+#   cache_read_input_tokens=50000,            # ← キャッシュから読み込み (90%OFF)
+#   output_tokens=140
+# )</code></pre>
+    <div class="card accent">
+      <strong>体感:</strong> elapsed1 (1回目) vs elapsed2 (2回目) で <strong>30〜50%レイテンシ短縮</strong>。コストは <strong>約90%削減</strong>。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑤ 節約額の計算 (実数値)</h2>
+<pre><code># Opus 4.7 料金: $5 / 1M input tokens
+
+# 1回目: cache_creation 50000 × 1.25 = 62500トークン相当
+#       + 通常input 12トークン = $0.3125
+
+# 2回目: cache_read 50000 × 0.1 = 5000トークン相当
+#       + 通常input 14トークン = $0.0250
+#       → 約12.5倍コスト削減
+
+# 100回繰り返した場合:
+#   キャッシュなし: 50000 × 100 = 5,000,000トークン × $5/M = $25.00
+#   キャッシュあり: $0.3125 + $0.0250 × 99 = $2.79
+#   → 約9倍コスト削減</code></pre>
+  </section>
+
+  <section>
+    <h2>⑥ growing conversation (自動キャッシュ)</h2>
+    <p>会話履歴が伸びる用途では「最後のメッセージに毎回 breakpoint を動かす」自動キャッシュが便利:</p>
+<pre><code>conversation = []
+
+def chat(user_msg):
+    conversation.append({"role": "user", "content": user_msg})
+    response = client.messages.create(
+        model=model,
+        max_tokens=512,
+        cache_control={"type": "ephemeral"},  # ← top-level (自動)
+        system="...",
+        messages=conversation,
+    )
+    conversation.append({"role": "assistant", "content": response.content[0].text})
+    print(f"cache_read={response.usage.cache_read_input_tokens}, "
+          f"cache_creation={response.usage.cache_creation_input_tokens}")
+    return response
+
+chat("Anthropic って何の会社?")
+# 1回目: cache_creation=4500, cache_read=0
+
+chat("Claudeのバージョン教えて")
+# 2回目: cache_creation=400, cache_read=4500 (前回のsystem+履歴がHIT)
+
+chat("Sonnet と Opus の違いは?")
+# 3回目: cache_creation=500, cache_read=4900</code></pre>
+    <div class="card blue">
+      <strong>自動キャッシュの利点:</strong> breakpoint が <strong>常に最新メッセージ</strong> に移動 → 過去履歴が常にキャッシュから読まれる。コード書く側は意識せずに使える。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑦ 階層的キャッシュ実演 — 4 breakpoint</h2>
+<pre><code>response = client.messages.create(
+    model=model,
+    max_tokens=512,
+    system=[
+        {"type": "text", "text": "[全社共通指示]",
+         "cache_control": {"type": "ephemeral"}},        # breakpoint 1
+        {"type": "text", "text": "[このアプリ固有指示]",
+         "cache_control": {"type": "ephemeral"}}         # breakpoint 2
+    ],
+    tools=[
+        {..., "cache_control": {"type": "ephemeral"}}    # breakpoint 3
+    ],
+    messages=[{
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "[巨大なFAQ全文]",
+             "cache_control": {"type": "ephemeral"}},    # breakpoint 4
+            {"type": "text", "text": "[今回のユーザー質問]"}
+        ]
+    }]
+)
+# usage に各キャッシュ層のヒット状況が反映される</code></pre>
+    <div class="card mint">
+      <strong>使い分け:</strong>
+      <ul>
+        <li>全社共通指示: 全アプリで共有</li>
+        <li>アプリ固有指示: アプリごとに別キャッシュ</li>
+        <li>tool定義: 滅多に変わらない</li>
+        <li>FAQ全文: 月1回更新</li>
+      </ul>
+      → 1個変えても他の3個は生き残る。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑧ デバッグ: キャッシュが効かない時のチェックリスト</h2>
+    <details>
+      <summary>cache_creation_input_tokens = 0 のとき</summary>
+      <p><strong>原因:</strong> 最小トークン数未満。Opus 4.7 なら 4,096 トークン必要。<br>
+      → system prompt を長くする or cache_control を付け間違えていないか確認。</p>
+    </details>
+    <details>
+      <summary>cache_read_input_tokens = 0 のとき (2回目以降)</summary>
+      <p><strong>原因:</strong> 1回目と2回目で prefix が違う。1byte違いを探す:
+      <ol>
+        <li>timestamp が system に混ざっていないか</li>
+        <li>tool定義が動的生成されていないか</li>
+        <li>JSONキーの順番が違っていないか</li>
+        <li>image/tool_choice/thinking パラメータが変わっていないか</li>
+      </ol></p>
+    </details>
+    <details>
+      <summary>cache_read が一部しか効いてない</summary>
+      <p><strong>原因:</strong> breakpoint が複数ある場合、上層が無効化されて下層もミス。階層順序 (tools→system→messages) を意識して再配置。</p>
+    </details>
+    <details>
+      <summary>レイテンシが期待ほど下がらない</summary>
+      <p><strong>原因:</strong> キャッシュは効いているが output 生成が支配的。max_tokens を見直し / Sonnet/Haiku に切り替え検討。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑨ 実演スニペット — 効果を計測する完全コード</h2>
+<pre><code>import anthropic, time
+
+client = anthropic.Anthropic()
+SYSTEM_TEXT = open("./long_faq.txt").read()  # 50000トークン相当
+
+def run_with_cache(question, with_cache=True):
+    system = [{"type": "text", "text": SYSTEM_TEXT}]
+    if with_cache:
+        system[0]["cache_control"] = {"type": "ephemeral"}
+
+    t0 = time.time()
+    response = client.messages.create(
+        model="claude-opus-4-7",
+        max_tokens=512,
+        system=system,
+        messages=[{"role": "user", "content": question}]
+    )
+    elapsed = time.time() - t0
+    u = response.usage
+    return {
+        "elapsed": elapsed,
+        "input": u.input_tokens,
+        "cache_create": u.cache_creation_input_tokens or 0,
+        "cache_read": u.cache_read_input_tokens or 0,
+        "output": u.output_tokens,
+    }
+
+# 比較実演
+print("=== キャッシュなし (3回連続) ===")
+for q in ["副業申請は?", "有給は?", "住所変更は?"]:
+    r = run_with_cache(q, with_cache=False)
+    print(f"  {r['elapsed']:.2f}秒 / input={r['input']}")
+
+print("=== キャッシュあり (3回連続) ===")
+for q in ["副業申請は?", "有給は?", "住所変更は?"]:
+    r = run_with_cache(q, with_cache=True)
+    print(f"  {r['elapsed']:.2f}秒 / cache_create={r['cache_create']} cache_read={r['cache_read']}")</code></pre>
+  </section>
+
+  <section>
+    <h2>⑩ 中学生向けに例えると</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 44%;">学校の例え</th><th>caching in action の対応</th></tr></thead>
+      <tbody>
+        <tr><td>1回目:「教科書ぜんぶ書き写してから質問する」</td><td>cache_creation 発生 (高い)</td></tr>
+        <tr><td>2回目以降:「机に教科書あるから質問だけ」</td><td>cache_read 発生 (安い)</td></tr>
+        <tr><td>「教科書置きっぱ」だから先生もすぐ答えられる</td><td>レイテンシ短縮</td></tr>
+        <tr><td>「家で教科書を温める = pre-warm」</td><td>事前にcache作成しておく</td></tr>
+        <tr><td>「机の様子をノートに記録」</td><td>usage オブジェクト</td></tr>
+      </tbody>
+    </table>
+    <div class="card accent">
+      <strong>核心:</strong> 動かしてみると <strong>「数字で確認できる」</strong>。usageを見て「ちゃんと効いてるか」を毎リクエスト判定する習慣をつける。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑪ 理解度チェック</h2>
+    <details>
+      <summary>Q1. 1回目と2回目の usage はどう違うのが正解?</summary>
+      <p><strong>1回目:</strong> cache_creation_input_tokens が大きい、cache_read=0<br>
+      <strong>2回目:</strong> cache_creation=0、cache_read_input_tokens が大きい<br>
+      これが見えなければ「キャッシュ設定間違い」を疑う。</p>
+    </details>
+    <details>
+      <summary>Q2. cache_creation の料金倍率は?</summary>
+      <p><strong>1.25倍</strong> (5分TTL) / <strong>2.0倍</strong> (1時間TTL)。2-3回再利用すれば回収できる損益分岐点。</p>
+    </details>
+    <details>
+      <summary>Q3. cache_read の料金倍率は?</summary>
+      <p><strong>0.1倍 (= 90%OFF)</strong>。これがキャッシュの旨味の本体。</p>
+    </details>
+    <details>
+      <summary>Q4. 自動キャッシュとは?</summary>
+      <p>top-level <code class="inline">cache_control={"type":"ephemeral"}</code> を1個だけ指定する方式。Anthropic 側が「最後の cacheable block」に自動 breakpoint を置く。growing conversation で便利。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑫ 自分メモ</h2>
+    <div class="memo-area">実コード書いて usage 観察したメモ…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 62: Prompt caching in action<br>
+    公式ドキュメント: <a href="https://platform.claude.com/docs/en/docs/build-with-claude/prompt-caching">Anthropic Docs — Prompt caching</a><br>
+    前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_61_textbook.html">Lecture 61 — Rules of prompt caching</a>
+  </footer>
+</main>
+</body>
+</html>
