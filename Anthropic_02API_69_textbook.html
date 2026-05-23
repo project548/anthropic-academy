@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 69: The server inspector — MCP Inspector でローカルデバッグ | Anthropic Academy 教科書</title>
+<style>
+:root { --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a; --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028; --soft-blue: #cfe7ef; --soft-yellow: #fdf0c8; --soft-mint: #d8ecd6; --soft-pink: #f6dcdc; --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+.card.blue { background: var(--soft-blue); border-left: 4px solid #4a8aa3; }
+.card.warning { background: var(--soft-pink); border-left: 4px solid #c66b6b; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+table.vocab td.code { font-family: "Consolas","Menlo",monospace; color: var(--accent); font-weight: 700; white-space: nowrap; }
+pre { background: #f4eedb; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: "Consolas","Menlo",monospace; font-size: 14px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--border); }
+code.inline { background: #f4eedb; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Menlo",monospace; font-size: 0.92em; color: #a85200; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 600px) { body { padding: 20px 14px; } h1.lecture-title { font-size: 24px; } h2 { font-size: 19px; } p, ol li, ul li { font-size: 15px; } }
+</style>
+</head>
+<body>
+<main class="book">
+  <span class="chapter-tag">Module 12 ・ Lecture 69 ・ 解説回</span>
+  <h1 class="lecture-title">The server inspector<span class="ja-sub">— MCP Inspector でローカルサーバーをデバッグ・テストする</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① まず結論 — Inspector って何?</h2>
+    <p>MCP Inspector は <strong>ブラウザベースのデバッグ&テストUI</strong>。Claude Desktop に登録する前に、自作 MCP サーバーが正しく動くか確認できる開発者ツール。</p>
+    <div class="card accent">
+      <strong>できること:</strong>
+      <ul>
+        <li>tool / resource / prompt の一覧確認</li>
+        <li>tool を任意の引数で呼び出して結果確認</li>
+        <li>送受信される JSON-RPC メッセージのログ</li>
+        <li>エラー再現・デバッグ</li>
+        <li>capability negotiation の中身観察</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>② なぜ Inspector が必要?</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 38%;">Claude Desktop で直接テスト</th><th>Inspector でテスト</th></tr></thead>
+      <tbody>
+        <tr><td>毎回 Claude Desktop 再起動</td><td>コード変更 → そのままリロード</td></tr>
+        <tr><td>Claude が tool 呼ぶか分からない</td><td>UI から任意引数で <strong>強制実行</strong></td></tr>
+        <tr><td>ログが見えない</td><td>JSON-RPC 通信を可視化</td></tr>
+        <tr><td>エラー時のメッセージが不明</td><td>stderr / traceback が見える</td></tr>
+        <tr><td>1イテレーション 30秒</td><td>1イテレーション 5秒</td></tr>
+      </tbody>
+    </table>
+    <div class="card mint">
+      <strong>開発サイクル:</strong> Inspector で開発・デバッグ → 動作確認できたら Claude Desktop に登録 → 本番運用、という流れ。
+    </div>
+  </section>
+
+  <section>
+    <h2>③ 起動方法 — 1コマンド</h2>
+<pre><code># プロジェクトディレクトリで
+uv run mcp dev main.py
+
+# 出力例:
+# MCP Inspector starting...
+# Server connected. Click here to inspect:
+#   http://localhost:5173?MCP_PROXY_AUTH_TOKEN=xxx</code></pre>
+    <div class="card blue">
+      <strong>1コマンドで完結:</strong> <code class="inline">mcp dev</code> は内部で:
+      <ol>
+        <li>あなたの MCP サーバー (main.py) を子プロセス起動</li>
+        <li>Inspector Web UI を localhost:5173 で起動</li>
+        <li>両者を MCP プロトコルで接続</li>
+      </ol>
+      ブラウザで URL を開けば即操作可能。
+    </div>
+  </section>
+
+  <section>
+    <h2>④ Inspector UI の見方</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 24%;">UIパネル</th><th>表示内容</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Connection</strong></td><td>サーバー接続状態 / capability negotiation 結果</td></tr>
+        <tr><td><strong>Tools</strong></td><td>tools/list の結果。各 tool の name/description/schema を可視化</td></tr>
+        <tr><td><strong>Resources</strong></td><td>resources/list の結果。URI とメタ情報</td></tr>
+        <tr><td><strong>Prompts</strong></td><td>prompts/list の結果。テンプレート一覧</td></tr>
+        <tr><td><strong>History</strong></td><td>送受信した JSON-RPC メッセージのログ (リアルタイム)</td></tr>
+        <tr><td><strong>Server Logs</strong></td><td>サーバーの stdout / stderr</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑤ tool を実行してみる</h2>
+<pre><code>┌─ Tool: get_weather ───────────────────────┐
+│ Description: Get the current weather...   │
+│                                            │
+│ Inputs:                                    │
+│   city: [ Tokyo                          ] │  ← 入力フォーム
+│                                            │
+│ [ Run Tool ]                               │
+└────────────────────────────────────────────┘
+
+# 実行後
+┌─ Result ───────────────────────────────────┐
+│ {                                          │
+│   "content": [                             │
+│     { "type": "text",                      │
+│       "text": "Tokyo: Sunny, 22°C" }       │
+│   ]                                        │
+│ }                                          │
+└────────────────────────────────────────────┘</code></pre>
+    <div class="card accent">
+      <strong>魔法:</strong> Inspector が JSON schema を読んで <strong>適切な入力フォーム</strong> を自動生成。string なら text input、int なら number input、Literal なら dropdown、boolean なら checkbox 等。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑥ History パネルで JSON-RPC を観察</h2>
+<pre><code># 1. Client → Server: initialize リクエスト
+{ "jsonrpc": "2.0", "id": 1, "method": "initialize", ... }
+
+# 2. Server → Client: initialize レスポンス
+{ "jsonrpc": "2.0", "id": 1, "result": {
+    "protocolVersion": "2025-06-18",
+    "capabilities": { "tools": {...}, "resources": {...} },
+    "serverInfo": { "name": "weather", "version": "0.1.0" }
+}}
+
+# 3. Client → Server: tools/list
+{ "jsonrpc": "2.0", "id": 2, "method": "tools/list" }
+
+# 4. Server → Client: tool 一覧
+{ "jsonrpc": "2.0", "id": 2,
+  "result": { "tools": [{"name": "get_weather", ...}] } }
+
+# 5. Client → Server: tools/call
+{ "jsonrpc": "2.0", "id": 3, "method": "tools/call",
+  "params": { "name": "get_weather", "arguments": {"city": "Tokyo"} } }
+
+# 6. Server → Client: 実行結果
+{ "jsonrpc": "2.0", "id": 3, "result": {...} }</code></pre>
+    <div class="card blue">
+      <strong>学習価値:</strong> MCP プロトコルの実体験。「Claude Desktop の中で何が起きてるか」がブラックボックスでなくなる。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑦ 開発フロー — Inspector を活用する</h2>
+<pre><code># 1. Inspector 起動 (ターミナル 1)
+uv run mcp dev main.py
+# → ブラウザで Inspector UI 開く
+
+# 2. main.py を編集 (エディタ) → 新しい tool を追加
+
+# 3. Inspector で Reload (ボタン1つ)
+# → サーバー再起動 + tools/list 自動更新
+
+# 4. Tools パネルで新 tool を実行 → 即動作確認
+
+# 5. Server Logs パネルでログ確認 → エラーあれば修正
+
+# (3〜5 を繰り返す。1イテレーション 5秒)
+
+# 動いたら Claude Desktop config に登録 → 本番運用</code></pre>
+  </section>
+
+  <section>
+    <h2>⑧ よくあるトラブルと Inspector での確認</h2>
+    <details>
+      <summary>1. tool が一覧に出ない</summary>
+      <p><strong>Inspector の確認方法:</strong> Tools パネルが空 → main.py で <code class="inline">@mcp.tool()</code> 付け忘れ or import エラー。<br>
+      → Server Logs パネルで traceback 確認 → 修正 → Reload。</p>
+    </details>
+    <details>
+      <summary>2. tool 実行で「Invalid parameters」</summary>
+      <p><strong>Inspector の確認方法:</strong> tool のスキーマを見て、引数の <strong>型</strong> を確認。<br>
+      例: <code class="inline">city: str</code> なのに数値入力 → エラー。type hints を再確認。</p>
+    </details>
+    <details>
+      <summary>3. tool 実行で内部エラー (500)</summary>
+      <p><strong>Inspector の確認方法:</strong> History に error response が記録される + Server Logs に stderr 出力 + traceback。<br>
+      → Python例外をキャッチして ToolError に変換するべき。</p>
+    </details>
+    <details>
+      <summary>4. capability negotiation が失敗</summary>
+      <p><strong>Inspector の確認方法:</strong> Connection パネルで「initialize」 が赤くなる。<br>
+      → protocolVersion 不整合・serverInfo 必須項目欠落等を疑う。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑨ Inspector 単独起動 (任意サーバー接続)</h2>
+<pre><code># 既存の (例: GitHub MCP server) に接続してテスト
+npx @modelcontextprotocol/inspector npx -y @modelcontextprotocol/server-github
+
+# あるいは HTTP リモート MCP に接続
+npx @modelcontextprotocol/inspector --url https://slack-mcp.example.com/mcp</code></pre>
+    <div class="card mint">
+      <strong>応用:</strong> 自分のサーバーだけでなく、<strong>他人のMCPサーバーをテストする</strong> 用途にも使える。サードパーティMCPを評価するときに重宝。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑩ セキュリティ注意</h2>
+    <div class="card warning">
+      <strong>Inspector はローカル開発用:</strong>
+      <ul>
+        <li>localhost にしか bind しない (デフォルト)</li>
+        <li><code class="inline">MCP_PROXY_AUTH_TOKEN</code> でアクセス制限</li>
+        <li>本番環境では絶対起動しない (機密データに触れるサーバーの場合は特に)</li>
+        <li>共有ネットワーク (カフェ Wi-Fi 等) では <strong>外部公開設定にしない</strong></li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>⑪ resource / prompt も同様に検査</h2>
+<pre><code># Resources パネル
+# → resources/list の結果が一覧表示
+# → 個別 resource クリックで resources/read 実行
+# → URI と content をプレビュー
+
+# Prompts パネル
+# → prompts/list の結果
+# → prompt をクリックで prompts/get 実行
+# → 動的補完されたプロンプトテキストを確認</code></pre>
+    <div class="card blue">
+      <strong>3本柱を一気に検査:</strong> tool だけでなく resource / prompt も同じUIで動作確認できる。<strong>MCP サーバー丸ごとデバッグ</strong>。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑫ 中学生向けに例えると</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 44%;">学校の例え</th><th>Inspector の対応</th></tr></thead>
+      <tbody>
+        <tr><td>新しい工作を発表会で出す前に試運転する</td><td>Claude Desktop登録前のテスト</td></tr>
+        <tr><td>「動くか」「壊れてないか」を確認する点検装置</td><td>Inspector UI</td></tr>
+        <tr><td>道具を1個ずつ手動で動かしてみる</td><td>Tools パネルで tool 実行</td></tr>
+        <tr><td>通信ログを録音して再生する</td><td>History パネル (JSON-RPC)</td></tr>
+        <tr><td>道具を直したらすぐに再テスト</td><td>Reload ボタンで即反映</td></tr>
+      </tbody>
+    </table>
+    <div class="card accent">
+      <strong>核心:</strong> Inspector は <strong>MCP開発の必須ツール</strong>。Claude Desktop で「動かない」とハマる前に、ここで90%のバグを潰せる。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑬ キーワード一覧</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 32%;">英語</th><th style="width: 28%;">読み方</th><th>意味</th></tr></thead>
+      <tbody>
+        <tr><td class="code">MCP Inspector</td><td>エムシーピー インスペクター</td><td>MCP サーバー検査UI</td></tr>
+        <tr><td class="code">mcp dev</td><td>エムシーピー デブ</td><td>開発モード起動コマンド</td></tr>
+        <tr><td class="code">JSON-RPC</td><td>ジェイソン アールピーシー</td><td>MCP の通信プロトコル</td></tr>
+        <tr><td class="code">initialize</td><td>イニシャライズ</td><td>接続最初のハンドシェイク</td></tr>
+        <tr><td class="code">tools/list</td><td>ツールズ リスト</td><td>tool一覧取得リクエスト</td></tr>
+        <tr><td class="code">tools/call</td><td>ツールズ コール</td><td>tool実行リクエスト</td></tr>
+        <tr><td class="code">capability negotiation</td><td>ケイパビリティ ネゴシエーション</td><td>接続時の能力すり合わせ</td></tr>
+        <tr><td class="code">MCP_PROXY_AUTH_TOKEN</td><td>認証トークン</td><td>Inspectorアクセス制限用</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑭ 理解度チェック</h2>
+    <details>
+      <summary>Q1. Inspector の用途は?</summary>
+      <p>自作 MCP サーバーを <strong>Claude Desktop に登録する前に</strong> デバッグ・テストすること。tool 単体実行・JSON-RPC ログ確認・schema検査・サーバーログ閲覧 を一画面でできる。</p>
+    </details>
+    <details>
+      <summary>Q2. どう起動する?</summary>
+      <p><code class="inline">uv run mcp dev main.py</code> 一発。サーバーとInspector UI を両方起動 → ブラウザで localhost:5173 を開く。</p>
+    </details>
+    <details>
+      <summary>Q3. Inspector で確認すべき4点は?</summary>
+      <p>① <strong>Tools パネル</strong>: tool一覧と schema<br>
+      ② <strong>tool 実行</strong>: 任意引数で結果確認<br>
+      ③ <strong>History</strong>: JSON-RPC 通信ログ<br>
+      ④ <strong>Server Logs</strong>: stderr / traceback</p>
+    </details>
+    <details>
+      <summary>Q4. セキュリティ上の注意は?</summary>
+      <p>Inspector は <strong>ローカル開発用</strong>。① localhost のみ ② AUTH_TOKEN で制限 ③ 本番環境では絶対起動しない ④ 共有ネットワークで外部公開しない</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑮ 自分メモ</h2>
+    <div class="memo-area">Inspector を使ってデバッグした記録…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 69: The server inspector<br>
+    元レクチャー: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287781">SkillJar — The server inspector</a><br>
+    公式: <a href="https://github.com/modelcontextprotocol/inspector">MCP Inspector GitHub</a><br>
+    前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_68_textbook.html">Lecture 68 — Defining tools with MCP</a>
+  </footer>
+</main>
+</body>
+</html>
