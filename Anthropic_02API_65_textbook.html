@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 65: Introducing MCP — AI とツールの繋ぎ規格 | Anthropic Academy 教科書</title>
+<style>
+:root { --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a; --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028; --soft-blue: #cfe7ef; --soft-yellow: #fdf0c8; --soft-mint: #d8ecd6; --soft-pink: #f6dcdc; --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+.card.blue { background: var(--soft-blue); border-left: 4px solid #4a8aa3; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+table.vocab td.code { font-family: "Consolas","Menlo",monospace; color: var(--accent); font-weight: 700; white-space: nowrap; }
+pre { background: #f4eedb; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: "Consolas","Menlo",monospace; font-size: 14px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--border); }
+code.inline { background: #f4eedb; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Menlo",monospace; font-size: 0.92em; color: #a85200; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 600px) { body { padding: 20px 14px; } h1.lecture-title { font-size: 24px; } h2 { font-size: 19px; } p, ol li, ul li { font-size: 15px; } }
+</style>
+</head>
+<body>
+<main class="book">
+  <span class="chapter-tag">Module 12 ・ Lecture 65 ・ 解説回</span>
+  <h1 class="lecture-title">Introducing MCP<span class="ja-sub">— Model Context Protocol = AI と外部システムの「USB-C 規格」</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① まず結論 — MCP って何?</h2>
+    <p>MCP (<strong>M</strong>odel <strong>C</strong>ontext <strong>P</strong>rotocol) は <strong>AIアプリと外部システムをつなぐオープン規格</strong>。2024年11月に Anthropic が公開し、ChatGPT・Cursor・VS Code 等も対応する業界標準になっている。</p>
+    <div class="card accent">
+      <strong>喩え:</strong> AI 用の <strong>USB-C ポート</strong>。USB-C があれば「マウス」「キーボード」「モニター」を共通に挿せる。MCP があれば「Slack」「GitHub」「Notion」「DB」を共通に AI に挿せる。
+    </div>
+  </section>
+
+  <section>
+    <h2>② なぜ必要? — 自前 tool との違い</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 30%;">観点</th><th>自前tool (#37-#48)</th><th>MCP</th></tr></thead>
+      <tbody>
+        <tr><td>定義場所</td><td>アプリ内に直書き</td><td>独立した「サーバー」として切り出し</td></tr>
+        <tr><td>再利用性</td><td>1アプリ専用</td><td><strong>複数アプリで使い回せる</strong></td></tr>
+        <tr><td>言語</td><td>アプリと同じ言語縛り</td><td>サーバー側は自由 (Python/Node/Go等)</td></tr>
+        <tr><td>運用</td><td>アプリ更新時に再デプロイ</td><td>サーバー単体で更新可能</td></tr>
+        <tr><td>エコシステム</td><td>—</td><td>公式サーバー多数 + コミュニティ</td></tr>
+      </tbody>
+    </table>
+    <div class="card mint">
+      <strong>結論:</strong> 単発tool なら自前で書く。<strong>「他のAIアプリでも使い回したい / 組織で共有したい」</strong> なら MCP化する。
+    </div>
+  </section>
+
+  <section>
+    <h2>③ MCP でできること</h2>
+    <ul>
+      <li>エージェントが <strong>Google Calendar や Notion</strong> に接続 → パーソナルAIアシスタント化</li>
+      <li>Claude Code が <strong>Figma デザインから Web アプリ全体を生成</strong></li>
+      <li>社内チャットbot が <strong>複数DB横断</strong> でデータ分析</li>
+      <li>AI が <strong>Blender で3Dデザイン → 3Dプリンタで印刷</strong></li>
+    </ul>
+    <div class="card blue">
+      <strong>共通パターン:</strong> 「Claude + 外部システム → 業務自動化」。今までは個別実装が必要だったが、MCP で <strong>誰かが作ったサーバーを挿すだけ</strong>。
+    </div>
+  </section>
+
+  <section>
+    <h2>④ 3つの登場人物</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 22%;">役割</th><th>例</th><th>責任</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Host</strong></td><td>Claude Desktop / Cursor</td><td>ユーザーが触るアプリ全体</td></tr>
+        <tr><td><strong>Client</strong></td><td>Host 内の接続管理</td><td>1サーバーと1対1で通信</td></tr>
+        <tr><td><strong>Server</strong></td><td>GitHub MCP / Slack MCP</td><td>外部システムを MCP 規格で公開</td></tr>
+      </tbody>
+    </table>
+    <div class="card accent">
+      <strong>核心:</strong> Host は複数のサーバーに繋がる。1サーバーごとに1 Client が立ち、独立して動く。詳細は #66 で。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑤ 3本柱 — Tools / Resources / Prompts</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 24%;">概念</th><th>意味</th><th>例</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Tools</strong> (動詞)</td><td>サーバーが提供する実行アクション</td><td>send_message, create_issue, search_db</td></tr>
+        <tr><td><strong>Resources</strong> (名詞)</td><td>サーバーが提供する読み取り専用データ</td><td>ファイル一覧・DBスキーマ・API応答</td></tr>
+        <tr><td><strong>Prompts</strong> (テンプレ)</td><td>サーバーが用意したプロンプトテンプレ</td><td>「障害レポート作成」テンプレ</td></tr>
+      </tbody>
+    </table>
+    <div class="card mint">
+      <strong>使い分け:</strong> Tool = やってもらう / Resource = 見せてもらう / Prompt = 借りる。MCPサーバーはこの3種を組合せて公開する。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑥ オープン規格の意味</h2>
+    <ul>
+      <li>Anthropic 主導だが <strong>仕様は公開</strong> (modelcontextprotocol.io)</li>
+      <li>OpenAI ChatGPT も対応</li>
+      <li>Visual Studio Code / Cursor / MCPJam 等 多数のクライアント</li>
+      <li>サーバー実装は <strong>Python / TypeScript / Go / Rust 等多言語</strong></li>
+    </ul>
+    <div class="card blue">
+      <strong>意味:</strong> Anthropic 1社の囲い込みではない。<strong>業界標準</strong> としてエコシステムが育ちつつある。「MCPサーバー1個作れば、どの AI でも動く」状態。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑦ 本コースで学ぶ流れ</h2>
+    <ol>
+      <li><strong>#65 (本章)</strong>: MCP とは何か (コンセプト)</li>
+      <li><strong>#66 MCP clients</strong>: 繋ぐ側の理解</li>
+      <li><strong>#67 Project setup</strong>: サーバー自作の準備 (uv + mcp[cli])</li>
+      <li><strong>#68 Defining tools with MCP</strong>: @mcp.tool() で関数を tool 化</li>
+      <li><strong>#69 The server inspector</strong>: 自作サーバーをデバッグ</li>
+    </ol>
+    <div class="card accent">
+      <strong>本章は概論</strong>。コンセプトだけ掴めば次章以降で実装に進める。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑧ 中学生向けに例えると</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 44%;">学校の例え</th><th>MCP の対応</th></tr></thead>
+      <tbody>
+        <tr><td>USB-C ケーブルがあるから何でも繋がる</td><td>MCP 規格 (共通プロトコル)</td></tr>
+        <tr><td>「みんな共通の差し込み口を作ろう」と決めた</td><td>オープン規格 (誰でも参加可能)</td></tr>
+        <tr><td>「マウスや音楽プレイヤーや充電器を1個の口で」</td><td>1AIアプリで複数サーバーに接続</td></tr>
+        <tr><td>「ケーブル買い直さなくていい」</td><td>サーバー使い回し</td></tr>
+      </tbody>
+    </table>
+    <div class="card accent">
+      <strong>核心:</strong> AI を 「<strong>賢いだけの存在</strong>」 から 「<strong>世界中のシステムに繋がれる存在</strong>」 へ進化させる規格。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑨ キーワード一覧</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 32%;">英語</th><th style="width: 28%;">読み方</th><th>意味</th></tr></thead>
+      <tbody>
+        <tr><td class="code">MCP</td><td>エムシーピー</td><td>Model Context Protocol</td></tr>
+        <tr><td class="code">Host</td><td>ホスト</td><td>AIアプリ全体</td></tr>
+        <tr><td class="code">Client</td><td>クライアント</td><td>1サーバー専属接続</td></tr>
+        <tr><td class="code">Server</td><td>サーバー</td><td>外部システム公開側</td></tr>
+        <tr><td class="code">Tools / Resources / Prompts</td><td>3本柱</td><td>MCPが提供する3種のリソース</td></tr>
+        <tr><td class="code">open protocol</td><td>オープン プロトコル</td><td>仕様公開された規格</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑩ 理解度チェック</h2>
+    <details>
+      <summary>Q1. MCP は何の略?</summary>
+      <p><strong>Model Context Protocol</strong>。AI モデルにコンテキスト(外部システム)を繋ぐためのプロトコル。</p>
+    </details>
+    <details>
+      <summary>Q2. MCP の喩えは?</summary>
+      <p><strong>AI用の USB-C 規格</strong>。1つの規格でいろんな機器が繋がる。MCP も1つのプロトコルでいろんな外部システムが繋がる。</p>
+    </details>
+    <details>
+      <summary>Q3. 自前tool と MCP の主な違いは?</summary>
+      <p>① 再利用性 (MCPは複数アプリで使い回せる) ② 言語自由 ③ 独立運用 ④ オープンエコシステム。自前tool は単発・閉鎖。MCP は共有・開放。</p>
+    </details>
+    <details>
+      <summary>Q4. 3本柱は?</summary>
+      <p><strong>Tools (実行) / Resources (データ参照) / Prompts (テンプレ取得)</strong>。MCPサーバーはこの3種を組合せて公開する。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑪ 自分メモ</h2>
+    <div class="memo-area">MCP で繋ぎたい外部システム…例: Lark API / freee / Outlook / 自社DB…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 65: Introducing MCP<br>
+    元レクチャー: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287780">SkillJar — Introducing MCP</a><br>
+    公式: <a href="https://modelcontextprotocol.io">modelcontextprotocol.io</a><br>
+    前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_63_textbook.html">Lecture 63 — Code execution and the Files API</a> / 次章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_66_textbook.html">Lecture 66 — MCP clients</a>
+  </footer>
+</main>
+</body>
+</html>
