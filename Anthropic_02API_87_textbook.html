@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 87: Environment inspection | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}pre{background:#f4eedb;border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:"Consolas","Menlo",monospace;font-size:14px;line-height:1.7;margin:12px 0;border:1px solid var(--border)}code.inline{background:#f4eedb;padding:2px 6px;border-radius:4px;font-family:"Consolas","Menlo",monospace;font-size:.92em;color:#a85200}details{background:var(--paper-2);border-radius:var(--radius);padding:14px 22px;margin:10px 0;box-shadow:var(--shadow);border-left:4px solid var(--tag-bg)}details summary{cursor:pointer;font-weight:700;font-size:15px;outline:none}details[open]{border-left-color:var(--accent)}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 13 ・ Lecture 87 ・ 解説回</span>
+  <h1 class="lecture-title">Environment inspection<span class="ja-sub">— Agent が「自分が居る環境」を理解するための仕組み</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section><h2>① なぜ環境理解が重要?</h2>
+  <p>Agent が自律的に tool を使うには、<strong>「今どこにいるか」「何が使えるか」「どんな状態か」</strong> を最初に理解する必要がある。これが <strong>Environment inspection</strong> (環境観察)。</p>
+  <div class="card accent"><strong>核心:</strong> Agent に最初に「環境を観察する tool」を使わせて状況把握 → その後、本タスクに入る。失敗率が大幅に下がる。</div></section>
+
+  <section><h2>② 環境観察 tool の例</h2>
+  <ul>
+    <li><strong>list_files</strong>: 現在ディレクトリのファイル一覧</li>
+    <li><strong>get_cwd</strong>: 現在の作業ディレクトリ</li>
+    <li><strong>git_status</strong>: git の状態 (ブランチ・変更ファイル)</li>
+    <li><strong>list_env_vars</strong>: 環境変数</li>
+    <li><strong>check_dependencies</strong>: インストール済みパッケージ</li>
+    <li><strong>read_config</strong>: 設定ファイル (CLAUDE.md / package.json 等)</li>
+  </ul></section>
+
+  <section><h2>③ Claude Code での実装例</h2>
+<pre><code># Claude Code は標準で:
+# 1. 起動時に Glob でプロジェクト構造把握
+# 2. CLAUDE.md があれば Read
+# 3. git status で状態確認
+# 4. .gitignore / package.json / pyproject.toml をスキャン
+# → 「このプロジェクトは Python/Node/Go か」「テストはあるか」を把握
+
+# その後の指示はこの理解の上に乗る:
+# ユーザー: "テスト追加して"
+# Claude: (環境理解済みなので) "pytest があるね、tests/ に追加します"</code></pre></section>
+
+  <section><h2>④ 設計のコツ</h2>
+  <ol>
+    <li>Agent の system prompt で「<strong>最初に環境を観察して</strong>」と明示</li>
+    <li>環境観察 tool は <strong>read-only / 副作用なし</strong> にする (失敗しても安全)</li>
+    <li>結果は <strong>キャッシュ</strong>して何度も呼ばない (cost節約)</li>
+    <li>長時間 agent では <strong>定期的に再観察</strong> (環境変化に対応)</li>
+  </ol></section>
+
+  <section><h2>⑤ アンチパターン</h2>
+  <ul>
+    <li><strong>環境観察なし</strong>: いきなり実装 → Python/Node の違いを無視して動かない</li>
+    <li><strong>過剰観察</strong>: 全ファイル全ディレクトリを毎回スキャン → トークン浪費</li>
+    <li><strong>古い情報で動く</strong>: 初回観察結果をずっと使う → 環境変化に未対応</li>
+  </ul></section>
+
+  <section><h2>⑥ 中学生向けに例えると</h2>
+  <p>新しい教室に行ったら、まず「教室の地図 (どこに何がある)」を見る。授業始める前に「教科書あるか」「机の場所」を確認する。それと同じことを agent もやる。</p></section>
+
+  <section><h2>⑦ 理解度チェック</h2>
+  <details><summary>Q1. Environment inspection が必要な理由は?</summary><p>A. Agent は環境状況を知らないと適切な tool を選べないため。先に観察してから本タスクに入ると失敗率が下がる。</p></details>
+  <details><summary>Q2. 環境観察 tool に必須の性質は?</summary><p>A. read-only / 副作用なし。観察自体が状態を壊すのを防ぐ。</p></details></section>
+
+  <section><h2>⑧ 自分メモ</h2><div class="memo-area">自分の agent に必要な環境観察 tool…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 87: Environment inspection</footer>
+</main></body></html>

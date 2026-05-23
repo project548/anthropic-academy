@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 83: Parallelization workflows | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}pre{background:#f4eedb;border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:"Consolas","Menlo",monospace;font-size:14px;line-height:1.7;margin:12px 0;border:1px solid var(--border)}code.inline{background:#f4eedb;padding:2px 6px;border-radius:4px;font-family:"Consolas","Menlo",monospace;font-size:.92em;color:#a85200}details{background:var(--paper-2);border-radius:var(--radius);padding:14px 22px;margin:10px 0;box-shadow:var(--shadow);border-left:4px solid var(--tag-bg)}details summary{cursor:pointer;font-weight:700;font-size:15px;outline:none}details[open]{border-left-color:var(--accent)}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 13 ・ Lecture 83 ・ 解説回</span>
+  <h1 class="lecture-title">Parallelization workflows<span class="ja-sub">— 独立タスクを並列で動かす workflow パターン</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section><h2>① パターン定義</h2>
+  <p><strong>Parallelization</strong> = 互いに依存しない複数のLLM呼び出しを <strong>同時並行</strong> で実行 → 結果を集約する workflow パターン。</p>
+  <div class="card accent"><strong>2つのサブパターン:</strong>
+    <ul>
+      <li><strong>Sectioning</strong>: 1つのタスクを並列に分割 (例: 文章の章ごとに別Claudeに要約させて結合)</li>
+      <li><strong>Voting</strong>: 同じタスクを複数回並列実行 → 多数決で結論 (品質UP)</li>
+    </ul>
+  </div></section>
+
+  <section><h2>② コード例 (asyncio.gather)</h2>
+<pre><code>import asyncio
+from anthropic import AsyncAnthropic
+
+client = AsyncAnthropic()
+
+async def review_aspect(code: str, aspect: str) -&gt; str:
+    """1観点で並列レビュー"""
+    response = await client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=1024,
+        messages=[{"role": "user", "content":
+            f"以下のコードを {aspect} 観点でレビューして:\n{code}"
+        }]
+    )
+    return f"[{aspect}] {response.content[0].text}"
+
+async def parallel_review(code: str):
+    aspects = ["security", "performance", "readability", "testability"]
+    # 4観点を並列実行
+    results = await asyncio.gather(
+        *[review_aspect(code, a) for a in aspects]
+    )
+    return "\n\n".join(results)
+
+# 直列なら 4回 × 2秒 = 8秒
+# 並列なら max(2秒) × 4 = 約2秒</code></pre></section>
+
+  <section><h2>③ 使い所</h2>
+  <ul>
+    <li><strong>独立評価の集約</strong>: 多観点コードレビュー / 多軸分析</li>
+    <li><strong>多数決</strong>: 同じ質問を3回投げて多数決 (品質保証)</li>
+    <li><strong>大量データ処理</strong>: 100ファイルを並列要約</li>
+    <li><strong>監視・ガードレール</strong>: 本処理と「これは安全か?」チェックを並列で</li>
+  </ul></section>
+
+  <section><h2>④ 注意点</h2>
+  <ul>
+    <li>Rate limit に注意 (一気に呼ぶと制限に当たる)</li>
+    <li>並列度は <strong>5〜10</strong> 程度推奨。100並列はNG</li>
+    <li>各サブタスクは <strong>本当に独立</strong> か確認 (依存があれば chaining)</li>
+  </ul>
+  <div class="card mint"><strong>並列ツール:</strong> Python なら <code class="inline">asyncio.gather</code> / Node.js なら <code class="inline">Promise.all</code> / Anthropic Batch API も並列実行に有効。</div></section>
+
+  <section><h2>⑤ 中学生向けに例えると</h2>
+  <p>料理で「野菜切り」「肉炒め」「味噌汁」を1人で順番にやると30分。3人で並列にやると10分。独立した作業なら人数増やせば速い。</p></section>
+
+  <section><h2>⑥ 自分メモ</h2><div class="memo-area">並列化できる業務タスクのアイデア…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 83: Parallelization workflows</footer>
+</main></body></html>

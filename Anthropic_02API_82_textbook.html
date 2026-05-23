@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 82: Agents and workflows | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}table.vocab{width:100%;background:var(--paper-2);border-collapse:collapse;margin:16px 0;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}table.vocab th,table.vocab td{border:1px solid var(--border);padding:10px 14px;text-align:left;font-size:15px}table.vocab th{background:var(--tag-bg);color:var(--tag-text);font-weight:700}details{background:var(--paper-2);border-radius:var(--radius);padding:14px 22px;margin:10px 0;box-shadow:var(--shadow);border-left:4px solid var(--tag-bg)}details summary{cursor:pointer;font-weight:700;font-size:15px;outline:none}details[open]{border-left-color:var(--accent)}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 13 ・ Lecture 82 ・ 解説回</span>
+  <h1 class="lecture-title">Agents and workflows<span class="ja-sub">— エージェントとワークフローの定義・違い・選び方</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section><h2>① 結論 — 2つは別物</h2>
+  <p>Anthropic 公式の定義 (2025年4月「Building effective agents」):</p>
+  <ul>
+    <li><strong>Workflow</strong>: <strong>事前に決められた経路</strong> で LLM とtool を組合せて動かす (決定論的)</li>
+    <li><strong>Agent</strong>: LLM が<strong>動的に次のアクションを判断</strong>して動く (非決定論的・自律的)</li>
+  </ul>
+  <div class="card accent"><strong>核心:</strong> 「使う前に流れが決まってる」= workflow / 「使いながら流れを決める」= agent。</div></section>
+
+  <section><h2>② 比較表</h2>
+  <table class="vocab"><thead><tr><th style="width: 22%;">観点</th><th>Workflow</th><th>Agent</th></tr></thead><tbody>
+    <tr><td><strong>制御フロー</strong></td><td>固定 (人間が設計)</td><td>動的 (LLMが判断)</td></tr>
+    <tr><td><strong>予測可能性</strong></td><td>高い・デバッグ容易</td><td>低い・テスト難しい</td></tr>
+    <tr><td><strong>柔軟性</strong></td><td>低い (パターン固定)</td><td>高い (未知タスク対応)</td></tr>
+    <tr><td><strong>コスト</strong></td><td>低い (必要な分のみ)</td><td>高い (試行錯誤)</td></tr>
+    <tr><td><strong>適する場面</strong></td><td>業務自動化・既知タスク</td><td>未知タスク・探索系</td></tr>
+  </tbody></table></section>
+
+  <section><h2>③ 選び方の判断軸</h2>
+  <ol>
+    <li><strong>タスクの流れが事前に分かる</strong> → workflow</li>
+    <li><strong>ユーザー要望が毎回違う・未知</strong> → agent</li>
+    <li><strong>失敗時のコストが大きい</strong> → workflow (予測可能)</li>
+    <li><strong>探索・調査タスク</strong> → agent</li>
+    <li><strong>本番運用・SLA厳しい</strong> → workflow</li>
+  </ol>
+  <div class="card mint"><strong>Anthropic 推奨:</strong> まず workflow で実装 → 動的判断が必要な部分だけ agent 化。最初から全部 agent 化は過剰設計になりがち。</div></section>
+
+  <section><h2>④ Workflow の5パターン (#83-#85 で詳述)</h2>
+  <ul>
+    <li><strong>Parallelization</strong> (#83): 独立タスクを並列実行</li>
+    <li><strong>Chaining</strong> (#84): タスクを連鎖して逐次実行</li>
+    <li><strong>Routing</strong> (#85): 入力に応じて分岐先選択</li>
+    <li><strong>Orchestrator-workers</strong>: マスターが子タスクに分割</li>
+    <li><strong>Evaluator-optimizer</strong>: 生成 → 評価 → 改善ループ</li>
+  </ul></section>
+
+  <section><h2>⑤ 中学生向けに例えると</h2>
+  <p><strong>Workflow</strong> = レシピ通りに料理。手順1→2→3→完成。<br>
+  <strong>Agent</strong> = 自由料理。冷蔵庫見て「今日はカレー」「いや、肉じゃが」と臨機応変。</p></section>
+
+  <section><h2>⑥ 自分メモ</h2><div class="memo-area">自分の業務で workflow / agent どっち向き?…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 82: Agents and workflows<br>公式: <a href="https://www.anthropic.com/research/building-effective-agents">Building effective agents</a></footer>
+</main></body></html>
