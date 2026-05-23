@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 75: MCP review | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}details{background:var(--paper-2);border-radius:var(--radius);padding:14px 22px;margin:10px 0;box-shadow:var(--shadow);border-left:4px solid var(--tag-bg)}details summary{cursor:pointer;font-weight:700;font-size:15px;outline:none}details[open]{border-left-color:var(--accent)}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 12 ・ Lecture 75 ・ 振り返り</span>
+  <h1 class="lecture-title">MCP review<span class="ja-sub">— Model Context Protocol モジュール総復習</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section><h2>① 学んできた範囲</h2>
+  <ul>
+    <li><strong>#65 Introducing MCP</strong>: AI 用の USB-C 規格</li>
+    <li><strong>#66 MCP clients</strong>: Host / Client / Server 三層</li>
+    <li><strong>#67 Project setup</strong>: uv + mcp[cli] でセットアップ</li>
+    <li><strong>#68 Defining tools with MCP</strong>: @mcp.tool() でtool定義</li>
+    <li><strong>#69 The server inspector</strong>: mcp dev でデバッグ</li>
+    <li><strong>#70 Implementing a client</strong>: Python で自前クライアント</li>
+    <li><strong>#71 Defining resources</strong>: @mcp.resource() で読取り専用データ</li>
+    <li><strong>#72 Accessing resources</strong>: クライアントから read_resource</li>
+    <li><strong>#73 Defining prompts</strong>: @mcp.prompt() でテンプレ提供</li>
+    <li><strong>#74 Prompts in the client</strong>: クライアントから get_prompt</li>
+  </ul></section>
+
+  <section><h2>② 核心まとめ</h2>
+  <div class="card accent">
+    <ul>
+      <li><strong>MCP = AI 用 USB-C 規格</strong>。1サーバー作れば全AIアプリで使い回せる</li>
+      <li><strong>3本柱</strong>: Tools (動詞) / Resources (名詞) / Prompts (テンプレ)</li>
+      <li><strong>サーバー実装</strong>: FastMCP デコレータで関数を即tool/resource/prompt化</li>
+      <li><strong>クライアント実装</strong>: ClientSession + stdio_client (or sse_client)</li>
+      <li><strong>デバッグ</strong>: mcp dev で Inspector UI</li>
+      <li><strong>本番連携</strong>: Claude Desktop / Cursor / Claude API すべてMCP対応</li>
+    </ul>
+  </div></section>
+
+  <section><h2>③ チェックポイント</h2>
+  <details><summary>Q1. MCP の喩えは?</summary><p>AI 用 USB-C 規格。共通プロトコルで複数AIから複数外部システムへ接続。</p></details>
+  <details><summary>Q2. 3本柱は?</summary><p>Tools (実行) / Resources (参照) / Prompts (テンプレ)</p></details>
+  <details><summary>Q3. tool と resource の使い分けは?</summary><p>副作用あり (実行) → Tool / 副作用なし (読み取り) → Resource。Claude 自動判断 → Tool / ユーザー明示指定 → Resource。</p></details>
+  <details><summary>Q4. サーバー開発でデバッグツールは?</summary><p>MCP Inspector (<code class="inline">uv run mcp dev main.py</code>)。ブラウザ UI で tool 実行・JSON-RPC ログ確認。</p></details>
+  <details><summary>Q5. 自前 Python クライアント実装の3層は?</summary><p>StdioServerParameters → stdio_client → ClientSession の3層ネスト。</p></details></section>
+
+  <section><h2>④ 次に何ができる?</h2>
+  <ul>
+    <li>社内システム向け MCP サーバーを書いて、Claude.ai/Code から呼び出し</li>
+    <li>公開MCP server (GitHub/Slack/Notion) を Claude Desktop に追加して業務効率化</li>
+    <li>自前アプリに MCP クライアント組込み → Claude+MCP エージェント開発</li>
+    <li>チーム内プロンプト集を prompt 化して全員で共有</li>
+  </ul></section>
+
+  <section><h2>⑤ 自分メモ</h2><div class="memo-area">MCP モジュール全体を通しての気づき・自分プロジェクト案…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 75: MCP review</footer>
+</main></body></html>

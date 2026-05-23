@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 74: Prompts in the client | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}pre{background:#f4eedb;border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:"Consolas","Menlo",monospace;font-size:14px;line-height:1.7;margin:12px 0;border:1px solid var(--border)}code.inline{background:#f4eedb;padding:2px 6px;border-radius:4px;font-family:"Consolas","Menlo",monospace;font-size:.92em;color:#a85200}details{background:var(--paper-2);border-radius:var(--radius);padding:14px 22px;margin:10px 0;box-shadow:var(--shadow);border-left:4px solid var(--tag-bg)}details summary{cursor:pointer;font-weight:700;font-size:15px;outline:none}details[open]{border-left-color:var(--accent)}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 12 ・ Lecture 74 ・ 演習回</span>
+  <h1 class="lecture-title">Prompts in the client<span class="ja-sub">— クライアント側で prompt を取得・利用する</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section><h2>① 本章の目的</h2>
+  <p>#73 で prompt を <strong>提供する側</strong> を学んだ。本章は <strong>使う側</strong> 。クライアント (自前アプリ / Claude Desktop) で prompt を取得して活用する方法。</p></section>
+
+  <section><h2>② Python クライアントから取得</h2>
+<pre><code>async with ClientSession(read, write) as session:
+    await session.initialize()
+
+    # 1. prompt 一覧取得
+    prompts = await session.list_prompts()
+    for p in prompts.prompts:
+        print(f"- {p.name}: {p.description}")
+        for arg in p.arguments:
+            print(f"    arg: {arg.name} ({'必須' if arg.required else '任意'})")
+
+    # 2. 引数を埋めて prompt を取得
+    result = await session.get_prompt(
+        "code_review_request",
+        arguments={"file_path": "src/utils.py", "focus": "security"}
+    )
+    # → 穴埋め済みのテンプレが返る
+
+    # 3. 取得した prompt を Claude API に渡す
+    messages = result.messages
+    response = client.messages.create(
+        model="claude-opus-4-7",
+        max_tokens=2048,
+        messages=[{"role": m.role, "content": m.content.text} for m in messages]
+    )</code></pre></section>
+
+  <section><h2>③ Claude Desktop での体験</h2>
+  <p>Claude Desktop ではユーザーが UI 上で:</p>
+  <ol>
+    <li>入力欄に <strong>「/」</strong> を打つ → コマンドメニュー出現</li>
+    <li>登録されている prompts 一覧が表示</li>
+    <li>選択 → 引数入力フォームが表示</li>
+    <li>引数を埋めて Enter → prompt が会話に挿入</li>
+    <li>Claude が応答開始</li>
+  </ol>
+  <div class="card mint"><strong>体感:</strong> 「テンプレを呼ぶ → 穴埋め → Claude に投げる」が <strong>UIワンクリック</strong> で完結。</div></section>
+
+  <section><h2>④ 業務応用パターン</h2>
+  <ul>
+    <li><strong>チーム共通プロンプト集</strong>: 「障害レポート」「日報」「議事録要約」を MCP server に集約 → 全員が同じ品質で使える</li>
+    <li><strong>ベテランのプロンプト共有</strong>: 熟練者の良いプロンプトを skill化 + prompt 化</li>
+    <li><strong>ノーコード化</strong>: 非エンジニアでも UI でテンプレを使える</li>
+  </ul></section>
+
+  <section><h2>⑤ 中学生向けに例えると</h2>
+  <p>レポート用紙の <strong>穴埋めテンプレ</strong> を本棚に置いてあり、「読書感想文」「日記」「観察記録」と選ぶだけで適切なフォーマットが出てくる。みんなが同じレベルで書ける。</p></section>
+
+  <section><h2>⑥ 理解度チェック</h2>
+  <details><summary>Q1. クライアントから prompt を使う3ステップは?</summary><p>① list_prompts で一覧取得 ② get_prompt(name, arguments) で穴埋め ③ 返ってきた messages を Claude API に渡す</p></details></section>
+
+  <section><h2>⑦ 自分メモ</h2><div class="memo-area">業務で共有したい prompt 候補…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 74: Prompts in the client</footer>
+</main></body></html>

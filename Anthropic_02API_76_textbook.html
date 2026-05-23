@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 76: Quiz on Model Context Protocol | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}details{background:var(--paper-2);border-radius:var(--radius);padding:14px 22px;margin:10px 0;box-shadow:var(--shadow);border-left:4px solid var(--tag-bg)}details summary{cursor:pointer;font-weight:700;font-size:15px;outline:none}details[open]{border-left-color:var(--accent)}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 12 ・ Lecture 76 ・ クイズ</span>
+  <h1 class="lecture-title">Quiz on Model Context Protocol<span class="ja-sub">— MCP モジュール理解度クイズ</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section><h2>① 範囲</h2>
+  <p>#65-#75 (Model Context Protocol) モジュール:</p>
+  <ul>
+    <li>MCP の基本コンセプト</li>
+    <li>Host / Client / Server 三層構造</li>
+    <li>Tools / Resources / Prompts (3本柱)</li>
+    <li>FastMCP でのサーバー実装</li>
+    <li>クライアント実装 (Python SDK)</li>
+    <li>MCP Inspector でのデバッグ</li>
+  </ul></section>
+
+  <section><h2>② セルフチェック (頻出ポイント)</h2>
+  <details><summary>Q: MCP の目的は?</summary><p>AI アプリと外部システムをつなぐ <strong>オープン規格</strong>。1サーバー作れば複数AIから使い回せる。</p></details>
+  <details><summary>Q: Host・Client・Server の関係は?</summary><p>Host (アプリ全体) ⊃ Client (1サーバー専属接続) ⇄ Server (外部システム公開)</p></details>
+  <details><summary>Q: 3本柱は何?</summary><p><strong>Tools</strong> (動詞・実行) / <strong>Resources</strong> (名詞・参照) / <strong>Prompts</strong> (テンプレ)</p></details>
+  <details><summary>Q: Tool 定義のデコレータは?</summary><p><code>@mcp.tool()</code>。type hints + docstring から JSON schema 自動生成。</p></details>
+  <details><summary>Q: サーバー実装したら最初にやるテストは?</summary><p>MCP Inspector (<code>uv run mcp dev main.py</code>)。Claude Desktop 登録前に動作確認。</p></details>
+  <details><summary>Q: クライアントが server に問い合わせる主な6リクエストは?</summary><p>initialize / tools/list / tools/call / resources/list / resources/read / prompts/list / prompts/get</p></details>
+  <details><summary>Q: transport の3種は?</summary><p>stdio (ローカル) / HTTP+SSE (旧版リモート) / Streamable HTTP (新版・推奨)</p></details>
+  <details><summary>Q: tool テスト前に Claude に接続するのは?</summary><p>NG。MCP Inspector で先にテストする。「Testing isn't needed」「Connect immediately」「Test in production」は誤り。<strong>Use the MCP Inspector in your browser</strong> が正解。</p></details></section>
+
+  <section><h2>③ クイズリンク</h2>
+  <p>SkillJar のクイズ: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/">クイズへ</a> (MCPモジュール末尾のQuizにアクセス)</p></section>
+
+  <section><h2>④ 自分メモ</h2><div class="memo-area">クイズ結果・理解の弱点…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 76: Quiz on Model Context Protocol<br><strong>MCPモジュール完走</strong></footer>
+</main></body></html>

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 71: Defining resources | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}pre{background:#f4eedb;border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:"Consolas","Menlo",monospace;font-size:14px;line-height:1.7;margin:12px 0;border:1px solid var(--border)}code.inline{background:#f4eedb;padding:2px 6px;border-radius:4px;font-family:"Consolas","Menlo",monospace;font-size:.92em;color:#a85200}details{background:var(--paper-2);border-radius:var(--radius);padding:14px 22px;margin:10px 0;box-shadow:var(--shadow);border-left:4px solid var(--tag-bg)}details summary{cursor:pointer;font-weight:700;font-size:15px;outline:none}details[open]{border-left-color:var(--accent)}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 12 ・ Lecture 71 ・ 演習回</span>
+  <h1 class="lecture-title">Defining resources<span class="ja-sub">— MCP server で「リソース」を提供する</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section><h2>① Resource って何?</h2>
+  <p>MCP の3本柱 (Tools / Resources / Prompts) のうち、Resources は <strong>「読み取り専用データ」</strong> の提供。Tool は動詞 (実行) / Resource は名詞 (参照)。</p>
+  <div class="card accent"><strong>例:</strong>
+    <ul>
+      <li>ファイル一覧 (file://path/)</li>
+      <li>DB スキーマ (db://schema/users)</li>
+      <li>API レスポンスのキャッシュ (api://github/repos)</li>
+      <li>設定値・定数 (config://app/settings)</li>
+    </ul>
+  </div></section>
+
+  <section><h2>② FastMCP での定義</h2>
+<pre><code>from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("my-server")
+
+@mcp.resource("config://app/settings")
+def get_settings() -&gt; str:
+    """アプリ設定の取得"""
+    return """
+    {
+      "theme": "dark",
+      "language": "ja",
+      "max_retries": 3
+    }
+    """
+
+@mcp.resource("file://docs/{name}")
+def get_doc(name: str) -&gt; str:
+    """ドキュメント取得 (動的URI)"""
+    with open(f"docs/{name}.md") as f:
+        return f.read()</code></pre></section>
+
+  <section><h2>③ URI のパターン</h2>
+  <ul>
+    <li><strong>静的URI</strong>: <code class="inline">config://app/settings</code> (固定)</li>
+    <li><strong>動的URI</strong>: <code class="inline">file://docs/{name}</code> ({name} で可変)</li>
+    <li><strong>スキーム自由</strong>: file/// db/// api/// config/// memo/// 等好きに命名</li>
+  </ul>
+  <div class="card mint"><strong>scheme は自由</strong>。資源の種類が分かるように命名。</div></section>
+
+  <section><h2>④ Tool との使い分け</h2>
+  <table style="width:100%;background:#fff;border-collapse:collapse;margin:16px 0;border-radius:12px;overflow:hidden"><thead><tr style="background:var(--tag-bg)"><th style="padding:10px 14px;text-align:left;border:1px solid var(--border)">場面</th><th style="padding:10px 14px;text-align:left;border:1px solid var(--border)">Tool / Resource</th></tr></thead><tbody>
+    <tr><td style="padding:10px 14px;border:1px solid var(--border)">ファイル「読む」だけ</td><td style="padding:10px 14px;border:1px solid var(--border)">Resource</td></tr>
+    <tr><td style="padding:10px 14px;border:1px solid var(--border)">ファイル「書く・編集」</td><td style="padding:10px 14px;border:1px solid var(--border)">Tool</td></tr>
+    <tr><td style="padding:10px 14px;border:1px solid var(--border)">DB SELECT</td><td style="padding:10px 14px;border:1px solid var(--border)">Resource</td></tr>
+    <tr><td style="padding:10px 14px;border:1px solid var(--border)">DB INSERT/UPDATE</td><td style="padding:10px 14px;border:1px solid var(--border)">Tool</td></tr>
+    <tr><td style="padding:10px 14px;border:1px solid var(--border)">API GET</td><td style="padding:10px 14px;border:1px solid var(--border)">Resource (or Tool)</td></tr>
+    <tr><td style="padding:10px 14px;border:1px solid var(--border)">API POST/PUT</td><td style="padding:10px 14px;border:1px solid var(--border)">Tool</td></tr>
+  </tbody></table>
+  <div class="card mint"><strong>原則:</strong> 副作用なし = Resource / 副作用あり = Tool。</div></section>
+
+  <section><h2>⑤ 中学生向けに例えると</h2>
+  <p>図書館で本を「読む」のが Resource (借りるだけ)、「書き込む」のが Tool (本に痕跡を残す)。MCP は両方区別して安全に提供する。</p></section>
+
+  <section><h2>⑥ 理解度チェック</h2>
+  <details><summary>Q1. Tool と Resource の違いは?</summary><p>Tool = 動詞・副作用あり (実行)。Resource = 名詞・副作用なし (参照)。</p></details>
+  <details><summary>Q2. 動的URIの書き方は?</summary><p><code class="inline">@mcp.resource("file://docs/{name}")</code> のように <code class="inline">{name}</code> プレースホルダーを使う。関数の引数で受け取る。</p></details></section>
+
+  <section><h2>⑦ 自分メモ</h2><div class="memo-area">resource を使う場面…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 71: Defining resources</footer>
+</main></body></html>

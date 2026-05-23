@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 72: Accessing resources | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}pre{background:#f4eedb;border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:"Consolas","Menlo",monospace;font-size:14px;line-height:1.7;margin:12px 0;border:1px solid var(--border)}code.inline{background:#f4eedb;padding:2px 6px;border-radius:4px;font-family:"Consolas","Menlo",monospace;font-size:.92em;color:#a85200}details{background:var(--paper-2);border-radius:var(--radius);padding:14px 22px;margin:10px 0;box-shadow:var(--shadow);border-left:4px solid var(--tag-bg)}details summary{cursor:pointer;font-weight:700;font-size:15px;outline:none}details[open]{border-left-color:var(--accent)}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 12 ・ Lecture 72 ・ 演習回</span>
+  <h1 class="lecture-title">Accessing resources<span class="ja-sub">— クライアントから resource を読み込む</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section><h2>① 本章の目的</h2>
+  <p>#71 で resource を <strong>提供する側</strong> を学んだ。本章は <strong>使う側</strong> 。Claude or 自前クライアントから resource を読み込む方法。</p></section>
+
+  <section><h2>② Python クライアントから読む</h2>
+<pre><code>async with ClientSession(read, write) as session:
+    await session.initialize()
+
+    # 1. resource 一覧取得
+    resources = await session.list_resources()
+    for r in resources.resources:
+        print(f"- {r.uri}: {r.name}")
+
+    # 2. 特定 resource を読む (静的URI)
+    content = await session.read_resource("config://app/settings")
+    print(content.contents[0].text)
+
+    # 3. 動的URI で読む
+    doc = await session.read_resource("file://docs/intro")
+    # → docs/intro.md の中身が返る</code></pre></section>
+
+  <section><h2>③ Claude が resource を読むパターン</h2>
+  <p>Claude Desktop 等のクライアントでは、ユーザーが <strong>@で resource を指定</strong> できる:</p>
+<pre><code>ユーザー: "@config://app/settings をベースに、本番用の設定を提案して"
+
+# Claude Desktop が:
+# 1. MCP server から resource を読込 (read_resource)
+# 2. その内容を Claude API のmessages に含める
+# 3. Claude が「現在の設定」を参考に提案を生成</code></pre>
+  <div class="card mint"><strong>核心:</strong> resource は <strong>ユーザーが明示的に「これを参考に」</strong> と指定する。tool のように Claude が自動選択せず、明示参照されたものだけ context に入る。</div></section>
+
+  <section><h2>④ resource vs tool — 呼ばれ方の違い</h2>
+  <ul>
+    <li><strong>Tool</strong>: Claude が自動で「これ使うべき」と判断 → call_tool</li>
+    <li><strong>Resource</strong>: ユーザーまたはアプリが「これ読んで」と明示指定 → read_resource</li>
+  </ul></section>
+
+  <section><h2>⑤ 中学生向けに例えると</h2>
+  <p>Tool は「先生が自分で参考書を開いて答える」、Resource は「生徒が『この本のここを見て答えて』と指定する」。指示の主体が違う。</p></section>
+
+  <section><h2>⑥ 理解度チェック</h2>
+  <details><summary>Q1. read_resource はいつ呼ばれる?</summary><p>① ユーザーが明示的に @uri 指定したとき ② アプリが「この resource を context に入れる」と判断したとき。Claude 自動判断ではない。</p></details></section>
+
+  <section><h2>⑦ 自分メモ</h2><div class="memo-area">resource 活用シナリオ…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 72: Accessing resources</footer>
+</main></body></html>

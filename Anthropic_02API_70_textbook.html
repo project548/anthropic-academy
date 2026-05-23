@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 70: Implementing a client | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}pre{background:#f4eedb;border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:"Consolas","Menlo",monospace;font-size:14px;line-height:1.7;margin:12px 0;border:1px solid var(--border)}code.inline{background:#f4eedb;padding:2px 6px;border-radius:4px;font-family:"Consolas","Menlo",monospace;font-size:.92em;color:#a85200}details{background:var(--paper-2);border-radius:var(--radius);padding:14px 22px;margin:10px 0;box-shadow:var(--shadow);border-left:4px solid var(--tag-bg)}details summary{cursor:pointer;font-weight:700;font-size:15px;outline:none}details[open]{border-left-color:var(--accent)}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 12 ・ Lecture 70 ・ 演習回</span>
+  <h1 class="lecture-title">Implementing a client<span class="ja-sub">— Python SDK で自前 MCP クライアントを実装する</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section><h2>① 本章の目的</h2>
+  <p>#66 でクライアントの概念、#67-#69 でサーバー側を学んだ。今度は <strong>Python で MCP クライアントを自分で書く</strong> 番。Claude Desktop / Cursor を使わず、自前アプリから MCP サーバーに繋ぐ実装。</p>
+  <div class="card accent"><strong>ゴール:</strong> 自前 Python アプリから MCP サーバーに繋いで <code class="inline">tools/list</code> + <code class="inline">tools/call</code> ができるようになる。</div></section>
+
+  <section><h2>② 最小クライアント実装 (stdio)</h2>
+<pre><code>from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+import asyncio
+
+async def main():
+    # サーバー起動パラメータ
+    server_params = StdioServerParameters(
+        command="python",
+        args=["weather_server.py"],  # 起動する MCP server
+    )
+
+    # stdio で接続
+    async with stdio_client(server_params) as (read, write):
+        async with ClientSession(read, write) as session:
+            # 1. 初期化 (capability negotiation)
+            await session.initialize()
+
+            # 2. tool 一覧取得
+            tools = await session.list_tools()
+            for t in tools.tools:
+                print(f"- {t.name}: {t.description}")
+
+            # 3. tool 呼び出し
+            result = await session.call_tool(
+                "get_weather",
+                arguments={"city": "Tokyo"}
+            )
+            print(result.content[0].text)
+
+asyncio.run(main())</code></pre></section>
+
+  <section><h2>③ 流れ — 5ステップ</h2>
+  <ol>
+    <li><strong>StdioServerParameters</strong>: サーバー起動コマンドを定義</li>
+    <li><strong>stdio_client</strong>: 子プロセスを起動 + stdio パイプを開く</li>
+    <li><strong>ClientSession</strong>: 接続セッション確立</li>
+    <li><strong>session.initialize()</strong>: capability negotiation</li>
+    <li><strong>list_tools / call_tool / read_resource / get_prompt</strong>: API 呼び出し</li>
+  </ol></section>
+
+  <section><h2>④ Claude API と組み合わせる</h2>
+<pre><code># MCP server の tools を取得 → Claude API に渡す
+tools_list = await session.list_tools()
+anthropic_tools = [
+    {"name": t.name, "description": t.description, "input_schema": t.inputSchema}
+    for t in tools_list.tools
+]
+
+response = client.messages.create(
+    model="claude-opus-4-7",
+    max_tokens=1024,
+    tools=anthropic_tools,
+    messages=[{"role": "user", "content": "東京の天気は?"}]
+)
+
+# Claude が tool_use を要求したら MCP server に転送
+for block in response.content:
+    if block.type == "tool_use":
+        result = await session.call_tool(block.name, arguments=block.input)
+        # ... 結果を Claude に戻す</code></pre>
+  <div class="card mint"><strong>真の威力:</strong> Claude API + MCP server を組合せれば、自前アプリで「Claudeが MCPツールを自動選択して呼ぶ」エージェントが作れる。</div></section>
+
+  <section><h2>⑤ HTTP 接続版 (リモート MCP server)</h2>
+<pre><code>from mcp.client.sse import sse_client
+
+async def main():
+    async with sse_client("https://slack-mcp.example.com/mcp") as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+            # ... 以下同じ</code></pre></section>
+
+  <section><h2>⑥ 中学生向けに例えると</h2>
+  <p>#66 Claude Desktop のような <strong>「既製品の使う側」</strong> ではなく、<strong>「自分で使う側を作る」</strong>。家電を買うか、自分で家電を作るかの違い。</p></section>
+
+  <section><h2>⑦ 理解度チェック</h2>
+  <details><summary>Q1. クライアント実装の3層は?</summary><p>StdioServerParameters → stdio_client → ClientSession の3層をネストしてセッション確立。</p></details>
+  <details><summary>Q2. Claude API と組合せるには?</summary><p>① MCP server から tools 一覧取得 ② Claude API に tools として渡す ③ Claude が tool_use 要求 ④ MCP server に call_tool で転送 ⑤ 結果を Claude に戻す。</p></details></section>
+
+  <section><h2>⑧ 自分メモ</h2><div class="memo-area">自前クライアント実装試行…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 70: Implementing a client<br>公式: <a href="https://modelcontextprotocol.io/quickstart/client">MCP Client Quickstart</a></footer>
+</main></body></html>
