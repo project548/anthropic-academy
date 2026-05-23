@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 5: ドキュメントの操作 — エージェントスキルで文書を扱う | Anthropic Academy 教科書</title>
+<style>:root { --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a; --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028; --soft-blue: #cfe7ef; --soft-mint: #d8ecd6; --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+.card.blue { background: var(--soft-blue); border-left: 4px solid #4a8aa3; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+pre { background: #f4eedb; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: "Consolas","Menlo",monospace; font-size: 14px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--border); }
+code.inline { background: #f4eedb; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Menlo",monospace; font-size: 0.92em; color: #a85200; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }</style></head><body><main class="book">
+  <span class="chapter-tag">Module 1 ・ Lecture 5 ・ 解説回 ・ コース01スキル</span>
+  <h1 class="lecture-title">ドキュメントの操作<span class="ja-sub">— エージェントスキル(Agent Skills) で Word/PDF/Excel を扱う</span></h1>
+  <p class="subtitle">Anthropic Academy / コース01 Introduction to Agent Skills</p>
+
+  <section><h2>① まず結論 — Agent Skills のドキュメント操作って?</h2>
+  <p>Claude の <strong>Agent Skills</strong> 機能で、Word(.docx) / PowerPoint(.pptx) / Excel(.xlsx) / PDF を作成・編集・読込できる。AnthropicがClaude.ai に組み込み済みのスキルが提供されている。</p>
+  <div class="card accent"><strong>できること:</strong><ul>
+    <li>Word ドキュメントを <strong>新規作成</strong> (見出し・段落・表・画像入り)</li>
+    <li>既存PowerPoint を <strong>編集</strong> (スライド追加・テキスト書換)</li>
+    <li>Excel で <strong>表データ操作</strong> (関数・グラフ含む)</li>
+    <li>PDF を <strong>読込 + 要約 + 改編</strong></li>
+  </ul></div></section>
+
+  <section><h2>② Agent Skills のしくみ</h2>
+  <p>Skills = <strong>事前定義された手順書のセット</strong>。Claude が実行時に必要なskillを動的にロードしてタスク実行する。</p>
+<pre><code># Skills の構成
+.claude/skills/
+├── docx-creator/
+│   ├── SKILL.md       ← 手順書 (Claudeが読む)
+│   └── scripts/       ← 実行コード (Python等)
+├── xlsx-editor/
+└── pdf-processor/</code></pre>
+  <div class="card mint"><strong>核心:</strong> Skills は <strong>「特定領域の専門知識」を切り出してClaude に貸す</strong> 仕組み。ドキュメント作成のように「決まった手順がある作業」を高品質に再現できる。</div></section>
+
+  <section><h2>③ どうやって使う?</h2>
+  <p>Claude.ai (Pro/Team/Enterprise) では既にskills が組み込まれている:</p>
+  <ol>
+    <li>Claude.ai で「<strong>WordでXX報告書を作って</strong>」と頼む</li>
+    <li>Claude が docx-creator skill を自動ロード</li>
+    <li>Code Execution sandbox 内でpython-docxを使って .docx 生成</li>
+    <li>ダウンロード可能な .docx ファイルが応答に添付される</li>
+  </ol>
+  <div class="card blue"><strong>ユーザー視点:</strong> 「Wordでマニュアル作って」と話すだけ。<strong>Claude が裏側でskillをロード+コード実行+ファイル生成</strong> を全部やる。</div></section>
+
+  <section><h2>④ 自前 skill を作るには</h2>
+  <p>Claude Code では <code class="inline">~/.claude/skills/</code> に自作 skill を置ける:</p>
+<pre><code># SKILL.md の構造
+---
+name: my-docx-skill
+description: 顧客報告書をWordで作るskill
+---
+
+## 使い方
+"顧客 {名前} 向けの月次報告書を作って" と頼まれたら...
+
+## 手順
+1. テンプレ template.docx を読み込み
+2. プレースホルダ置換
+3. 保存して返す</code></pre>
+  <div class="card accent"><strong>Skill = 「ノウハウの再利用パッケージ」</strong>。社内で蓄積した独自の作成手順をskill化すれば、誰でも同じ品質で再現できる。</div></section>
+
+  <section><h2>⑤ 中学生向けに例えると</h2>
+  <table class="vocab"><thead><tr><th style="width: 44%;">学校の例え</th><th>Skills の対応</th></tr></thead><tbody>
+    <tr><td>「読書感想文の書き方マニュアル」を本棚から取って読む</td><td>Skill のロード</td></tr>
+    <tr><td>マニュアル通りに作文を書く</td><td>Claude が手順実行</td></tr>
+    <tr><td>図工で「折り紙の鶴の折り方」を見ながら作る</td><td>specialized skill</td></tr>
+    <tr><td>マニュアル増やせばいろんな作業ができる</td><td>Skills 追加で機能拡張</td></tr>
+  </tbody></table>
+  <div class="card accent"><strong>核心:</strong> Claude は「博識な人」だが「マニュアル(skill)を持つと専門家」になる。文書作業ならskillで Word/PDF プロフェッショナル並み。</div></section>
+
+  <section><h2>⑥ 理解度チェック</h2>
+  <details><summary>Q1. Agent Skills でできるドキュメント操作は?</summary>
+  <p>Word / PowerPoint / Excel / PDF の <strong>作成・編集・読込</strong>。Claude.ai に組み込み済みのskillで対応。</p></details>
+  <details><summary>Q2. Skill = 何?</summary>
+  <p><strong>手順書(SKILL.md) + 実行コード のセット</strong>。Claude が実行時に動的ロードして使う。専門領域のノウハウを切り出して再利用できる。</p></details>
+  <details><summary>Q3. Skills のメリットは?</summary>
+  <p>① 高品質再現 (同じ手順で同じ結果) ② 専門知識を切り出して共有可能 ③ Claude のベース能力に追加できる「拡張」として機能</p></details></section>
+
+  <section><h2>⑦ 自分メモ</h2><div class="memo-area">自分が欲しいskill…例: 議事録テンプレ自動生成 / 請求書生成 / プレゼン資料骨子作成…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 5: ドキュメントの操作<br>元レクチャー: <a href="https://anthropic.skilljar.com/introduction-to-agent-skills/434528">SkillJar — Document handling</a></footer>
+</main></body></html>

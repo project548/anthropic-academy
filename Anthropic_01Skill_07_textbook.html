@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 6: コードのためのClaude — Claude をプログラミングに活かす | Anthropic Academy 教科書</title>
+<style>:root { --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a; --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028; --soft-blue: #cfe7ef; --soft-mint: #d8ecd6; --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+.card.blue { background: var(--soft-blue); border-left: 4px solid #4a8aa3; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+pre { background: #f4eedb; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: "Consolas","Menlo",monospace; font-size: 14px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--border); }
+code.inline { background: #f4eedb; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Menlo",monospace; font-size: 0.92em; color: #a85200; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }</style></head><body><main class="book">
+  <span class="chapter-tag">Module 1 ・ Lecture 6 ・ 解説回 ・ コース01スキル</span>
+  <h1 class="lecture-title">コードのためのClaude<span class="ja-sub">— Claude をプログラミングに活かす機能の全体像</span></h1>
+  <p class="subtitle">Anthropic Academy / コース01 Introduction to Agent Skills</p>
+
+  <section><h2>① まず結論 — Claude のコード力</h2>
+  <p>Claude (特に Opus / Sonnet 4.x系) は <strong>業界最高水準のコーディング能力</strong>。SWE-bench Verified で74%超達成 (2025年時点)。プログラム作成・デバッグ・リファクタ・テスト生成すべてが可能。</p>
+  <div class="card accent"><strong>主な使い方:</strong><ul>
+    <li><strong>Claude.ai</strong> でコードを書いてもらう (ブラウザ)</li>
+    <li><strong>Claude Code</strong> でターミナル内開発 (CLI agent)</li>
+    <li><strong>Anthropic API</strong> で自前アプリにClaude組込</li>
+    <li><strong>Cursor / VS Code (Copilot Chat)</strong> でエディタ統合</li>
+  </ul></div></section>
+
+  <section><h2>② Claude Code — Anthropic 公式 CLI</h2>
+  <p>Claude Code は <strong>ターミナル内で動くエージェント型コーディングツール</strong>。ファイル読書き・コマンド実行・git操作・テスト・デバッグ等を Claude が自律的に行う。</p>
+<pre><code># インストール
+npm install -g @anthropic-ai/claude-code
+
+# 起動
+claude
+
+# 例: 自然言語で指示
+"src/utils.py の型エラーを直して、テストも書いて"
+
+# Claude が:
+# 1. ファイル読み込み (Read)
+# 2. エラー特定
+# 3. 修正 (Edit)
+# 4. test_utils.py 生成 (Write)
+# 5. pytest 実行 (Bash)
+# 6. 結果確認 + 報告</code></pre>
+  <div class="card mint"><strong>核心:</strong> 「コード書いて」と頼むだけで、Claude が <strong>ファイル操作・コマンド実行・検証まで</strong> 全部やる。</div></section>
+
+  <section><h2>③ コード関連の代表的Skills</h2>
+  <table class="vocab"><thead><tr><th style="width: 32%;">Skill</th><th>用途</th></tr></thead><tbody>
+    <tr><td><strong>code-reviewer</strong></td><td>セキュリティ・品質・ベストプラクティスでコードレビュー</td></tr>
+    <tr><td><strong>tdd-guide</strong></td><td>テスト駆動開発 (RED→GREEN→REFACTOR)</td></tr>
+    <tr><td><strong>build-error-resolver</strong></td><td>ビルドエラー自動修正</td></tr>
+    <tr><td><strong>refactor-cleaner</strong></td><td>デッドコード削除・整理</td></tr>
+    <tr><td><strong>security-reviewer</strong></td><td>OWASP Top 10・脆弱性チェック</td></tr>
+    <tr><td><strong>e2e-runner</strong></td><td>E2Eテスト実行・修正</td></tr>
+  </tbody></table></section>
+
+  <section><h2>④ コードで強い領域</h2>
+  <ul>
+    <li><strong>新機能実装</strong>: 仕様 → コード → テスト</li>
+    <li><strong>デバッグ</strong>: エラーメッセージから原因特定 → 修正</li>
+    <li><strong>リファクタリング</strong>: 設計改善・命名・分割</li>
+    <li><strong>レガシーコード移行</strong>: 古いコードを現代的に書き直す</li>
+    <li><strong>マイグレーション</strong>: フレームワーク・言語間の移行</li>
+    <li><strong>テスト生成</strong>: カバレッジ拡大</li>
+    <li><strong>ドキュメント自動化</strong>: コードから docstring 補完</li>
+  </ul></section>
+
+  <section><h2>⑤ ベストプラクティス</h2>
+  <details><summary>1. 計画してから書く</summary><p><strong>planner</strong> エージェントで仕様化 → <strong>generator</strong> で実装 → <strong>evaluator</strong> でテスト、の3段階。</p></details>
+  <details><summary>2. テスト駆動 (TDD)</summary><p>tdd-guide skill 使用。先にテスト書く → 失敗確認 → 実装 → 通過 → リファクタ。</p></details>
+  <details><summary>3. レビューを必ず</summary><p>書いた直後に <strong>code-reviewer</strong> + <strong>security-reviewer</strong> 起動。CRITICAL/HIGH は必ず修正。</p></details>
+  <details><summary>4. 小さく刻む</summary><p>1関数・1ファイル単位で動かす → 動作確認 → 次へ。大規模一括変更は避ける。</p></details></section>
+
+  <section><h2>⑥ 中学生向けに例えると</h2>
+  <table class="vocab"><thead><tr><th style="width: 44%;">学校の例え</th><th>Claude code の対応</th></tr></thead><tbody>
+    <tr><td>家庭科の先生「料理作って」と言える</td><td>自然言語でコード依頼</td></tr>
+    <tr><td>先生が材料切る・煮る・盛り付けまで</td><td>Claude がファイル操作・実行・確認</td></tr>
+    <tr><td>「味見してダメなら直して」</td><td>テスト → 修正のループ</td></tr>
+    <tr><td>「最後にレシピも書いてね」</td><td>ドキュメント自動生成</td></tr>
+  </tbody></table></section>
+
+  <section><h2>⑦ 理解度チェック</h2>
+  <details><summary>Q1. Claude Code とは?</summary><p><strong>Anthropic公式のターミナル統合エージェント</strong>。ファイル操作・コマンド実行・git操作を Claude が自律的に行う。「コード書いて」「直して」と話すだけで動く。</p></details>
+  <details><summary>Q2. コード作業のベストプラクティスは?</summary><p>① 計画 → 実装 → テストの3段階 ② TDD ③ レビュー必須 ④ 小さく刻む</p></details></section>
+
+  <section><h2>⑧ 自分メモ</h2><div class="memo-area">Claude Code で自動化したい作業…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 6: コードのためのClaude<br>元レクチャー: <a href="https://anthropic.skilljar.com/introduction-to-agent-skills/434529">SkillJar — Claude for Code</a></footer>
+</main></body></html>

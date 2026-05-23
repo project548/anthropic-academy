@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 8: クロードモデルの概要 | Anthropic Academy 教科書</title>
+<style>:root { --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a; --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028; --soft-mint: #d8ecd6; --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+table.vocab td.code { font-family: "Consolas","Menlo",monospace; color: var(--accent); font-weight: 700; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }</style></head><body><main class="book">
+  <span class="chapter-tag">Module 2 ・ Lecture 8 ・ 解説回</span>
+  <h1 class="lecture-title">クロードモデルの概要<span class="ja-sub">— Opus / Sonnet / Haiku 3兄弟の使い分け</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section><h2>① 3つのモデル家族</h2>
+  <p>Anthropic Claude は <strong>3つのモデル家族</strong> を提供。用途とコストでバランスを選ぶ。</p>
+  <table class="vocab"><thead><tr><th style="width: 18%;">家族</th><th>特徴</th><th>得意</th><th>料金感</th></tr></thead><tbody>
+    <tr><td><strong>Opus</strong></td><td>最高性能</td><td>複雑推論・コード・研究</td><td>高 ($15/M)</td></tr>
+    <tr><td><strong>Sonnet</strong></td><td>バランス</td><td>本番アプリ・日常タスク</td><td>中 ($3/M)</td></tr>
+    <tr><td><strong>Haiku</strong></td><td>軽量・速い</td><td>大量処理・チャット・分類</td><td>低 ($0.80/M)</td></tr>
+  </tbody></table>
+  <div class="card accent"><strong>選び方:</strong> 迷ったら<strong>Sonnet</strong> から始める → 「精度足りない」なら Opus へ / 「コスト高すぎ」なら Haiku へ。</div></section>
+
+  <section><h2>② 最新バージョン (2026年5月時点)</h2>
+  <table class="vocab"><thead><tr><th>Model ID</th><th>世代</th><th>用途</th></tr></thead><tbody>
+    <tr><td class="code">claude-opus-4-7</td><td>Opus 4.7</td><td>最高性能 (Mythos Preview)</td></tr>
+    <tr><td class="code">claude-opus-4-6</td><td>Opus 4.6</td><td>1つ前世代</td></tr>
+    <tr><td class="code">claude-sonnet-4-6</td><td>Sonnet 4.6</td><td>本番推奨 (バランス◎)</td></tr>
+    <tr><td class="code">claude-haiku-4-5</td><td>Haiku 4.5</td><td>軽量・コスト最重視</td></tr>
+  </tbody></table>
+  <div class="card mint">Model ID は API リクエスト時に <code>model="claude-opus-4-7"</code> のように指定する。世代が新しいほど高性能 + 同等以下コスト。</div></section>
+
+  <section><h2>③ モデル選定の判断軸</h2>
+  <ul>
+    <li><strong>精度</strong>: 難問・複雑推論 → Opus / 一般的タスク → Sonnet / 単純分類 → Haiku</li>
+    <li><strong>速度</strong>: リアルタイム応答 → Haiku / 通常 → Sonnet / 時間OK → Opus</li>
+    <li><strong>コスト</strong>: 大量バッチ → Haiku / 中規模 → Sonnet / 少量・高品質 → Opus</li>
+    <li><strong>Context長</strong>: 全モデル 200K tokens / Opus 4.7 は 1M tokens オプション</li>
+  </ul></section>
+
+  <section><h2>④ 中学生向けに例えると</h2>
+  <table class="vocab"><thead><tr><th>家族</th><th>例え</th></tr></thead><tbody>
+    <tr><td>Opus</td><td>東大教授 (詳しいが時間と費用かかる)</td></tr>
+    <tr><td>Sonnet</td><td>有能な大学生 (バランス良し)</td></tr>
+    <tr><td>Haiku</td><td>機転の利く高校生 (速い・安い)</td></tr>
+  </tbody></table></section>
+
+  <section><h2>⑤ 理解度チェック</h2>
+  <details><summary>Q1. 迷ったときの第一選択は?</summary><p><strong>Sonnet</strong>。性能・速度・コストのバランスが最も良く、本番運用の8割をカバーできる。</p></details>
+  <details><summary>Q2. 大量データ処理に向くのは?</summary><p><strong>Haiku</strong>。速い・安いの組合せで、分類・要約・抽出などの単純タスクを大量処理する用途に最適。</p></details></section>
+
+  <section><h2>⑥ 自分メモ</h2><div class="memo-area">自分のプロジェクトに合うモデル選び…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 8: クロードモデルの概要<br>元レクチャー: <a href="https://anthropic.skilljar.com/introduction-to-agent-skills/434530">SkillJar — Overview of Claude models</a></footer>
+</main></body></html>
