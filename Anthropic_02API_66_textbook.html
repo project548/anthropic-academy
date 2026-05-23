@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 66: MCP clients — Claude/Cursor/VS Code等とMCPサーバーを繋ぐ側 | Anthropic Academy 教科書</title>
+<style>
+:root { --paper: #faf6ef; --paper-2: #ffffff; --ink: #2b2b2b; --ink-sub: #5a5a5a; --accent: #d97757; --accent-light: #fdebde; --tag-bg: #ebe3d3; --tag-text: #6b5028; --soft-blue: #cfe7ef; --soft-yellow: #fdf0c8; --soft-mint: #d8ecd6; --soft-pink: #f6dcdc; --border: #dcd3c0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.04); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif; background: var(--paper); color: var(--ink); line-height: 1.9; padding: 40px 20px; }
+.book { max-width: 760px; margin: 0 auto; }
+.chapter-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 8px 28px; border-radius: 0 24px 24px 0; font-size: 14px; letter-spacing: 0.1em; font-weight: 700; margin-left: -20px; margin-bottom: 14px; }
+h1.lecture-title { font-size: 30px; font-weight: 800; line-height: 1.35; margin-bottom: 6px; }
+h1.lecture-title .ja-sub { display: block; font-size: 17px; font-weight: 500; color: var(--ink-sub); margin-top: 6px; }
+.subtitle { color: var(--ink-sub); font-size: 14px; margin-bottom: 40px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+section { margin-bottom: 52px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 18px; padding-left: 18px; border-left: 6px solid var(--accent); }
+p { margin-bottom: 14px; font-size: 16px; }
+ol, ul { margin: 12px 0 18px 28px; }
+ol li, ul li { margin-bottom: 8px; font-size: 16px; }
+.card { background: var(--paper-2); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); margin: 16px 0; }
+.card.accent { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.card.mint { background: var(--soft-mint); border-left: 4px solid #67a061; }
+.card.blue { background: var(--soft-blue); border-left: 4px solid #4a8aa3; }
+.card.warning { background: var(--soft-pink); border-left: 4px solid #c66b6b; }
+table.vocab { width: 100%; background: var(--paper-2); border-collapse: collapse; margin: 16px 0; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table.vocab th, table.vocab td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; font-size: 15px; }
+table.vocab th { background: var(--tag-bg); color: var(--tag-text); font-weight: 700; }
+table.vocab td.code { font-family: "Consolas","Menlo",monospace; color: var(--accent); font-weight: 700; white-space: nowrap; }
+pre { background: #f4eedb; border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-family: "Consolas","Menlo",monospace; font-size: 14px; line-height: 1.7; margin: 12px 0; border: 1px solid var(--border); }
+code.inline { background: #f4eedb; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Menlo",monospace; font-size: 0.92em; color: #a85200; }
+details { background: var(--paper-2); border-radius: var(--radius); padding: 14px 22px; margin: 10px 0; box-shadow: var(--shadow); border-left: 4px solid var(--tag-bg); }
+details summary { cursor: pointer; font-weight: 700; font-size: 15px; outline: none; }
+details[open] { border-left-color: var(--accent); }
+details[open] summary { color: var(--accent); margin-bottom: 10px; }
+.illustration { text-align: center; margin: 24px 0; }
+.illustration svg { max-width: 100%; height: auto; }
+.caption { font-size: 13px; color: var(--ink-sub); margin-top: 8px; text-align: center; }
+.memo-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; min-height: 120px; background: var(--paper-2); color: #b0a589; font-size: 14px; font-style: italic; }
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 13px; color: var(--ink-sub); text-align: center; line-height: 1.7; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 600px) { body { padding: 20px 14px; } h1.lecture-title { font-size: 24px; } h2 { font-size: 19px; } p, ol li, ul li { font-size: 15px; } }
+</style>
+</head>
+<body>
+<main class="book">
+  <span class="chapter-tag">Module 12 ・ Lecture 66 ・ 解説回</span>
+  <h1 class="lecture-title">MCP clients<span class="ja-sub">— Claude/Cursor/VS Code等から MCP サーバーに繋ぐ「クライアント」側を理解する</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section>
+    <h2>① まず結論 — MCP clientって何?</h2>
+    <p>MCP (Model Context Protocol) は <strong>AI と外部システムをつなぐ USB-C 規格</strong>。前章 (#65 Introducing MCP) でコンセプトを学んだあと、本章は <strong>「繋ぐ側」= クライアント</strong> の世界。</p>
+    <div class="card accent">
+      <strong>3つの登場人物:</strong>
+      <ol>
+        <li><strong>Host</strong>: アプリ全体 (Claude Desktop, Cursor, VS Code等)</li>
+        <li><strong>Client</strong>: Host内で<strong>1つのMCPサーバーと1対1で対話</strong> する接続管理コンポーネント</li>
+        <li><strong>Server</strong>: 外部システム (DB / Google Calendar / Figma等) を MCP 規格で公開する側</li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <h2>② 主なMCP対応クライアント</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 28%;">クライアント</th><th>用途</th><th>設定方法</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Claude Desktop</strong></td><td>デスクトップ版Claude.ai</td><td><code class="inline">claude_desktop_config.json</code> 編集</td></tr>
+        <tr><td><strong>Claude Code</strong></td><td>Anthropic公式CLI</td><td><code class="inline">claude mcp add</code> コマンド</td></tr>
+        <tr><td><strong>claude.ai (Web)</strong></td><td>Webブラウザ版</td><td>Connectors 設定UI</td></tr>
+        <tr><td><strong>Cursor</strong></td><td>AI統合エディタ</td><td><code class="inline">.cursor/mcp.json</code> 編集</td></tr>
+        <tr><td><strong>VS Code</strong></td><td>GitHub Copilot Chat統合</td><td>設定UIで追加</td></tr>
+        <tr><td><strong>ChatGPT (OpenAI)</strong></td><td>競合だがMCP対応</td><td>Custom GPT 設定</td></tr>
+        <tr><td><strong>MCPJam</strong></td><td>MCP テストツール</td><td>ブラウザベース</td></tr>
+      </tbody>
+    </table>
+    <div class="card mint">
+      <strong>USB-Cの真意:</strong> どのクライアントでも <strong>同じMCPサーバーが使える</strong>。Slack向けMCPサーバーを書けば、Claude Desktop でも Cursor でも VS Code でも使い回せる。
+    </div>
+  </section>
+
+  <section>
+    <h2>③ Host・Client・Server の三層構造</h2>
+    <div class="illustration">
+      <svg width="640" height="320" viewBox="0 0 640 320" xmlns="http://www.w3.org/2000/svg">
+        <rect x="20" y="20" width="600" height="280" rx="12" fill="#fdebde" stroke="#d97757" stroke-width="2"/>
+        <text x="40" y="44" font-family="Hiragino Sans" font-size="14" font-weight="800" fill="#a04500">Host (Claude Desktop など アプリ全体)</text>
+        <rect x="40" y="64" width="240" height="100" rx="8" fill="#fff" stroke="#dcd3c0"/>
+        <text x="160" y="86" text-anchor="middle" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#2b2b2b">Client A</text>
+        <text x="160" y="110" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#5a5a5a">(1サーバーと1対1)</text>
+        <text x="160" y="140" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#5a5a5a">capability negotiation</text>
+        <text x="160" y="156" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#5a5a5a">request / response</text>
+        <rect x="360" y="64" width="240" height="100" rx="8" fill="#fff" stroke="#dcd3c0"/>
+        <text x="480" y="86" text-anchor="middle" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#2b2b2b">Client B</text>
+        <text x="480" y="110" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#5a5a5a">(別サーバーと別接続)</text>
+        <text x="160" y="195" text-anchor="middle" font-size="18" fill="#a85200">↓ MCP (stdio/HTTP)</text>
+        <text x="480" y="195" text-anchor="middle" font-size="18" fill="#a85200">↓ MCP (stdio/HTTP)</text>
+        <rect x="40" y="210" width="240" height="70" rx="8" fill="#d8ecd6" stroke="#67a061"/>
+        <text x="160" y="235" text-anchor="middle" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#2b6e2e">MCP Server (Google Calendar)</text>
+        <text x="160" y="258" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#5a5a5a">外部システム公開</text>
+        <rect x="360" y="210" width="240" height="70" rx="8" fill="#cfe7ef" stroke="#4a8aa3"/>
+        <text x="480" y="235" text-anchor="middle" font-family="Hiragino Sans" font-size="13" font-weight="700" fill="#2a5a73">MCP Server (Slack)</text>
+        <text x="480" y="258" text-anchor="middle" font-family="Hiragino Sans" font-size="11" fill="#5a5a5a">外部システム公開</text>
+      </svg>
+      <p class="caption">図① Host 内に複数 Client → 各 Client が別 Server と1対1</p>
+    </div>
+    <div class="card accent">
+      <strong>核心:</strong> Host は複数の Server を扱うが、<strong>Client は1つのサーバー専属</strong>。これにより接続管理がシンプル + セキュリティ境界が明確。
+    </div>
+  </section>
+
+  <section>
+    <h2>④ Transport — どうやって通信する?</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 24%;">Transport</th><th>用途</th><th>通信方式</th></tr></thead>
+      <tbody>
+        <tr><td><strong>stdio</strong></td><td>ローカル子プロセス</td><td>標準入出力で JSON-RPC やり取り</td></tr>
+        <tr><td><strong>HTTP + SSE</strong></td><td>リモートサーバー (旧版)</td><td>HTTP POST + Server-Sent Events</td></tr>
+        <tr><td><strong>Streamable HTTP</strong></td><td>リモートサーバー (新版・推奨)</td><td>単一HTTPエンドポイントで双方向</td></tr>
+      </tbody>
+    </table>
+    <div class="card mint">
+      <strong>選び方:</strong>
+      <ul>
+        <li><strong>ローカル開発</strong>: stdio (子プロセスとして起動)</li>
+        <li><strong>本番リモート</strong>: Streamable HTTP (新版が推奨・SSEは段階廃止)</li>
+        <li><strong>SaaS統合</strong>: Streamable HTTP + OAuth 認証</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>⑤ Claude Desktop での設定例</h2>
+<pre><code>// claude_desktop_config.json (macOS: ~/Library/Application Support/Claude/)
+{
+  "mcpServers": {
+    "weather": {
+      "command": "python",
+      "args": ["/Users/abi/work/weather-mcp/server.py"]
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": { "GITHUB_TOKEN": "ghp_xxx..." }
+    },
+    "slack": {
+      "url": "https://slack-mcp.example.com/mcp"
+    }
+  }
+}</code></pre>
+    <div class="card blue">
+      <strong>3パターン同居:</strong>
+      <ul>
+        <li>weather: stdio (Pythonローカルプロセス)</li>
+        <li>github: stdio (npx で外部パッケージ実行)</li>
+        <li>slack: HTTP (リモートMCPサーバーURL)</li>
+      </ul>
+      → 1つのHostから複数のClient接続を同時に張れる。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑥ Claude Code での設定 (CLI)</h2>
+<pre><code># 追加
+claude mcp add weather python /Users/abi/work/weather-mcp/server.py
+
+# 一覧
+claude mcp list
+
+# 削除
+claude mcp remove weather
+
+# HTTPサーバー追加
+claude mcp add slack --transport http https://slack-mcp.example.com/mcp
+
+# Scope (project / user / system)
+claude mcp add --scope project github npx -y @modelcontextprotocol/server-github</code></pre>
+    <div class="card warning">
+      <strong>scope の違い:</strong>
+      <ul>
+        <li><code class="inline">--scope project</code>: 今のプロジェクトのみ (<code class="inline">.claude/mcp.json</code>)</li>
+        <li><code class="inline">--scope user</code>: 自分のホームディレクトリ全部 (デフォルト)</li>
+        <li><code class="inline">--scope system</code>: マシン全体 (要権限)</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>⑦ クライアントが Server に頼める6種のリクエスト</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 24%;">リクエスト</th><th>意味</th><th>例</th></tr></thead>
+      <tbody>
+        <tr><td><strong>tools/list</strong></td><td>サーバーがどんなツールを提供してるか問い合わせ</td><td>get_weather, send_message 等を列挙</td></tr>
+        <tr><td><strong>tools/call</strong></td><td>特定ツールを実行依頼</td><td>get_weather(city="Tokyo")</td></tr>
+        <tr><td><strong>resources/list</strong></td><td>サーバーが提供する読み取り専用データ</td><td>ファイル一覧・DBスキーマ等</td></tr>
+        <tr><td><strong>resources/read</strong></td><td>特定リソースを読む</td><td>specific_file.md の中身</td></tr>
+        <tr><td><strong>prompts/list</strong></td><td>サーバーが提供する定型プロンプト</td><td>「障害レポート作成テンプレ」等</td></tr>
+        <tr><td><strong>prompts/get</strong></td><td>特定プロンプト取得</td><td>テンプレ + 動的補完</td></tr>
+      </tbody>
+    </table>
+    <div class="card mint">
+      <strong>3本柱:</strong> <strong>Tools</strong> (実行) / <strong>Resources</strong> (データ参照) / <strong>Prompts</strong> (テンプレ取得)。これがMCPの中心概念。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑧ Capability Negotiation — 接続時のハンドシェイク</h2>
+<pre><code># Client → Server: 「自分はこんな機能サポートしてるよ」と申告
+initialize {
+  protocolVersion: "2025-06-18",
+  capabilities: {
+    sampling: {},      # client が Server からの LLM 呼び出しを許可
+    elicitation: {},   # client が user 入力収集を許可
+    roots: {listChanged: true}  # フォルダ root 共有
+  }
+}
+
+# Server → Client: 「私はこれをサポートします」と返す
+{
+  capabilities: {
+    tools: {listChanged: true},
+    resources: {listChanged: true, subscribe: true},
+    prompts: {listChanged: true}
+  }
+}
+
+# その後はお互いに sampling / tools/call / resources/read 等を投げる</code></pre>
+    <div class="card accent">
+      <strong>核心:</strong> 接続最初に「お互い何できる?」を確認 → 以降は <strong>合意した機能のみ</strong> 使う。プロトコルバージョン違いも吸収。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑨ よくあるクライアント側ハマりポイント</h2>
+    <details>
+      <summary>1. 設定ファイルの場所が分からない</summary>
+      <p>クライアントごとに違う:
+      <ul>
+        <li>Claude Desktop (macOS): <code class="inline">~/Library/Application Support/Claude/claude_desktop_config.json</code></li>
+        <li>Claude Desktop (Windows): <code class="inline">%APPDATA%\Claude\claude_desktop_config.json</code></li>
+        <li>Cursor: <code class="inline">~/.cursor/mcp.json</code> or <code class="inline">.cursor/mcp.json</code> (project)</li>
+        <li>Claude Code: <code class="inline">claude mcp list</code> で確認</li>
+      </ul></p>
+    </details>
+    <details>
+      <summary>2. サーバーが起動しない</summary>
+      <p>stdio の場合: <code class="inline">command + args</code> が正しいか確認。Path が通っているか。実行権限 (chmod +x) があるか。ターミナルで手動実行してエラーメッセージを確認。</p>
+    </details>
+    <details>
+      <summary>3. tool/call で「Permission denied」</summary>
+      <p>Capability negotiation が成立してない or scope が間違っている可能性。設定の env / args をチェック。</p>
+    </details>
+    <details>
+      <summary>4. リモートMCP接続で証明書エラー</summary>
+      <p>HTTPS必須。自己署名証明書なら検証スキップオプションを設定(本番非推奨)。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑩ Claude API での MCP 接続</h2>
+<pre><code>response = client.beta.messages.create(
+    model="claude-opus-4-7",
+    max_tokens=4096,
+    mcp_servers=[
+        {
+            "type": "url",
+            "url": "https://slack-mcp.example.com/mcp",
+            "name": "slack",
+            "authorization_token": "Bearer xxx"  # OAuth等
+        }
+    ],
+    messages=[{"role": "user", "content": "#generalに『おはよう』と投稿して"}],
+    betas=["mcp-client-2025-04-04"]
+)</code></pre>
+    <div class="card blue">
+      <strong>応用:</strong> 自前のチャットUIにMCPサーバーを統合 → Claude が自動的に「適切なツール」を選んで呼ぶ。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑪ 中学生向けに例えると</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 44%;">学校の例え</th><th>MCP の対応</th></tr></thead>
+      <tbody>
+        <tr><td>学校 = USB-C ポートがある</td><td>Host (Claude Desktop等)</td></tr>
+        <tr><td>USB-C ケーブル = 共通の繋ぎ口</td><td>MCP プロトコル</td></tr>
+        <tr><td>マウス・キーボード・モニター = 周辺機器</td><td>MCP Server (Slack/Calendar/DB)</td></tr>
+        <tr><td>「マウス担当」「キーボード担当」と分業</td><td>Client A / Client B (1対1)</td></tr>
+        <tr><td>挿した瞬間「これマウスです」「私キーボード」</td><td>capability negotiation</td></tr>
+      </tbody>
+    </table>
+    <div class="card accent">
+      <strong>核心:</strong> 「自社専用の繋ぎ方」を毎回作らない。<strong>USB-Cのような共通規格</strong> で、誰が作ったツールでも組み合わせ自由に。
+    </div>
+  </section>
+
+  <section>
+    <h2>⑫ キーワード一覧</h2>
+    <table class="vocab">
+      <thead><tr><th style="width: 32%;">英語</th><th style="width: 28%;">読み方</th><th>意味</th></tr></thead>
+      <tbody>
+        <tr><td class="code">MCP</td><td>エムシーピー</td><td>Model Context Protocol</td></tr>
+        <tr><td class="code">Host</td><td>ホスト</td><td>アプリ全体 (Claude Desktop等)</td></tr>
+        <tr><td class="code">Client</td><td>クライアント</td><td>1サーバー専属の接続管理</td></tr>
+        <tr><td class="code">Server</td><td>サーバー</td><td>外部システム公開側</td></tr>
+        <tr><td class="code">stdio transport</td><td>スタジオ トランスポート</td><td>標準入出力で通信</td></tr>
+        <tr><td class="code">Streamable HTTP</td><td>ストリーマブル エイチティーティーピー</td><td>新版リモート通信</td></tr>
+        <tr><td class="code">capability negotiation</td><td>ケイパビリティ ネゴシエーション</td><td>接続時の能力すり合わせ</td></tr>
+        <tr><td class="code">tools / resources / prompts</td><td>3本柱</td><td>MCPが提供する3種類のリソース</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>⑬ 理解度チェック</h2>
+    <details>
+      <summary>Q1. MCP の喩えは?</summary>
+      <p><strong>AI 用の USB-C 規格</strong>。どの AI アプリ (Claude / ChatGPT / Cursor / VS Code) でも、共通プロトコル MCP を介して、同じMCPサーバーが使い回せる。</p>
+    </details>
+    <details>
+      <summary>Q2. Host と Client の違いは?</summary>
+      <p><strong>Host</strong> = アプリ全体 (Claude Desktop)<br>
+      <strong>Client</strong> = Host内で1サーバーと1対1で対話する接続管理コンポーネント<br>
+      Host は複数 Client を抱える。各 Client は1サーバー専属。</p>
+    </details>
+    <details>
+      <summary>Q3. transport の3種は?</summary>
+      <p>① <strong>stdio</strong> (ローカル子プロセス) ② <strong>HTTP+SSE</strong> (旧版リモート) ③ <strong>Streamable HTTP</strong> (新版リモート・推奨)<br>
+      → ローカルなら stdio / 本番なら Streamable HTTP。</p>
+    </details>
+    <details>
+      <summary>Q4. MCPの3本柱は?</summary>
+      <p><strong>Tools</strong> (実行) / <strong>Resources</strong> (データ参照) / <strong>Prompts</strong> (テンプレ取得)。tool=動詞・resource=名詞・prompt=テンプレ、と覚える。</p>
+    </details>
+  </section>
+
+  <section>
+    <h2>⑭ 自分メモ</h2>
+    <div class="memo-area">使ってみたい MCP サーバー…例: GitHub MCP / Slack MCP / Notion MCP…</div>
+  </section>
+
+  <footer>
+    Anthropic Academy 教科書版 ・ Lecture 66: MCP clients<br>
+    元レクチャー: <a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api/287775">SkillJar — MCP clients</a><br>
+    公式: <a href="https://modelcontextprotocol.io">modelcontextprotocol.io</a> / <a href="https://platform.claude.com/docs/en/agents-and-tools/mcp">Anthropic MCP Docs</a><br>
+    前章: <a href="https://project548.github.io/anthropic-academy/Anthropic_02API_63_textbook.html">Lecture 63 — Code execution and the Files API</a> (#65 Introducing MCP はスキップ)
+  </footer>
+</main>
+</body>
+</html>
