@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 90: Final Assessment | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}details{background:var(--paper-2);border-radius:var(--radius);padding:14px 22px;margin:10px 0;box-shadow:var(--shadow);border-left:4px solid var(--tag-bg)}details summary{cursor:pointer;font-weight:700;font-size:15px;outline:none}details[open]{border-left-color:var(--accent)}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 14 ・ Lecture 90 ・ 最終評価</span>
+  <h1 class="lecture-title">Final Assessment<span class="ja-sub">— コース02 修了試験・自己評価チェック</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section><h2>① この回の位置づけ</h2>
+  <p>コース02 の最終評価回。これまで学んだ知識を <strong>問題形式</strong> で総点検する。SkillJar 公式は選択式テスト形式だが、ここでは自分で答えられるかセルフチェックする。</p>
+  <div class="card accent"><strong>合格目安:</strong> 12問中 9問正解で「実務で使える」レベル。間違えた領域は該当章を復習。</div></section>
+
+  <section><h2>② 問題セット (理解度チェック)</h2>
+
+  <details><summary>Q1. Claude API で <code>messages.create</code> に必須のパラメータは?</summary><p>A. <code>model</code> / <code>max_tokens</code> / <code>messages</code> の3つ。temperature は任意。</p></details>
+
+  <details><summary>Q2. マルチターン会話で過去履歴を保持する方法は?</summary><p>A. <code>messages</code> 配列に user/assistant を交互に積む。Claude API はステートレスなのでクライアント側で履歴管理。</p></details>
+
+  <details><summary>Q3. Tool use フローの4ステップは?</summary><p>A. ① schema 定義 → ② Claude が tool_use 出力 → ③ クライアントが実行 → ④ tool_result を返して再呼び出し。</p></details>
+
+  <details><summary>Q4. Prompt caching の効果は?</summary><p>A. 同じ前置きの再利用で input トークン課金を 90% 削減・latency も大幅短縮。<code>cache_control: {type: "ephemeral"}</code> でマーク。</p></details>
+
+  <details><summary>Q5. Fine-grained tool streaming の利点は?</summary><p>A. tool input が完成する前から実行開始可能。<code>eager_input_streaming</code> パラメータで有効化。大きい input でも早期実行。</p></details>
+
+  <details><summary>Q6. RAG の基本フローは?</summary><p>A. ① ドキュメントを embedding 化して保存 → ② query を embedding 化 → ③ 類似度検索 → ④ 取得チャンクを context に注入 → ⑤ Claude に質問。</p></details>
+
+  <details><summary>Q7. Extended thinking はいつ使う?</summary><p>A. 複雑な推論・数学・計画立案が必要なとき。<code>thinking: {type:"enabled", budget_tokens: 16000}</code> で有効化。</p></details>
+
+  <details><summary>Q8. Citations 機能の役割は?</summary><p>A. Claude が参照した document のどの部分を引用したか自動的に返す。出典明示が必要な業務 (リサーチ・法務) で必須。</p></details>
+
+  <details><summary>Q9. PDF input の最大ページ数は?</summary><p>A. 100ページ・32MB まで直接 <code>document</code> ブロックで送信可能。それ以上は Files API でアップロード。</p></details>
+
+  <details><summary>Q10. Workflow と Agent の違いは?</summary><p>A. Workflow = 事前にフロー固定 (人間設計) / Agent = LLM が動的に次のアクション判断。本番は workflow 推奨、限定部分のみ agent 化。</p></details>
+
+  <details><summary>Q11. Parallelization と Chaining の違いは?</summary><p>A. Parallel = 独立タスクを並列実行 (asyncio.gather) / Chain = 依存タスクを逐次実行 (前段の出力 → 次段の入力)。</p></details>
+
+  <details><summary>Q12. Agent の終了条件は?</summary><p>A. <code>response.stop_reason</code> が <code>"tool_use"</code> 以外 (<code>"end_turn"</code> 等) のとき。それまで tool 実行と再呼び出しをループ。</p></details>
+
+  </section>
+
+  <section><h2>③ 結果別の振り返り指針</h2>
+  <ul>
+    <li><strong>10問以上正解</strong>: 実務で使える。次のコース03 (MCP) へ</li>
+    <li><strong>7-9問</strong>: 弱い領域だけ復習。該当章を再読</li>
+    <li><strong>6問以下</strong>: コース全体を1巡再受講推奨。実装演習も再実施</li>
+  </ul></section>
+
+  <section><h2>④ 学んだ12テーマ早見表</h2>
+  <div class="card mint">
+  <ol>
+    <li>API 基本 (messages.create)</li>
+    <li>マルチターン会話</li>
+    <li>Tool use</li>
+    <li>Fine-grained streaming</li>
+    <li>Prompt caching</li>
+    <li>RAG / Embeddings</li>
+    <li>Extended thinking</li>
+    <li>Citations</li>
+    <li>Image / PDF / Files API</li>
+    <li>Code execution / Web search / MCP</li>
+    <li>Workflows (Parallel/Chain/Route)</li>
+    <li>Agents</li>
+  </ol>
+  </div></section>
+
+  <section><h2>⑤ 中学生向けに例えると</h2>
+  <p>学期末テスト。1学期で習った全部から出る。受けて 9 問以上取れたら「卒業」OK。間違えたところは復習ノートに戻ろう。</p></section>
+
+  <section><h2>⑥ 自分メモ</h2><div class="memo-area">弱い領域・復習する章…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 90: Final Assessment<br>コース02 最終評価 → 次は #91 Course Wrap Up</footer>
+</main></body></html>

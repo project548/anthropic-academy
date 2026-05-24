@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 102: Accessing resources | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}pre{background:#f4eedb;border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:"Consolas","Menlo",monospace;font-size:14px;line-height:1.7;margin:12px 0;border:1px solid var(--border)}code.inline{background:#f4eedb;padding:2px 6px;border-radius:4px;font-family:"Consolas","Menlo",monospace;font-size:.92em;color:#a85200}details{background:var(--paper-2);border-radius:var(--radius);padding:14px 22px;margin:10px 0;box-shadow:var(--shadow);border-left:4px solid var(--tag-bg)}details summary{cursor:pointer;font-weight:700;font-size:15px;outline:none}details[open]{border-left-color:var(--accent)}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 3 ・ Lecture 102 ・ クライアント編</span>
+  <h1 class="lecture-title">Accessing resources<span class="ja-sub">— クライアント側から MCP Resources を読む</span></h1>
+  <p class="subtitle">Anthropic Academy / コース03 Model Context Protocol</p>
+
+  <section><h2>① 前回 (#101) の続き</h2>
+  <p>前回は server 側で resource を <strong>定義</strong> する方法を学んだ。今回は <strong>クライアント側</strong> から、定義された resource を <strong>呼び出して読む</strong> 方法を学ぶ。</p>
+  <div class="card accent"><strong>核心:</strong> Resource は LLM が「自動で」呼ばない (tool と違って)。Host (アプリ) かユーザーが <strong>明示的に context へ取り込む</strong> のが基本パターン。</div></section>
+
+  <section><h2>② Resource アクセスの3ステップ</h2>
+  <ol>
+    <li><strong>一覧取得</strong>: <code class="inline">resources/list</code> で公開中の resource を一覧</li>
+    <li><strong>テンプレ取得</strong>: <code class="inline">resources/templates/list</code> で動的 URI 一覧</li>
+    <li><strong>読み込み</strong>: <code class="inline">resources/read</code> に URI を指定して中身を取得</li>
+  </ol></section>
+
+  <section><h2>③ MCP Client SDK での読み込み例</h2>
+<pre><code>from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+
+async def main():
+    params = StdioServerParameters(command="python", args=["server.py"])
+
+    async with stdio_client(params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+
+            # 1. 公開 resource 一覧
+            resources = await session.list_resources()
+            for r in resources.resources:
+                print(r.uri, "-", r.name)
+
+            # 2. 動的 URI テンプレ一覧
+            templates = await session.list_resource_templates()
+
+            # 3. 中身を読み込み
+            result = await session.read_resource("docs://readme")
+            for content in result.contents:
+                print(content.text)  # str の場合
+                # content.blob でバイナリ取得も可</code></pre></section>
+
+  <section><h2>④ Claude Desktop で resource を使う流れ</h2>
+  <ol>
+    <li>Claude Desktop の入力欄で <code class="inline">@</code> を入力</li>
+    <li>サーバ名 + resource 一覧がサジェスト表示</li>
+    <li>選択するとその resource の中身がメッセージに添付される</li>
+    <li>Claude はその文脈を理解して応答</li>
+  </ol>
+  <div class="card mint"><strong>例:</strong> ユーザーが <code class="inline">@docs-server/readme</code> を選ぶと、README.md 全文が prompt に挿入され、Claude はその内容について質問に答えられる。</div></section>
+
+  <section><h2>⑤ Resource を context に含める3パターン</h2>
+  <ul>
+    <li><strong>ユーザー指定</strong>: Claude Desktop で <code>@</code> 経由 (上記)</li>
+    <li><strong>自動的に LLM 文脈へ</strong>: Host 側のロジックで初期 prompt に組込</li>
+    <li><strong>tool 経由で間接アクセス</strong>: tool が内部で resource を read → 結果を返す</li>
+  </ul></section>
+
+  <section><h2>⑥ Subscribe (リアルタイム更新)</h2>
+<pre><code># resource の変更を購読する
+await session.subscribe_resource("logs://errors")
+
+# 更新通知 (notifications/resources/updated) が来る
+async for notification in session.iter_notifications():
+    if notification.method == "notifications/resources/updated":
+        # 再読み込み
+        new_data = await session.read_resource(notification.params.uri)</code></pre>
+  <p>長期実行のアプリで「ログが追記されたら通知」のような動的監視に有用。</p></section>
+
+  <section><h2>⑦ Resource vs Tool の使い分け再確認</h2>
+  <div class="card mint">
+    <ul>
+      <li><strong>「読みたいデータ」</strong>がある → Resource (副作用なし)</li>
+      <li><strong>「実行したいアクション」</strong>がある → Tool (副作用あり)</li>
+      <li>境界が微妙な場合 (例: 検索) → 副作用なら Tool / 単純検索なら Resource</li>
+    </ul>
+  </div></section>
+
+  <section><h2>⑧ 中学生向けに例えると</h2>
+  <p>図書館で本を借りる流れ。① 目録 (resource list) を見る → ② 本棚から本を取る (read_resource) → ③ 中身を読む。「本を借りる」までは資料アクセス、「本に書き込む」のは tool (副作用) の世界。</p></section>
+
+  <section><h2>⑨ 理解度チェック</h2>
+  <details><summary>Q1. Resource を読む3ステップは?</summary><p>A. ① <code>resources/list</code> で一覧 → ② <code>resources/templates/list</code> で動的テンプレ → ③ <code>resources/read</code> で URI 指定して中身取得。</p></details>
+  <details><summary>Q2. Claude Desktop で resource を context に入れる方法は?</summary><p>A. 入力欄で <code>@</code> を入力 → サーバ名 + resource をサジェストから選ぶ → 中身が prompt に挿入される。</p></details>
+  <details><summary>Q3. Resource 変更をリアルタイムで知る方法は?</summary><p>A. <code>subscribe_resource()</code> で購読 → <code>notifications/resources/updated</code> 通知を受け取る → 必要なら再 read。</p></details></section>
+
+  <section><h2>⑩ 自分メモ</h2><div class="memo-area">クライアント側から呼びたい resource…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 102: Accessing resources</footer>
+</main></body></html>

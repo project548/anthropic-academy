@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 101: Defining resources | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}table.vocab{width:100%;background:var(--paper-2);border-collapse:collapse;margin:16px 0;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}table.vocab th,table.vocab td{border:1px solid var(--border);padding:10px 14px;text-align:left;font-size:15px}table.vocab th{background:var(--tag-bg);color:var(--tag-text);font-weight:700}pre{background:#f4eedb;border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:"Consolas","Menlo",monospace;font-size:14px;line-height:1.7;margin:12px 0;border:1px solid var(--border)}code.inline{background:#f4eedb;padding:2px 6px;border-radius:4px;font-family:"Consolas","Menlo",monospace;font-size:.92em;color:#a85200}details{background:var(--paper-2);border-radius:var(--radius);padding:14px 22px;margin:10px 0;box-shadow:var(--shadow);border-left:4px solid var(--tag-bg)}details summary{cursor:pointer;font-weight:700;font-size:15px;outline:none}details[open]{border-left-color:var(--accent)}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 3 ・ Lecture 101 ・ 実装回</span>
+  <h1 class="lecture-title">Defining resources<span class="ja-sub">— MCP の Resources (名詞) を定義する</span></h1>
+  <p class="subtitle">Anthropic Academy / コース03 Model Context Protocol</p>
+
+  <section><h2>① Resources とは?</h2>
+  <p>MCP の <strong>Resources</strong> は <strong>「LLM が読むデータ」</strong>。tool が「動詞 (実行)」なら、resource は「名詞 (参照)」。ファイル・DB行・URL の中身など、副作用なしで取得できる情報を提供する。</p>
+  <div class="card accent"><strong>tool vs resource:</strong><br>tool = LLM がアクションを起こす (送信・書込・実行) <br>resource = LLM が読み取って文脈に取り込む (ファイル内容・行データ・ステータス)</div></section>
+
+  <section><h2>② Tool との違い (重要)</h2>
+  <table class="vocab"><thead><tr><th>観点</th><th>Tool</th><th>Resource</th></tr></thead><tbody>
+    <tr><td><strong>動詞 / 名詞</strong></td><td>動詞 (send_email)</td><td>名詞 (file://...)</td></tr>
+    <tr><td><strong>副作用</strong></td><td>あり (書き込み・送信)</td><td>なし (read only)</td></tr>
+    <tr><td><strong>呼び出し主体</strong></td><td>LLM (自律判断)</td><td>Host (ユーザー指示・LLM 補助)</td></tr>
+    <tr><td><strong>識別子</strong></td><td>name</td><td>URI (file:// / db:// 等)</td></tr>
+    <tr><td><strong>主な用途</strong></td><td>API 呼出・DB 書込</td><td>文書取込・状態確認</td></tr>
+  </tbody></table></section>
+
+  <section><h2>③ FastMCP での定義例</h2>
+<pre><code>from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("docs-server")
+
+@mcp.resource("docs://readme")
+def readme() -&gt; str:
+    """プロジェクトの README を返す"""
+    with open("README.md") as f:
+        return f.read()
+
+@mcp.resource("config://app/{key}")
+def get_config(key: str) -&gt; str:
+    """app設定の指定キーを返す (パラメータ付き)"""
+    config = load_config()
+    return config.get(key, "")
+
+if __name__ == "__main__":
+    mcp.run()</code></pre>
+  <p>第1引数の文字列が <strong>URI テンプレート</strong>。<code class="inline">{key}</code> のような変数を埋め込める。</p></section>
+
+  <section><h2>④ URI スキーム設計のコツ</h2>
+  <ul>
+    <li><strong>名前空間を切る</strong>: <code class="inline">docs://</code> / <code class="inline">db://</code> / <code class="inline">config://</code> など用途別に</li>
+    <li><strong>階層を表す</strong>: <code class="inline">db://users/{id}</code> のように RESTful に</li>
+    <li><strong>クエリ的なものはパラメータ</strong>: <code class="inline">logs://errors?limit=100</code></li>
+    <li><strong>一覧と詳細を分ける</strong>: <code class="inline">db://users</code> (一覧) / <code class="inline">db://users/{id}</code> (詳細)</li>
+  </ul></section>
+
+  <section><h2>⑤ Resource Templates (動的 URI)</h2>
+<pre><code>@mcp.resource("notes://{date}")
+def daily_note(date: str) -&gt; str:
+    """指定日のメモを返す。例: notes://2026-05-24"""
+    path = f"./notes/{date}.md"
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"No note for {date}")
+    return open(path).read()</code></pre>
+  <p>URI テンプレートで <code class="inline">{date}</code> 部分を可変にすることで、無限のパターンを1つの定義でカバーできる。Client は <code class="inline">resources/templates/list</code> でテンプレ一覧を取得する。</p></section>
+
+  <section><h2>⑥ 戻り値の型</h2>
+  <ul>
+    <li><strong>str</strong>: テキスト (Markdown / プレーン)</li>
+    <li><strong>bytes</strong>: バイナリ (画像・PDF・音声 等)</li>
+    <li><strong>List[dict]</strong>: JSON 配列 (複数行データ)</li>
+  </ul>
+  <div class="card mint"><strong>MIME 設定:</strong> <code class="inline">@mcp.resource("img://...", mime_type="image/png")</code> でデコレータに明示できる。</div></section>
+
+  <section><h2>⑦ 中学生向けに例えると</h2>
+  <p>tool が「家のスイッチ」(押すと動く) なら、resource は「本棚の本」(読むだけ)。Claude は本棚から本を取り出して、内容を読んで考える。スイッチを押す (副作用) のとは別の役割。</p></section>
+
+  <section><h2>⑧ 理解度チェック</h2>
+  <details><summary>Q1. Resource と Tool の最大の違いは?</summary><p>A. 副作用の有無。Resource は read-only (読むだけ)・Tool は実行 (送信・書込)。LLM の使い方も変わる。</p></details>
+  <details><summary>Q2. Resource の識別子は?</summary><p>A. URI (Uniform Resource Identifier)。<code>file://</code>, <code>db://</code>, <code>config://</code> など自由にスキームを設計可能。</p></details>
+  <details><summary>Q3. 動的 URI を作るには?</summary><p>A. <code>@mcp.resource("notes://{date}")</code> のように URI テンプレートを使い、関数引数に変数を受け取る。</p></details></section>
+
+  <section><h2>⑨ 自分メモ</h2><div class="memo-area">resource として公開したいデータ…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 101: Defining resources</footer>
+</main></body></html>

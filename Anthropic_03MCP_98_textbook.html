@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 98: The server inspector | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}pre{background:#f4eedb;border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:"Consolas","Menlo",monospace;font-size:14px;line-height:1.7;margin:12px 0;border:1px solid var(--border)}code.inline{background:#f4eedb;padding:2px 6px;border-radius:4px;font-family:"Consolas","Menlo",monospace;font-size:.92em;color:#a85200}details{background:var(--paper-2);border-radius:var(--radius);padding:14px 22px;margin:10px 0;box-shadow:var(--shadow);border-left:4px solid var(--tag-bg)}details summary{cursor:pointer;font-weight:700;font-size:15px;outline:none}details[open]{border-left-color:var(--accent)}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 2 ・ Lecture 98 ・ ツール紹介</span>
+  <h1 class="lecture-title">The server inspector<span class="ja-sub">— MCP Inspector で server を可視化・デバッグする</span></h1>
+  <p class="subtitle">Anthropic Academy / コース03 Model Context Protocol</p>
+
+  <section><h2>① MCP Inspector とは?</h2>
+  <p><strong>MCP Inspector</strong> は、MCP server を <strong>ブラウザ UI で対話的にテスト</strong> できる開発者向けツール。Anthropic が公式提供。サーバの tool / resource / prompt を一覧表示し、引数を入れて手動実行できる。</p>
+  <div class="card accent"><strong>核心:</strong> Claude Desktop に登録する前の動作確認に必須。「サーバが正しく起動するか」「tool が一覧に出るか」「実行結果が期待通りか」をブラウザ画面で素早く検証。</div></section>
+
+  <section><h2>② 起動方法</h2>
+<pre><code># プロジェクトディレクトリで
+uv run mcp dev server.py
+
+# → 自動でブラウザが開く (http://localhost:5173 等)
+# → 別ターミナルから手動でも起動可:
+npx @modelcontextprotocol/inspector uv run server.py</code></pre></section>
+
+  <section><h2>③ Inspector 画面の構成</h2>
+  <ul>
+    <li><strong>左ペイン</strong>: server 接続状態 / 接続/切断ボタン</li>
+    <li><strong>タブ切替</strong>: Tools / Resources / Prompts / Sampling / Logs</li>
+    <li><strong>Tools タブ</strong>: 定義された tool 一覧 + 各 tool の input フォーム + Run ボタン + 結果表示</li>
+    <li><strong>Resources タブ</strong>: 公開されてる resource (ファイル・URL) の一覧 + 読み込みプレビュー</li>
+    <li><strong>Logs タブ</strong>: サーバとの全通信 (JSON-RPC メッセージ) を確認可能</li>
+  </ul></section>
+
+  <section><h2>④ 典型的なデバッグフロー</h2>
+  <ol>
+    <li><code>uv run mcp dev server.py</code> で Inspector 起動</li>
+    <li>Tools タブで自分の tool が一覧に出ているか確認</li>
+    <li>各 tool の description が LLM に分かりやすく書けているか目視チェック</li>
+    <li>引数フォームに値を入れて Run → 結果が期待通りか</li>
+    <li>エラー時は Logs タブで JSON-RPC やり取りを確認</li>
+    <li>OK なら Claude Desktop の config に登録</li>
+  </ol></section>
+
+  <section><h2>⑤ Inspector が解決してくれる「あるある」</h2>
+  <div class="card mint">
+    <ul>
+      <li><strong>Claude Desktop に登録したのに tool が出ない</strong> → Inspector で起動確認 → そもそも server が落ちてた / tool 名タイポ</li>
+      <li><strong>tool 実行で謎エラー</strong> → Inspector で同じ引数を流して再現 → スタックトレースが見える</li>
+      <li><strong>引数のバリデーションが効かない</strong> → Inspector で間違った型を入れて検証</li>
+      <li><strong>resource の URI 設計が悩ましい</strong> → Inspector でクライアントから見える形をプレビュー</li>
+    </ul>
+  </div></section>
+
+  <section><h2>⑥ Inspector vs Claude Desktop</h2>
+  <ul>
+    <li><strong>Inspector</strong>: 開発時の単体テスト用 (LLM 経由しない・手動実行)</li>
+    <li><strong>Claude Desktop</strong>: 本番運用 (LLM が自動で tool を選んで呼ぶ)</li>
+  </ul>
+  <p>両方を使い分ける。実装中は Inspector、ローカルE2Eなら Desktop。</p></section>
+
+  <section><h2>⑦ 中学生向けに例えると</h2>
+  <p>家電を本番設置する前に「テスト棚」で動作確認するイメージ。Inspector は MCP server の試運転台。ボタン押して中身を確かめてから、Claude Desktop (本番リビング) に持っていく。</p></section>
+
+  <section><h2>⑧ 理解度チェック</h2>
+  <details><summary>Q1. Inspector の起動コマンドは?</summary><p>A. <code>uv run mcp dev server.py</code>。自動でブラウザが開く。</p></details>
+  <details><summary>Q2. Inspector でデバッグが捗る場面は?</summary><p>A. Claude Desktop に登録する前の動作確認 / tool 実行エラーの再現 / JSON-RPC メッセージの確認。</p></details>
+  <details><summary>Q3. Inspector と Claude Desktop の使い分けは?</summary><p>A. Inspector = 開発者の単体テスト / Claude Desktop = LLM 経由の本番運用。両方使う。</p></details></section>
+
+  <section><h2>⑨ 自分メモ</h2><div class="memo-area">Inspector で確認したい自分の tool…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 98: The server inspector<br>公式: <a href="https://github.com/modelcontextprotocol/inspector">modelcontextprotocol/inspector</a></footer>
+</main></body></html>
