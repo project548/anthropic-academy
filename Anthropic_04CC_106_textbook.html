@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 106: Claude Code in Action | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 1 ・ Lecture 106 ・ コース04 タイトル</span>
+  <h1 class="lecture-title">Claude Code in Action<span class="ja-sub">— コース04 のタイトル回・全体イントロ</span></h1>
+  <p class="subtitle">Anthropic Academy / コース04 Claude Code</p>
+
+  <section><h2>① このコースは何を学ぶ?</h2>
+  <p>コース04 では <strong>Claude Code</strong> を扱う。<strong>Anthropic 公式のターミナル向け AI エージェント</strong>で、ファイル編集・コマンド実行・git 操作までターミナルから自然言語で指示できる。コース02/03 の集大成的な存在。</p>
+  <div class="card accent"><strong>結論:</strong> Claude Code = 「ターミナルに住んでる Claude」。コード書く・読む・実行する・テストする・git する、全部任せられる。</div></section>
+
+  <section><h2>② コース04 の到達点</h2>
+  <ul>
+    <li>Claude Code をインストール・初期設定できる</li>
+    <li>自然言語でコード変更・ファイル操作を指示できる</li>
+    <li>MCP server を Claude Code から呼び出せる</li>
+    <li>独自の slash commands を作成できる</li>
+    <li>CLAUDE.md でプロジェクト固有ルールを学習させられる</li>
+    <li>大きなコードベースで安全に作業できる</li>
+  </ul></section>
+
+  <section><h2>③ なぜ「ターミナル」?</h2>
+  <ul>
+    <li><strong>IDE 非依存</strong>: VS Code でも Cursor でも、生ターミナルでも同じ操作感</li>
+    <li><strong>パイプ可能</strong>: <code>git log | claude "コミット要約"</code> のように既存ツールと組合せ</li>
+    <li><strong>軽量</strong>: GUI 不要・SSH 接続先でも動く</li>
+    <li><strong>スクリプタブル</strong>: CI/CD やバッチ処理に組込可能</li>
+  </ul>
+  <div class="card mint"><strong>哲学:</strong> 開発者は既にターミナルで生きている。新しい UI を覚えさせるより、ターミナルの中に Claude を入れる方が早い。</div></section>
+
+  <section><h2>④ コース04 の章立て</h2>
+  <ol>
+    <li>Introduction (#107)</li>
+    <li>What is a coding assistant? (#108)</li>
+    <li>Claude Code in action (#109)</li>
+    <li>Claude Code setup (#110)</li>
+    <li>Project setup (#111)</li>
+    <li>Adding context (#112)</li>
+    <li>Making changes (#113)</li>
+    <li>Controlling context (#115)</li>
+    <li>Custom commands (#116)</li>
+    <li>MCP servers with Claude Code (#117)</li>
+  </ol></section>
+
+  <section><h2>⑤ コース02/03 との繋がり</h2>
+  <ul>
+    <li><strong>コース02</strong>: Claude API の使い方 → Claude Code は中身で API を叩く</li>
+    <li><strong>コース03</strong>: MCP の作り方 → Claude Code は MCP の最大のクライアント</li>
+    <li><strong>コース04</strong>: それらを <strong>ターミナル CLI として統合</strong> したエンドユーザー体験</li>
+  </ul></section>
+
+  <section><h2>⑥ 中学生向けに例えると</h2>
+  <p>コース02 でロボットの脳 (Claude API) を理解、コース03 でロボットの手 (MCP) を整備した。コース04 では「そのロボットをターミナルに住まわせて、家事 (コーディング) を全部やらせる」段階。</p></section>
+
+  <section><h2>⑦ 自分メモ</h2><div class="memo-area">Claude Code で任せたい自分の作業…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 106: Claude Code in Action<br>公式: <a href="https://docs.claude.com/en/docs/claude-code">docs.claude.com/claude-code</a></footer>
+</main></body></html>

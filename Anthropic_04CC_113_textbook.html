@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 113: Making changes | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}pre{background:#f4eedb;border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:"Consolas","Menlo",monospace;font-size:14px;line-height:1.7;margin:12px 0;border:1px solid var(--border)}code.inline{background:#f4eedb;padding:2px 6px;border-radius:4px;font-family:"Consolas","Menlo",monospace;font-size:.92em;color:#a85200}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 3 ・ Lecture 113 ・ コード変更</span>
+  <h1 class="lecture-title">Making changes<span class="ja-sub">— Claude にコードを変更させるベストな指示の出し方</span></h1>
+  <p class="subtitle">Anthropic Academy / コース04 Claude Code</p>
+
+  <section><h2>① 基本フロー</h2>
+  <ol>
+    <li><strong>指示</strong>: 自然言語で「○○して」と伝える</li>
+    <li><strong>計画提示</strong>: Claude が「これからこう変更します」と宣言</li>
+    <li><strong>diff 確認</strong>: 各 Edit ごとに承認 / 拒否を選択</li>
+    <li><strong>検証</strong>: テスト・lint・型チェックを Claude 自身が実行</li>
+    <li><strong>追加修正</strong>: 結果見て次の指示</li>
+  </ol>
+  <div class="card accent"><strong>核心:</strong> Claude は <strong>承認なしでファイルを上書きしない</strong>。diff 表示 → ユーザー承認のステップを必ず踏む。</div></section>
+
+  <section><h2>② 良い指示・悪い指示</h2>
+  <ul>
+    <li>❌ <strong>「いい感じに直して」</strong> → 何を直すか不明 / 曖昧</li>
+    <li>❌ <strong>「全部リファクタして」</strong> → スコープ広すぎ / 副作用大</li>
+    <li>✅ <strong>「<code>auth.ts:42</code> の <code>any</code> 型を厳密な型に書き換えて」</strong> → 場所と目的が明確</li>
+    <li>✅ <strong>「ログイン失敗時のエラーメッセージを日本語化。<code>messages.ts</code> に集約」</strong> → スコープと方針が明確</li>
+  </ul></section>
+
+  <section><h2>③ 大きい変更は段階分割</h2>
+<pre><code># ❌ 一気に全部
+&gt; auth 全体を JWT に書き換えて
+
+# ✅ 段階分割
+&gt; まず JWT 関連の依存を package.json に追加して
+&gt; 次に utils/jwt.ts を新規作成 (sign / verify)
+&gt; その次に login.ts で sign 呼び出しに置き換え
+&gt; 最後に middleware で verify 呼び出し
+
+# 各ステップで diff 確認 → テスト → 次へ</code></pre></section>
+
+  <section><h2>④ diff 承認の選択肢</h2>
+  <ul>
+    <li><strong>Approve</strong>: そのまま適用</li>
+    <li><strong>Reject</strong>: 適用しない・指示やり直し</li>
+    <li><strong>Edit</strong>: 内容を手動修正してから適用</li>
+    <li><strong>Approve All</strong>: 一連の変更を全部一括承認 (注意・診断必須)</li>
+  </ul></section>
+
+  <section><h2>⑤ 「失敗」を活かす指示</h2>
+  <div class="card mint">
+    <ul>
+      <li>テスト失敗 → 「失敗ログを読んで修正して」</li>
+      <li>型エラー → 「<code>tsc --noEmit</code> で出たエラーを直して」</li>
+      <li>lint エラー → 「<code>npm run lint</code> 実行して全エラー解消」</li>
+      <li>意図と違う出力 → 「ここは△△にしたかった。直して」</li>
+    </ul>
+  </div>
+  <p>Claude は <strong>失敗ログを読んで自己修正</strong> できる。エラーを隠さず見せるのが正解。</p></section>
+
+  <section><h2>⑥ 安全装置 (デフォルト)</h2>
+  <ul>
+    <li>ファイル変更前に必ず diff 表示</li>
+    <li>Bash 実行は承認待ち (危険コマンドは特に)</li>
+    <li><code>git status</code> 等の read-only は自動許可</li>
+    <li>git 操作は明示指示が必要 (commit/push は手動)</li>
+    <li>本番デプロイ系コマンドはブロック (settings で制御可)</li>
+  </ul></section>
+
+  <section><h2>⑦ 中学生向けに例えると</h2>
+  <p>料理ロボに「カレー作って」と頼んだとき、「玉ねぎを切ります、いいですか?」と毎回確認するのが Claude Code。「OK」「いや、もっと細かく」と指示し直せる。雑な指示より具体的な指示の方が出来も早い。</p></section>
+
+  <section><h2>⑧ 自分メモ</h2><div class="memo-area">変更指示で意識したいこと…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 113: Making changes</footer>
+</main></body></html>

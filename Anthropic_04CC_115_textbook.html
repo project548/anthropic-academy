@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 115: Controlling context | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}pre{background:#f4eedb;border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:"Consolas","Menlo",monospace;font-size:14px;line-height:1.7;margin:12px 0;border:1px solid var(--border)}code.inline{background:#f4eedb;padding:2px 6px;border-radius:4px;font-family:"Consolas","Menlo",monospace;font-size:.92em;color:#a85200}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 3 ・ Lecture 115 ・ 文脈制御</span>
+  <h1 class="lecture-title">Controlling context<span class="ja-sub">— 長いセッションで context を上手く管理する</span></h1>
+  <p class="subtitle">Anthropic Academy / コース04 Claude Code</p>
+
+  <section><h2>① なぜ context 管理が大事?</h2>
+  <p>Claude には <strong>context window 上限</strong> がある (Opus 4.7 = 1M トークン、Sonnet 4.6 = 200K)。大規模プロジェクトや長セッションでは <strong>不要な情報を入れない</strong>・<strong>古い情報を整理する</strong> 工夫が必要。</p>
+  <div class="card accent"><strong>核心:</strong> Context が膨らみすぎると、Claude の精度低下 / コスト増 / latency 増 のトリプルパンチ。意図的に制御する。</div></section>
+
+  <section><h2>② context を圧縮する3つの方法</h2>
+  <ol>
+    <li><strong>/compact</strong>: 過去のやり取りを Claude 自身が要約 → 履歴の代わりに圧縮版を保持</li>
+    <li><strong>/clear</strong>: 履歴を完全クリア (新しいセッションと同じ状態に)</li>
+    <li><strong>新セッション開始</strong>: ターミナル再起動 → 完全リフレッシュ</li>
+  </ol></section>
+
+  <section><h2>③ /compact の使い方</h2>
+<pre><code># 長いセッションで context が膨らんだら
+&gt; /compact
+
+# → Claude が過去履歴を要約してくれる
+# → 重要な決定事項・現在の状態は保持
+# → 一時的な情報・解決済みエラーは破棄</code></pre>
+  <p>Claude Code は自動 compaction も搭載。context 残量が少なくなったら自動で発動。</p></section>
+
+  <section><h2>④ Context を肥大化させないコツ</h2>
+  <div class="card mint">
+    <ul>
+      <li><strong>大ファイルを丸ごと読ませない</strong>: 必要な範囲を <code>file.ts:42-80</code> と指定</li>
+      <li><strong>確定した話題は CLAUDE.md / KNOWLEDGE.md に逃がす</strong>: 揮発性 → 永続化</li>
+      <li><strong>巨大ログを貼らない</strong>: <code>head -100</code> や grep で絞る</li>
+      <li><strong>session を作業単位で分ける</strong>: 「テスト作業」「lint対応」を別セッション</li>
+      <li><strong>不要な過去履歴は <code>/compact</code></strong></li>
+    </ul>
+  </div></section>
+
+  <section><h2>⑤ Subagent / Agent tool で分離</h2>
+  <p>並列で動かしたい調査タスクは <strong>サブエージェント</strong> を呼ぶと、メイン context を汚さずに完了できる。</p>
+<pre><code># 大量検索を別エージェントに委譲
+&gt; Explore agent で「TODO コメントを全部リストアップして」
+
+# → サブエージェントが探索 → 結果サマリーだけメインに戻る
+# → 何百ファイル読んでも main context は汚れない</code></pre></section>
+
+  <section><h2>⑥ Context 残量を意識する</h2>
+  <ul>
+    <li>セッション開始から残量 ~80% までは「自由に動く」</li>
+    <li>~50% で「集中作業のみ」</li>
+    <li>~20% で「<code>/compact</code> 推奨」</li>
+    <li>残量赤表示で「<code>/compact</code> 必須 or 新セッション」</li>
+  </ul></section>
+
+  <section><h2>⑦ 中学生向けに例えると</h2>
+  <p>勉強机の上が散らかってきたら整理する作業。<code>/compact</code> = 必要なメモだけ残して他は片付ける / <code>/clear</code> = 机の上全部リセット / 新セッション = 別の部屋に移動。机が広いほど集中しやすい。</p></section>
+
+  <section><h2>⑧ 自分メモ</h2><div class="memo-area">context が膨らんだ時にやること…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 115: Controlling context</footer>
+</main></body></html>

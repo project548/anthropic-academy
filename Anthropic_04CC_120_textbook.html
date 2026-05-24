@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 120: Defining hooks | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}pre{background:#f4eedb;border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:"Consolas","Menlo",monospace;font-size:14px;line-height:1.7;margin:12px 0;border:1px solid var(--border)}code.inline{background:#f4eedb;padding:2px 6px;border-radius:4px;font-family:"Consolas","Menlo",monospace;font-size:.92em;color:#a85200}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 5 ・ Lecture 120 ・ Hooks 定義</span>
+  <h1 class="lecture-title">Defining hooks<span class="ja-sub">— Hooks を settings.json に定義する書き方</span></h1>
+  <p class="subtitle">Anthropic Academy / コース04 Claude Code</p>
+
+  <section><h2>① 基本構造</h2>
+  <p>Hooks は <code class="inline">~/.claude/settings.json</code> または <code class="inline">{project}/.claude/settings.json</code> の <code class="inline">hooks</code> セクションに記載する。</p>
+<pre><code>{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "command": "prettier --write \"$FILE_PATH\"",
+        "description": "編集後に自動 format"
+      }
+    ]
+  }
+}</code></pre></section>
+
+  <section><h2>② 主要フィールド</h2>
+  <ul>
+    <li><strong>matcher</strong>: どの tool で発火するか (正規表現)・例: <code>"Write|Edit"</code>, <code>"Bash"</code>, <code>".*"</code></li>
+    <li><strong>command</strong>: 実行するシェルコマンド (環境変数を埋め込み可)</li>
+    <li><strong>description</strong>: 何のための hook か (人間用メモ)</li>
+    <li><strong>blocking</strong>: 同期実行で結果を Claude に返す (デフォルト false)</li>
+  </ul></section>
+
+  <section><h2>③ 利用可能な環境変数</h2>
+  <ul>
+    <li><code class="inline">$FILE_PATH</code>: 編集対象ファイルのパス</li>
+    <li><code class="inline">$TOOL_INPUT</code>: tool に渡された JSON 入力</li>
+    <li><code class="inline">$TOOL_OUTPUT</code>: tool 実行結果</li>
+    <li><code class="inline">$CLAUDE_PROJECT_DIR</code>: 現在のプロジェクトルート</li>
+    <li><code class="inline">$SESSION_ID</code>: 現セッション ID</li>
+  </ul></section>
+
+  <section><h2>④ 実践例 1: 自動 format</h2>
+<pre><code>{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "command": "node -e \"const f='$FILE_PATH'; if(/\\.(js|ts|tsx|json)$/.test(f)) require('child_process').execSync('npx prettier --write '+f)\"",
+        "description": "JS/TS ファイルの自動 format"
+      }
+    ]
+  }
+}</code></pre></section>
+
+  <section><h2>⑤ 実践例 2: 危険コマンドブロック</h2>
+<pre><code>{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "command": "node -e \"let d='';process.stdin.on('data',c=&gt;d+=c);process.stdin.on('end',()=&gt;{const i=JSON.parse(d);if(/rm\\s+-rf\\s+\\//.test(i.tool_input.command)){console.error('BLOCKED: rm -rf /');process.exit(2)}console.log(d)})\"",
+        "blocking": true,
+        "description": "rm -rf / をブロック"
+      }
+    ]
+  }
+}</code></pre>
+  <p><code class="inline">blocking: true</code> + <code class="inline">process.exit(2)</code> で tool 実行を停止できる。</p></section>
+
+  <section><h2>⑥ 実践例 3: セッション終了時の保存</h2>
+<pre><code>{
+  "hooks": {
+    "Stop": [
+      {
+        "command": "powershell -File ~/.claude/scripts/save-session-to-obsidian.ps1",
+        "description": "セッション終了時に Obsidian に保存"
+      }
+    ]
+  }
+}</code></pre></section>
+
+  <section><h2>⑦ デバッグ・確認方法</h2>
+  <div class="card mint">
+    <ul>
+      <li>Hook 実行ログ: <code class="inline">~/.claude/logs/</code> 配下</li>
+      <li>matcher が効いてるか不安なら <code class="inline">matcher: ".*"</code> で全マッチ確認</li>
+      <li>command を <code class="inline">echo</code> や log にして無害化テスト</li>
+      <li>blocking 設定で無限ループになっていないか確認</li>
+    </ul>
+  </div></section>
+
+  <section><h2>⑧ 中学生向けに例えると</h2>
+  <p>家のセンサー設定。「玄関のドアが開いたら (matcher) → 照明をつける (command)」のようなルール文を JSON で書く。Claude Code の各 tool 実行が「ドアが開く」イベントに相当する。</p></section>
+
+  <section><h2>⑨ 自分メモ</h2><div class="memo-area">書きたい hook の定義…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 120: Defining hooks</footer>
+</main></body></html>

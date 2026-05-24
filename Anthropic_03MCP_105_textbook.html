@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 105: MCP review | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}table.vocab{width:100%;background:var(--paper-2);border-collapse:collapse;margin:16px 0;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}table.vocab th,table.vocab td{border:1px solid var(--border);padding:10px 14px;text-align:left;font-size:14px}table.vocab th{background:var(--tag-bg);color:var(--tag-text);font-weight:700}code.inline{background:#f4eedb;padding:2px 6px;border-radius:4px;font-family:"Consolas","Menlo",monospace;font-size:.92em;color:#a85200}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 4 ・ Lecture 105 ・ レビュー</span>
+  <h1 class="lecture-title">MCP review<span class="ja-sub">— コース03 で学んだ MCP 全体の振り返り</span></h1>
+  <p class="subtitle">Anthropic Academy / コース03 Model Context Protocol</p>
+
+  <section><h2>① MCP の本質を1枚で</h2>
+  <div class="card accent">
+    <strong>MCP = LLM 向けの USB-C 規格</strong><br>
+    どの LLM クライアントからも、どの外部 tool / データ源にも、<strong>同じ繋ぎ方</strong>でアクセスできる。Anthropic が 2024-11 にオープンソース公開し、業界標準化が進行中。
+  </div></section>
+
+  <section><h2>② 3層アーキテクチャ再確認</h2>
+  <table class="vocab"><thead><tr><th>層</th><th>役割</th><th>例</th></tr></thead><tbody>
+    <tr><td><strong>Host</strong></td><td>UI + LLM 呼び出し</td><td>Claude Desktop / Claude Code / Cursor</td></tr>
+    <tr><td><strong>Client</strong></td><td>Server と1対1通信</td><td>Host 内蔵 (MCP SDK)</td></tr>
+    <tr><td><strong>Server</strong></td><td>tool / resource / prompt 提供</td><td>GitHub MCP / 自作 server.py</td></tr>
+  </tbody></table></section>
+
+  <section><h2>③ 3 Pillars 使い分けマトリクス</h2>
+  <table class="vocab"><thead><tr><th>観点</th><th>Tools</th><th>Resources</th><th>Prompts</th></tr></thead><tbody>
+    <tr><td>本質</td><td>動詞</td><td>名詞</td><td>テンプレ</td></tr>
+    <tr><td>呼び出し主体</td><td>LLM (自律)</td><td>Host/ユーザー</td><td>ユーザー</td></tr>
+    <tr><td>副作用</td><td>あり</td><td>なし</td><td>なし</td></tr>
+    <tr><td>FastMCP</td><td>@mcp.tool()</td><td>@mcp.resource(URI)</td><td>@mcp.prompt()</td></tr>
+    <tr><td>典型例</td><td>send_email / db_write</td><td>file:// / db://users/{id}</td><td>/code_review</td></tr>
+  </tbody></table></section>
+
+  <section><h2>④ ハンズオン全体フロー (再現手順)</h2>
+  <ol>
+    <li><code class="inline">uv init</code> + <code class="inline">uv add "mcp[cli]"</code></li>
+    <li><code class="inline">server.py</code> 作成 → <code class="inline">FastMCP("name")</code> インスタンス化</li>
+    <li><code class="inline">@mcp.tool()</code> / <code class="inline">@mcp.resource("...")</code> / <code class="inline">@mcp.prompt()</code> で3 Pillars 定義</li>
+    <li><code class="inline">uv run mcp dev server.py</code> → MCP Inspector で動作確認</li>
+    <li><code class="inline">claude_desktop_config.json</code> に登録 → Claude Desktop 再起動</li>
+    <li>ハンマーアイコン / <code class="inline">@</code> / <code class="inline">/</code> でアクセス確認</li>
+  </ol></section>
+
+  <section><h2>⑤ コース02 (Tool use) との関係性</h2>
+  <ul>
+    <li><strong>コース02</strong>: API 直書きで tool 定義 (アプリ内蔵)</li>
+    <li><strong>コース03 (MCP)</strong>: tool を別プロセスサーバ化 (再利用可能・標準)</li>
+  </ul>
+  <p>同じ「tool を使わせる」でも、<strong>再利用性 / 公開性</strong>が大きく変わる。組織内共有や OSS 公開には MCP が向く。</p></section>
+
+  <section><h2>⑥ 実務でよくある選択</h2>
+  <div class="card mint">
+    <ul>
+      <li><strong>自分1人で使う簡易 tool</strong> → コース02 直書きで十分</li>
+      <li><strong>チーム / 組織で共有</strong> → MCP server 化</li>
+      <li><strong>外部公開・OSS</strong> → MCP + npm/PyPI で配布</li>
+      <li><strong>業界標準を作りたい</strong> → MCP (例: GitHub MCP / Slack MCP)</li>
+    </ul>
+  </div></section>
+
+  <section><h2>⑦ 次のコース (Claude Code)</h2>
+  <p>コース04 では <strong>Claude Code (CLI 版 Claude)</strong> を学ぶ。MCP server をターミナルから直接呼べる開発体験。コース02/03 の知識が前提となる。</p></section>
+
+  <section><h2>⑧ 中学生向けに例えると</h2>
+  <p>コース03 全体は「家電量販店で標準コンセント (USB-C) を理解した」状態。これで、どのメーカーのスマホでも、どのケーブルでも、同じ口に差せる。次のコース04 ではその「コンセントを使う側 = Claude Code」を学ぶ。</p></section>
+
+  <section><h2>⑨ 自分メモ</h2><div class="memo-area">MCP で実現したい自分の道具…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 105: MCP review<br>コース03 完結 → 次は コース04 Claude Code</footer>
+</main></body></html>

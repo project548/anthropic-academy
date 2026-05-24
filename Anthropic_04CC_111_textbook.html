@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 111: Project setup | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}pre{background:#f4eedb;border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:"Consolas","Menlo",monospace;font-size:14px;line-height:1.7;margin:12px 0;border:1px solid var(--border)}code.inline{background:#f4eedb;padding:2px 6px;border-radius:4px;font-family:"Consolas","Menlo",monospace;font-size:.92em;color:#a85200}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 2 ・ Lecture 111 ・ プロジェクト初期化</span>
+  <h1 class="lecture-title">Project setup<span class="ja-sub">— Claude Code をプロジェクトで使う初期セットアップ</span></h1>
+  <p class="subtitle">Anthropic Academy / コース04 Claude Code</p>
+
+  <section><h2>① 既存プロジェクトでの開始</h2>
+<pre><code># 任意のディレクトリで claude を起動
+cd ~/work/my-project
+claude
+
+# 初回起動時に Claude が以下を自動実行:
+# - ls / Glob でプロジェクト構造を把握
+# - package.json / pyproject.toml / Cargo.toml 等を読む
+# - .gitignore を尊重
+# - CLAUDE.md があれば必読</code></pre></section>
+
+  <section><h2>② CLAUDE.md の役割</h2>
+  <p>プロジェクトルートに <code class="inline">CLAUDE.md</code> を置くと、Claude Code は毎セッションこれを <strong>必読</strong> する。プロジェクト固有のルール・規約・前提を伝える「Claude への手紙」。</p>
+  <div class="card accent"><strong>記載すべき内容:</strong><br>
+    - プロジェクト概要 (何を作っているか)<br>
+    - 主要コマンド (build / test / lint)<br>
+    - コードスタイル (命名・フォルダ構成)<br>
+    - やってほしくないこと (例: 本番DB触らない)<br>
+    - 重要ファイルの場所
+  </div></section>
+
+  <section><h2>③ /init コマンドで自動生成</h2>
+<pre><code># Claude セッション内で
+&gt; /init
+
+# → Claude がプロジェクトを分析して CLAUDE.md の雛形を作る
+# 内容を確認して保存 → 次回以降のセッションで自動使用</code></pre></section>
+
+  <section><h2>④ ディレクトリ構成 (Claude Code 周り)</h2>
+<pre><code>my-project/
+├── CLAUDE.md              # プロジェクト固有ルール (必読)
+├── .claude/
+│   ├── settings.json      # プロジェクト設定 (hooks/permissions)
+│   ├── settings.local.json # 個人ローカル設定 (gitignore推奨)
+│   ├── commands/          # プロジェクト専用 slash commands
+│   │   ├── deploy.md
+│   │   └── review.md
+│   └── agents/            # プロジェクト専用サブエージェント
+└── ... (実コード)</code></pre></section>
+
+  <section><h2>⑤ 設定の階層 (上書きルール)</h2>
+  <ol>
+    <li>ユーザー指定 (起動時引数 / セッション中の指示)</li>
+    <li>プロジェクト <code class="inline">.claude/settings.local.json</code></li>
+    <li>プロジェクト <code class="inline">.claude/settings.json</code></li>
+    <li>プロジェクト <code class="inline">CLAUDE.md</code></li>
+    <li>グローバル <code class="inline">~/.claude/settings.json</code></li>
+    <li>グローバル <code class="inline">~/.claude/CLAUDE.md</code></li>
+  </ol>
+  <p>下位ほど一般的・上位ほど具体的。具体的な設定が優先。</p></section>
+
+  <section><h2>⑥ よくある初期セットアップ手順</h2>
+  <div class="card mint">
+    <ol>
+      <li>プロジェクトに移動 → <code>claude</code> 起動</li>
+      <li><code>/init</code> で CLAUDE.md 自動生成</li>
+      <li>生成内容を確認・追記 (やってほしくないこと等)</li>
+      <li>必要なら <code>.claude/settings.json</code> に hooks / permissions 設定</li>
+      <li><code>.gitignore</code> に <code>.claude/settings.local.json</code> 追加</li>
+      <li>動作確認: 「このプロジェクトの概要は?」</li>
+    </ol>
+  </div></section>
+
+  <section><h2>⑦ 中学生向けに例えると</h2>
+  <p>新しいバイト先で先輩から「うちのお店のルール」のメモを渡される感じ。CLAUDE.md = そのルールメモ。これがあるおかげで毎日聞かなくても、Claude が自分でルールを思い出せる。</p></section>
+
+  <section><h2>⑧ 自分メモ</h2><div class="memo-area">CLAUDE.md に書きたいこと…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 111: Project setup</footer>
+</main></body></html>

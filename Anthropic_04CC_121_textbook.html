@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 121: Implementing a hook | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}pre{background:#f4eedb;border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:"Consolas","Menlo",monospace;font-size:14px;line-height:1.7;margin:12px 0;border:1px solid var(--border)}code.inline{background:#f4eedb;padding:2px 6px;border-radius:4px;font-family:"Consolas","Menlo",monospace;font-size:.92em;color:#a85200}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 5 ・ Lecture 121 ・ Hooks 実装</span>
+  <h1 class="lecture-title">Implementing a hook<span class="ja-sub">— 実用的な hook をゼロから作る</span></h1>
+  <p class="subtitle">Anthropic Academy / コース04 Claude Code</p>
+
+  <section><h2>① 今回作る hook</h2>
+  <p>実例として「<strong>Write/Edit 後に対象ファイルへ自動 lint を実行</strong>」する hook をゼロから作る。</p>
+  <div class="card accent"><strong>到達点:</strong> Claude がファイル編集するたびに、自動で lint が走り、エラーが Claude に通知される (= 次の指示で自動修正されやすくなる)。</div></section>
+
+  <section><h2>② 実装手順</h2>
+  <ol>
+    <li><code class="inline">.claude/hooks/</code> ディレクトリ作成</li>
+    <li>hook 用シェルスクリプト or Node スクリプトを書く</li>
+    <li><code class="inline">.claude/settings.json</code> に登録</li>
+    <li>動作確認 (matcher を一旦広めに → 動いたら絞り込み)</li>
+    <li>ログ・デバッグ → 安定化</li>
+  </ol></section>
+
+  <section><h2>③ Step 1: スクリプト作成</h2>
+<pre><code># .claude/hooks/auto-lint.js
+const fs = require('fs');
+const path = require('path');
+const { execSync } = require('child_process');
+
+let data = '';
+process.stdin.on('data', chunk =&gt; data += chunk);
+process.stdin.on('end', () =&gt; {
+  const input = JSON.parse(data);
+  const filePath = input.tool_input?.file_path;
+
+  if (!filePath) { process.exit(0); }
+  if (!/\.(js|ts|tsx)$/.test(filePath)) { process.exit(0); }
+
+  try {
+    execSync(`npx eslint --fix "${filePath}"`, { stdio: 'inherit' });
+  } catch (err) {
+    console.error('Lint errors found in ' + filePath);
+    process.exit(0);  // 警告だけで blocking しない
+  }
+});</code></pre></section>
+
+  <section><h2>④ Step 2: settings.json に登録</h2>
+<pre><code>{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "command": "node $CLAUDE_PROJECT_DIR/.claude/hooks/auto-lint.js",
+        "description": "編集後の自動 lint"
+      }
+    ]
+  }
+}</code></pre></section>
+
+  <section><h2>⑤ Step 3: 動作確認</h2>
+<pre><code># 1. Claude Code 起動
+claude
+
+# 2. 適当なファイルを編集させる
+&gt; src/app.ts に foo 関数を追加して
+
+# 3. hook 発火確認
+# → eslint が自動実行されるはず
+# → 結果がターミナル末尾に表示
+
+# 4. ログ確認
+ls ~/.claude/logs/</code></pre></section>
+
+  <section><h2>⑥ よくある実装パターン</h2>
+  <div class="card mint">
+    <ul>
+      <li><strong>条件付き発火</strong>: <code>filePath</code> の拡張子で early return</li>
+      <li><strong>非 blocking</strong>: 警告だけ表示・tool は止めない (process.exit(0))</li>
+      <li><strong>blocking</strong>: エラー時に process.exit(2) で tool 停止 (危険操作防止)</li>
+      <li><strong>標準入力</strong>: tool_input は JSON で stdin に流れてくる</li>
+      <li><strong>環境変数</strong>: <code>$CLAUDE_PROJECT_DIR</code> でプロジェクトルート相対指定</li>
+    </ul>
+  </div></section>
+
+  <section><h2>⑦ デバッグのコツ</h2>
+  <ul>
+    <li>最初は <code class="inline">echo $FILE_PATH &gt;&gt; /tmp/hook.log</code> でログだけ取る</li>
+    <li>stdout は Claude に渡る・stderr は人間に見える</li>
+    <li>process.exit(2) は tool を中止 / exit(0) は通過</li>
+    <li>無限ループ注意: PostToolUse hook が内部で Edit を呼ぶと再帰</li>
+    <li>遅い hook はセッションを遅くする → 軽量に</li>
+  </ul></section>
+
+  <section><h2>⑧ 応用アイデア</h2>
+  <ul>
+    <li>編集後に自動 git add (チェックポイント作成)</li>
+    <li>Bash 実行時の commands をローカル DB に記録 (監査)</li>
+    <li>tool 入力に PII (個人情報) が含まれていたら redact</li>
+    <li>セッション開始時に環境変数を読み込み</li>
+    <li>セッション終了時に Lark Doc へ要約を保存</li>
+  </ul></section>
+
+  <section><h2>⑨ 中学生向けに例えると</h2>
+  <p>「玄関に来客センサー」を実装する作業。① センサー本体 (script) を作る → ② 玄関に取り付ける (settings.json 登録) → ③ ドアを開けて動作確認 → ④ 動かない場合は配線 (ログ) を見て修正。Claude Code の hook も同じ手順。</p></section>
+
+  <section><h2>⑩ 自分メモ</h2><div class="memo-area">実装したい hook…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 121: Implementing a hook</footer>
+</main></body></html>
