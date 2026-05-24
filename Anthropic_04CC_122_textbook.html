@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 122: Gotchas around hooks | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}.card.warn{background:#fff4e5;border-left:4px solid #e8893a}pre{background:#f4eedb;border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:"Consolas","Menlo",monospace;font-size:14px;line-height:1.7;margin:12px 0;border:1px solid var(--border)}code.inline{background:#f4eedb;padding:2px 6px;border-radius:4px;font-family:"Consolas","Menlo",monospace;font-size:.92em;color:#a85200}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 5 ・ Lecture 122 ・ 落とし穴集</span>
+  <h1 class="lecture-title">Gotchas around hooks<span class="ja-sub">— Hooks 運用でハマる「落とし穴」と回避策</span></h1>
+  <p class="subtitle">Anthropic Academy / コース04 Claude Code</p>
+
+  <section><h2>① この章の位置づけ</h2>
+  <p>Hooks は強力だが、運用で <strong>地雷を踏みやすい</strong> 領域でもある。実際にハマる典型パターンと回避策を集めた回。</p>
+  <div class="card accent"><strong>核心:</strong> 「動いた!」と喜ぶ前に「これ無限ループにならない?」「セッション遅くならない?」「セキュリティ大丈夫?」を点検する。</div></section>
+
+  <section><h2>② Gotcha 1: 無限ループ</h2>
+  <div class="card warn"><strong>症状:</strong> PostToolUse hook の中で Edit を呼ぶ → その Edit が PostToolUse を発火 → 無限ループでセッション破壊。</div>
+<pre><code># ❌ NG: PostToolUse 内で再帰的に編集を呼ぶ
+{
+  "hooks": {
+    "PostToolUse": [{
+      "matcher": "Edit",
+      "command": "node script-that-calls-edit.js"  // 危険!
+    }]
+  }
+}
+
+# ✅ OK: 別ロジック (フォーマッタ等) を直接呼ぶ
+{
+  "hooks": {
+    "PostToolUse": [{
+      "matcher": "Edit",
+      "command": "prettier --write $FILE_PATH"
+    }]
+  }
+}</code></pre></section>
+
+  <section><h2>③ Gotcha 2: blocking hook が遅い</h2>
+  <div class="card warn"><strong>症状:</strong> blocking hook が毎回 3秒 かかる → tool 実行のたびに待たされる → 体験が悪い。</div>
+  <ul>
+    <li>blocking hook は <strong>100ms 以下</strong> を目標に</li>
+    <li>重い処理は非同期 (PostToolUse + 非 blocking)</li>
+    <li>npm パッケージ取得を毎回するとかは絶対 NG</li>
+    <li>キャッシュやプリロード推奨</li>
+  </ul></section>
+
+  <section><h2>④ Gotcha 3: stdout/stderr の混乱</h2>
+  <div class="card warn"><strong>症状:</strong> hook の stdout に余計なものが入って Claude の context を汚す or tool 結果が壊れる。</div>
+  <ul>
+    <li><strong>stdout</strong> = Claude に渡る → 必要なものだけ書く</li>
+    <li><strong>stderr</strong> = 人間ターミナルに表示 → ログ・警告はこちら</li>
+    <li>debug print は <code class="inline">console.error</code> で stderr に</li>
+    <li>素通しなら stdin を stdout にそのまま echo</li>
+  </ul></section>
+
+  <section><h2>⑤ Gotcha 4: matcher の正規表現ミス</h2>
+  <div class="card warn"><strong>症状:</strong> matcher が広すぎて全 tool で発火 / 狭すぎて全く発火しない。</div>
+<pre><code># ❌ 広すぎ
+"matcher": ".*"          // 全 tool で発火 → 重い + 副作用大
+
+# ❌ 狭すぎ
+"matcher": "WriteOnly"    // 該当 tool なし → 永遠に発火しない
+
+# ✅ ちょうど良い
+"matcher": "Write|Edit"   // Write と Edit のみ
+"matcher": "Bash"         // Bash のみ</code></pre></section>
+
+  <section><h2>⑥ Gotcha 5: 環境依存</h2>
+  <div class="card warn"><strong>症状:</strong> 自分の環境では動くが、別 OS / 別マシンで動かない。</div>
+  <ul>
+    <li>シェル前提 (<code>bash</code> 専用) → Windows で動かない</li>
+    <li>絶対パスハードコード → 別マシンで壊れる</li>
+    <li>外部コマンドが必要 (prettier 等) → インストールされてないと無言で失敗</li>
+    <li><code>$CLAUDE_PROJECT_DIR</code> 等の環境変数を活用</li>
+  </ul></section>
+
+  <section><h2>⑦ Gotcha 6: セキュリティ盲点</h2>
+  <div class="card warn"><strong>症状:</strong> 他人の settings.json を信用してインストール → 悪意ある hook が実行されて被害。</div>
+  <ul>
+    <li>Hook は <strong>あなたの権限で実行</strong>される (任意コマンド実行)</li>
+    <li>OSS の settings.json をコピペする前に <strong>必ず中身を読む</strong></li>
+    <li>機密情報を外部に送信する hook がないか確認</li>
+    <li><code>.claude/settings.local.json</code> は <code>.gitignore</code> へ</li>
+  </ul></section>
+
+  <section><h2>⑧ Gotcha 7: デバッグできない hook</h2>
+  <div class="card warn"><strong>症状:</strong> hook が動いてるか分からない / エラー出てるか分からない。</div>
+  <ul>
+    <li>ログ追記を仕込む: <code>echo "[$(date)] hook fired" &gt;&gt; ~/.claude/logs/hook.log</code></li>
+    <li>matcher を一旦 <code>".*"</code> にして発火を確認</li>
+    <li>command を <code>echo</code> にして変数値を確認</li>
+    <li><code>--debug</code> オプションで Claude Code 起動</li>
+  </ul></section>
+
+  <section><h2>⑨ チェックリスト (hook 投入前)</h2>
+  <div class="card mint">
+    <ul>
+      <li>[ ] 無限ループの可能性はないか?</li>
+      <li>[ ] blocking なら 100ms 以下か?</li>
+      <li>[ ] stdout/stderr は意図通り使い分けてるか?</li>
+      <li>[ ] matcher は意図したスコープか?</li>
+      <li>[ ] 他環境でも動くか? (OS / PATH)</li>
+      <li>[ ] 悪意ある操作してないか? (信頼できるソース?)</li>
+      <li>[ ] ログで確認できる構造になってるか?</li>
+    </ul>
+  </div></section>
+
+  <section><h2>⑩ 中学生向けに例えると</h2>
+  <p>家のセンサー自動化を仕込む時の「あるある失敗」集。「人感センサー → 照明 ON」は良いが、「照明が ON になると人感センサーが反応する」配置だと無限ループ。Claude Code の hook も同じ。設置前に動作を頭でシミュレーションする。</p></section>
+
+  <section><h2>⑪ 自分メモ</h2><div class="memo-area">気をつけたい落とし穴・自分が踏んだ罠…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 122: Gotchas around hooks</footer>
+</main></body></html>
