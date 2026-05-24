@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 126: Quiz on Claude Code | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}details{background:var(--paper-2);border-radius:var(--radius);padding:14px 22px;margin:10px 0;box-shadow:var(--shadow);border-left:4px solid var(--tag-bg)}details summary{cursor:pointer;font-weight:700;font-size:15px;outline:none}details[open]{border-left-color:var(--accent)}code.inline{background:#f4eedb;padding:2px 6px;border-radius:4px;font-family:"Consolas","Menlo",monospace;font-size:.92em;color:#a85200}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 6 ・ Lecture 126 ・ クイズ</span>
+  <h1 class="lecture-title">Quiz on Claude Code<span class="ja-sub">— コース04 修了クイズ・知識チェック</span></h1>
+  <p class="subtitle">Anthropic Academy / コース04 Claude Code</p>
+
+  <section><h2>① 取り組み方</h2>
+  <p>各問題を見て、まず自分で答えを考えてから <code>&lt;summary&gt;</code> をクリックして答え合わせ。10問中 8問正解で実務レベル。</p>
+  <div class="card accent"><strong>分野構成:</strong> セットアップ / 文脈管理 / 編集 / Custom commands / MCP / Hooks / SDK の7領域からバランス出題。</div></section>
+
+  <section><h2>② 問題セット (10問)</h2>
+
+  <details><summary>Q1. Claude Code をインストールするコマンドは?</summary><p>A. <code>npm install -g @anthropic-ai/claude-code</code>。グローバルインストール推奨。</p></details>
+
+  <details><summary>Q2. プロジェクト固有のルールを Claude に毎セッション読ませる方法は?</summary><p>A. プロジェクトルートに <code>CLAUDE.md</code> を置く。毎セッションで自動読込される。</p></details>
+
+  <details><summary>Q3. <code>/init</code> コマンドの役割は?</summary><p>A. Claude がプロジェクトを分析して CLAUDE.md の雛形を自動生成する。</p></details>
+
+  <details><summary>Q4. ファイル添付の記号は?</summary><p>A. <code>@</code>。例: <code>@src/auth.ts</code> でファイル / <code>@docs/</code> でディレクトリを context に追加。</p></details>
+
+  <details><summary>Q5. context が膨らんだ時に圧縮するコマンドは?</summary><p>A. <code>/compact</code>。過去履歴を Claude 自身が要約 → 圧縮版を保持。<code>/clear</code> は完全クリア。</p></details>
+
+  <details><summary>Q6. 自分専用 slash command の作成場所は?</summary><p>A. プロジェクト用: <code>{project}/.claude/commands/*.md</code> / 個人用: <code>~/.claude/commands/*.md</code>。ファイル名 = コマンド名。</p></details>
+
+  <details><summary>Q7. MCP server を Claude Code に追加するコマンドは?</summary><p>A. <code>claude mcp add &lt;name&gt; --command "&lt;cmd&gt;" --args "&lt;args&gt;"</code>。一覧確認は <code>claude mcp list</code>。</p></details>
+
+  <details><summary>Q8. Hook の主要なイベントは?</summary><p>A. <strong>PreToolUse</strong> (tool 直前) / <strong>PostToolUse</strong> (tool 直後) / <strong>UserPromptSubmit</strong> (入力直後) / <strong>Stop</strong> (セッション終了) / <strong>SessionStart</strong>。</p></details>
+
+  <details><summary>Q9. Hook 内で tool 実行をブロックする方法は?</summary><p>A. <code>blocking: true</code> 設定 + スクリプトで <code>process.exit(2)</code>。<code>exit 0</code> は通過、<code>exit 2</code> は中止。</p></details>
+
+  <details><summary>Q10. Claude Code SDK で本番運用厳禁の設定は?</summary><p>A. <code>permissionMode: "bypassPermissions"</code>。検証用のみ・本番では <code>allowedTools</code> で必要最小限に絞る。</p></details>
+
+  </section>
+
+  <section><h2>③ 結果別の振り返り指針</h2>
+  <ul>
+    <li><strong>9問以上</strong>: 実務で自走可能。自分のプロジェクトに Claude Code を投入</li>
+    <li><strong>6-8問</strong>: 弱領域を該当章 (#106-#125) で復習</li>
+    <li><strong>5問以下</strong>: コース全体を1巡再受講推奨</li>
+  </ul></section>
+
+  <section><h2>④ 領域別の章マッピング</h2>
+  <div class="card mint">
+    <ul>
+      <li>セットアップ → #110 Claude Code setup / #111 Project setup</li>
+      <li>文脈管理 → #112 Adding context / #115 Controlling context</li>
+      <li>編集 → #113 Making changes</li>
+      <li>Custom commands → #116</li>
+      <li>MCP 統合 → #117 / GitHub 統合 → #118</li>
+      <li>Hooks → #119 / #120 / #121 / #123 / #124</li>
+      <li>SDK → #125</li>
+    </ul>
+  </div></section>
+
+  <section><h2>⑤ 中学生向けに例えると</h2>
+  <p>コース04 の小テスト。覚えた内容を「言葉で説明できるか」を確認する回。間違えた問題こそ「弱点」。該当章に戻れば一発で復習できる。</p></section>
+
+  <section><h2>⑥ 自分メモ</h2><div class="memo-area">間違えた問題・復習する章…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 126: Quiz on Claude Code</footer>
+</main></body></html>

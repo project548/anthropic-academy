@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 123: Useful hooks! | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}pre{background:#f4eedb;border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:"Consolas","Menlo",monospace;font-size:14px;line-height:1.7;margin:12px 0;border:1px solid var(--border)}code.inline{background:#f4eedb;padding:2px 6px;border-radius:4px;font-family:"Consolas","Menlo",monospace;font-size:.92em;color:#a85200}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 5 ・ Lecture 123 ・ 実例集</span>
+  <h1 class="lecture-title">Useful hooks!<span class="ja-sub">— 実務で「これ便利」な hook 集</span></h1>
+  <p class="subtitle">Anthropic Academy / コース04 Claude Code</p>
+
+  <section><h2>① 自動 commit checkpoint hook</h2>
+  <p>Claude が編集するたびに自動 git add + commit。あとで気軽にロールバックできる「安全網」。</p>
+<pre><code>{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "command": "git -C $CLAUDE_PROJECT_DIR add -A && git -C $CLAUDE_PROJECT_DIR commit -m 'claude: auto checkpoint' --allow-empty 2&gt;/dev/null || true",
+        "description": "編集ごとに自動チェックポイント"
+      }
+    ]
+  }
+}</code></pre></section>
+
+  <section><h2>② 危険コマンドブロック hook</h2>
+<pre><code>{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "blocking": true,
+        "command": "node -e \"let d='';process.stdin.on('data',c=&gt;d+=c);process.stdin.on('end',()=&gt;{const i=JSON.parse(d);const c=i.tool_input?.command||'';if(/rm\\s+-rf\\s+\\/(\\s|$)|sudo\\s+rm|drop\\s+database|format\\s+c:/i.test(c)){console.error('BLOCKED dangerous command');process.exit(2)}console.log(d)})\"",
+        "description": "破壊的コマンドのブロック"
+      }
+    ]
+  }
+}</code></pre></section>
+
+  <section><h2>③ 編集後の自動 format hook</h2>
+<pre><code>{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "command": "node -e \"const fp=process.env.FILE_PATH||'';if(/\\.(ts|tsx|js|jsx|json)$/.test(fp))require('child_process').execSync('npx prettier --write '+fp,{stdio:'ignore'})\"",
+        "description": "JS/TS/JSON の自動 format"
+      }
+    ]
+  }
+}</code></pre></section>
+
+  <section><h2>④ セッション終了サマリー hook</h2>
+<pre><code>{
+  "hooks": {
+    "Stop": [
+      {
+        "command": "powershell -File ~/.claude/scripts/save-session-to-obsidian.ps1",
+        "description": "セッション終了時に Obsidian へ自動保存"
+      }
+    ]
+  }
+}</code></pre>
+  <p>セッションのまとめを Obsidian の daily note に自動投入 → 後で振り返り可能。</p></section>
+
+  <section><h2>⑤ PII redaction hook</h2>
+<pre><code>{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "command": "node ~/.claude/hooks/redact-pii.js",
+        "description": "メールアドレス・電話番号を [REDACTED] に置換"
+      }
+    ]
+  }
+}</code></pre>
+  <p>個人情報を含むコードを Claude に渡す前に自動マスク。社内利用での情報漏洩防止。</p></section>
+
+  <section><h2>⑥ 通知 hook (長時間タスク完了)</h2>
+<pre><code># Mac
+{
+  "hooks": {
+    "Stop": [
+      { "command": "osascript -e 'display notification \"Claude セッション終了\" with title \"Claude Code\"'" }
+    ]
+  }
+}
+
+# Windows (PowerShell)
+{
+  "hooks": {
+    "Stop": [
+      { "command": "powershell -c \"[System.Windows.Forms.MessageBox]::Show('Claude セッション終了')\"" }
+    ]
+  }
+}</code></pre></section>
+
+  <section><h2>⑦ Claude が自分でテスト走らせる hook</h2>
+<pre><code>{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit",
+        "command": "cd $CLAUDE_PROJECT_DIR && npm test --silent 2&gt;&amp;1 | head -20",
+        "description": "編集後の自動テスト実行"
+      }
+    ]
+  }
+}</code></pre>
+  <p>テスト失敗結果が Claude の context に返る → 自動で「失敗を見て修正」サイクル。</p></section>
+
+  <section><h2>⑧ 中学生向けに例えると</h2>
+  <p>家電の「自動セット」プリセット集。「外出時 = エアコン OFF + 鍵チェック」「帰宅時 = 照明 ON + テレビ ON」のように、よく使うパターンをパッケージ化したもの。Claude Code でも自分の運用ごとに hook をプリセット化できる。</p></section>
+
+  <section><h2>⑨ 自分メモ</h2><div class="memo-area">自分が使いたい hook…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 123: Useful hooks!</footer>
+</main></body></html>

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 125: The Claude Code SDK | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}pre{background:#f4eedb;border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:"Consolas","Menlo",monospace;font-size:14px;line-height:1.7;margin:12px 0;border:1px solid var(--border)}code.inline{background:#f4eedb;padding:2px 6px;border-radius:4px;font-family:"Consolas","Menlo",monospace;font-size:.92em;color:#a85200}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 6 ・ Lecture 125 ・ SDK</span>
+  <h1 class="lecture-title">The Claude Code SDK<span class="ja-sub">— Claude Code をプログラムから呼び出す SDK</span></h1>
+  <p class="subtitle">Anthropic Academy / コース04 Claude Code</p>
+
+  <section><h2>① Claude Code SDK とは?</h2>
+  <p><strong>Claude Code SDK</strong> = ターミナル CLI としての Claude Code を、<strong>自分のアプリ・スクリプトの中から呼び出す</strong>ための公式ライブラリ。Python / TypeScript 両対応 (Claude Agent SDK としても展開)。</p>
+  <div class="card accent"><strong>核心:</strong> 「Claude Code が持っているエージェント能力を、自分のプロダクトに組み込める」。CLI を超えてサーバサイド・CI/CD・カスタムアプリで使える。</div></section>
+
+  <section><h2>② CLI vs SDK</h2>
+  <ul>
+    <li><strong>CLI</strong>: 開発者が手で <code>claude</code> と打って対話</li>
+    <li><strong>SDK</strong>: コードから呼び出してプログラマブルに動かす</li>
+  </ul>
+  <p>同じ Claude Code エンジンを、入口だけ変えて使う。</p></section>
+
+  <section><h2>③ TypeScript SDK の例</h2>
+<pre><code>import { query } from "@anthropic-ai/claude-agent-sdk";
+
+const result = query({
+  prompt: "package.json の依存を最新版に更新するパッチを生成",
+  options: {
+    cwd: "/path/to/my-project",
+    permissionMode: "acceptEdits",
+    allowedTools: ["Read", "Edit", "Bash"],
+  }
+});
+
+for await (const message of result) {
+  if (message.type === "result") {
+    console.log(message.result);
+  }
+}</code></pre></section>
+
+  <section><h2>④ Python SDK の例</h2>
+<pre><code>from claude_agent_sdk import query, ClaudeAgentOptions
+
+options = ClaudeAgentOptions(
+    cwd="/path/to/my-project",
+    permission_mode="acceptEdits",
+    allowed_tools=["Read", "Edit", "Bash"],
+)
+
+async for message in query(
+    prompt="テスト追加して全部通るまで修正して",
+    options=options
+):
+    if message.type == "result":
+        print(message.result)</code></pre></section>
+
+  <section><h2>⑤ ユースケース</h2>
+  <ul>
+    <li><strong>CI/CD 統合</strong>: PR ごとに Claude が自動レビュー</li>
+    <li><strong>カスタムアプリ</strong>: 社内ツールに「Claude エージェント」機能を埋め込む</li>
+    <li><strong>バッチ処理</strong>: 100ファイルに同じ refactor を並列適用</li>
+    <li><strong>カスタム CLI</strong>: 自社専用の <code>mycli ai</code> コマンドの裏で Claude Code を呼ぶ</li>
+    <li><strong>サブエージェント</strong>: メイン Claude Code から別の Claude エージェントを起動</li>
+  </ul></section>
+
+  <section><h2>⑥ オプションの重要パラメータ</h2>
+  <div class="card mint">
+    <ul>
+      <li><strong>cwd</strong>: 作業ディレクトリ</li>
+      <li><strong>model</strong>: 使用モデル (opus / sonnet / haiku)</li>
+      <li><strong>permissionMode</strong>: <code>default</code> / <code>acceptEdits</code> / <code>bypassPermissions</code> / <code>plan</code></li>
+      <li><strong>allowedTools</strong>: 使える tool の whitelist</li>
+      <li><strong>disallowedTools</strong>: 禁止 tool</li>
+      <li><strong>maxTurns</strong>: 最大対話ターン数 (無限ループ防止)</li>
+    </ul>
+  </div></section>
+
+  <section><h2>⑦ セキュリティ</h2>
+  <ul>
+    <li><code>bypassPermissions</code> は <strong>本番運用厳禁</strong>。検証用のみ</li>
+    <li>本番では <code>allowedTools</code> で必要最小限に絞る</li>
+    <li>cwd を信頼できないパスに設定しない (任意のディレクトリ操作許可になる)</li>
+    <li>API key / token はコード埋め込み禁止。環境変数で</li>
+  </ul></section>
+
+  <section><h2>⑧ 中学生向けに例えると</h2>
+  <p>料理ロボットの「メーカー直営アプリ」のSDK版。普通は手で操作 (CLI) するけど、SDKを使うと「自社の業務アプリ」の中にロボの機能を組み込める。スマートホーム家電を社内ツールから呼ぶイメージ。</p></section>
+
+  <section><h2>⑨ 自分メモ</h2><div class="memo-area">SDK で作りたい自動化…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 125: The Claude Code SDK<br>公式: <a href="https://docs.claude.com/en/docs/claude-code/sdk">docs.claude.com/claude-code/sdk</a></footer>
+</main></body></html>
