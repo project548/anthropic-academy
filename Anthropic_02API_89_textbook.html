@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 89: Quiz on Agents and Workflows | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}details{background:var(--paper-2);border-radius:var(--radius);padding:14px 22px;margin:10px 0;box-shadow:var(--shadow);border-left:4px solid var(--tag-bg)}details summary{cursor:pointer;font-weight:700;font-size:15px;outline:none}details[open]{border-left-color:var(--accent)}code.inline{background:#f4eedb;padding:2px 6px;border-radius:4px;font-family:"Consolas","Menlo",monospace;font-size:.92em;color:#a85200}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 13 ・ Lecture 89 ・ クイズ</span>
+  <h1 class="lecture-title">Quiz on Agents and Workflows<span class="ja-sub">— エージェントとワークフロー設計のテスト</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section><h2>① 範囲・取り組み方</h2>
+  <p>#82〜#88 で学んだ「Agents and Workflows」を総点検する Quiz 回。10問中 8問正解で実務レベル。</p>
+  <div class="card accent"><strong>カバー領域:</strong> Agent と Workflow の違い / Parallelization / Chaining / Routing / Orchestrator-workers / Evaluator-optimizer / Environment inspection / Agent ループ実装。</div></section>
+
+  <section><h2>② 問題セット</h2>
+
+  <details><summary>Q1. Workflow と Agent の最大の違いは?</summary><p>A. <strong>制御フローの決まり方</strong>。Workflow = 事前に人間が固定 / Agent = LLM が動的に判断。</p></details>
+
+  <details><summary>Q2. Anthropic 推奨の実装順序は?</summary><p>A. <strong>まず Workflow で実装 → 動的判断が必要な部分だけ Agent 化</strong>。最初から全部 Agent は過剰設計。</p></details>
+
+  <details><summary>Q3. Parallelization workflow の2サブパターンは?</summary><p>A. <strong>Sectioning</strong> (1タスクを並列分割) / <strong>Voting</strong> (同じタスクを複数回 → 多数決で品質UP)。</p></details>
+
+  <details><summary>Q4. Chaining workflow の本質は?</summary><p>A. 複数 LLM 呼び出しを <strong>順次接続</strong>して、前のステップの出力を次のステップの入力にする。各ステップは小さく確実 → 全体で複雑タスク達成。</p></details>
+
+  <details><summary>Q5. Routing workflow の用途は?</summary><p>A. 入力を <strong>分類して専用フローへ振り分け</strong>。例: カスタマーサポートで refund / technical / billing に振り分け、各専用処理を呼ぶ。</p></details>
+
+  <details><summary>Q6. Orchestrator-workers workflow とは?</summary><p>A. マスター LLM が <strong>子タスクに動的分割</strong>して、各 worker (LLM or tool) に並列実行させて結果統合。</p></details>
+
+  <details><summary>Q7. Evaluator-optimizer workflow とは?</summary><p>A. 生成 → 評価 → 改善 の <strong>ループ</strong>。Generator が出力 → Evaluator が採点・FB → Generator が修正 → 合格まで反復。</p></details>
+
+  <details><summary>Q8. Agent ループの終了判定は?</summary><p>A. <code>response.stop_reason !== "tool_use"</code> (= <code>"end_turn"</code> 等)。それまで tool 実行と再呼び出しをループ。</p></details>
+
+  <details><summary>Q9. Agent に必要な5要素は?</summary><p>A. ① LLM (頭脳) ② Tools (手足) ③ Loop (制御構造) ④ Termination (終了判定) ⑤ Memory (履歴)。</p></details>
+
+  <details><summary>Q10. Environment inspection の役割は?</summary><p>A. Agent が <strong>「今どこにいるか・何が使えるか・どんな状態か」</strong>を最初に観察する。読み取り専用 tool で状況把握 → その後本タスクに入ると失敗率激減。</p></details>
+
+  </section>
+
+  <section><h2>③ 結果別の振り返り指針</h2>
+  <ul>
+    <li><strong>9問以上</strong>: コース02 完結! 自分で agent / workflow を実装できる状態</li>
+    <li><strong>6-8問</strong>: 弱領域を該当章 (#82〜#88) で復習</li>
+    <li><strong>5問以下</strong>: モジュール全体を1巡再受講推奨</li>
+  </ul></section>
+
+  <section><h2>④ 自分メモ</h2><div class="memo-area">間違えた問題・復習する章…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 89: Quiz on Agents and Workflows</footer>
+</main></body></html>

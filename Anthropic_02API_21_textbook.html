@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 21: Quiz on accessing Claude with the API | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}details{background:var(--paper-2);border-radius:var(--radius);padding:14px 22px;margin:10px 0;box-shadow:var(--shadow);border-left:4px solid var(--tag-bg)}details summary{cursor:pointer;font-weight:700;font-size:15px;outline:none}details[open]{border-left-color:var(--accent)}code.inline{background:#f4eedb;padding:2px 6px;border-radius:4px;font-family:"Consolas","Menlo",monospace;font-size:.92em;color:#a85200}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 2 ・ Lecture 21 ・ クイズ</span>
+  <h1 class="lecture-title">Quiz on accessing Claude with the API<span class="ja-sub">— API で Claude にアクセスする基本知識テスト</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section><h2>① 範囲・取り組み方</h2>
+  <p>#5〜#20 で学んだ「API の基本アクセス」を総点検する Quiz 回。10問中 8問正解で実務レベル。</p>
+  <div class="card accent"><strong>カバー領域:</strong> API key 取得 / SDK インストール / messages.create / model 指定 / system prompt / マルチターン会話 / ストリーミング / エラー処理。</div></section>
+
+  <section><h2>② 問題セット</h2>
+
+  <details><summary>Q1. Anthropic API key を取得するサイトは?</summary><p>A. <code>console.anthropic.com</code>。Workbench 兼コンソール。発行後は環境変数 <code>ANTHROPIC_API_KEY</code> で管理。</p></details>
+
+  <details><summary>Q2. Python SDK のインストールコマンドは?</summary><p>A. <code>pip install anthropic</code>。TypeScript なら <code>npm install @anthropic-ai/sdk</code>。</p></details>
+
+  <details><summary>Q3. <code>messages.create</code> に必須の3パラメータは?</summary><p>A. <code>model</code> / <code>max_tokens</code> / <code>messages</code>。</p></details>
+
+  <details><summary>Q4. system prompt はどこに渡す?</summary><p>A. <code>messages.create(system="...", messages=[...])</code> の <code>system</code> パラメータ。messages 配列の中の "system" ロールでは <strong>ない</strong>。</p></details>
+
+  <details><summary>Q5. マルチターン会話で会話履歴を保持する方法は?</summary><p>A. <code>messages</code> 配列に user/assistant メッセージを交互に積む。Claude API はステートレスなのでクライアント側管理。</p></details>
+
+  <details><summary>Q6. レスポンスから本文テキストを取り出すには?</summary><p>A. <code>response.content[0].text</code> (Python)。<code>content</code> はブロック配列で、type=text のブロックの text を参照。</p></details>
+
+  <details><summary>Q7. ストリーミングを使う API は?</summary><p>A. <code>client.messages.stream()</code>。<code>with</code> 文 (Python) / <code>for await</code> (TS) で chunk を逐次受信。</p></details>
+
+  <details><summary>Q8. レート制限に達したときのエラーは?</summary><p>A. HTTP 429 / <code>RateLimitError</code>。retry-after ヘッダで待ち時間がわかる。指数バックオフで再試行が定石。</p></details>
+
+  <details><summary>Q9. モデル ID の例は?</summary><p>A. <code>claude-opus-4-7</code> / <code>claude-sonnet-4-6</code> / <code>claude-haiku-4-5</code>。最新の正式 ID は公式ドキュメント参照。</p></details>
+
+  <details><summary>Q10. stop_reason の主な値は?</summary><p>A. <code>end_turn</code> (正常終了) / <code>max_tokens</code> (上限到達) / <code>stop_sequence</code> (指定文字列) / <code>tool_use</code> (tool 呼び出し)。</p></details>
+
+  </section>
+
+  <section><h2>③ 結果別の振り返り指針</h2>
+  <ul>
+    <li><strong>9問以上</strong>: 次の module (prompt engineering) に進める</li>
+    <li><strong>6-8問</strong>: 弱領域を該当章 (#5〜#20) で復習</li>
+    <li><strong>5問以下</strong>: モジュール全体を1巡再受講推奨</li>
+  </ul></section>
+
+  <section><h2>④ 自分メモ</h2><div class="memo-area">間違えた問題・復習する章…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 21: Quiz on accessing Claude with the API</footer>
+</main></body></html>

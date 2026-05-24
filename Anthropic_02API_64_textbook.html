@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 64: Quiz on features of Claude | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}details{background:var(--paper-2);border-radius:var(--radius);padding:14px 22px;margin:10px 0;box-shadow:var(--shadow);border-left:4px solid var(--tag-bg)}details summary{cursor:pointer;font-weight:700;font-size:15px;outline:none}details[open]{border-left-color:var(--accent)}code.inline{background:#f4eedb;padding:2px 6px;border-radius:4px;font-family:"Consolas","Menlo",monospace;font-size:.92em;color:#a85200}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 7 ・ Lecture 64 ・ クイズ</span>
+  <h1 class="lecture-title">Quiz on features of Claude<span class="ja-sub">— Claude の主要機能 (RAG / Caching / Citations 等) のテスト</span></h1>
+  <p class="subtitle">Anthropic Academy / コース02 Claude with the Anthropic API</p>
+
+  <section><h2>① 範囲・取り組み方</h2>
+  <p>#50〜#63 で学んだ「Claude の features (RAG / Embeddings / Caching / Extended thinking / Citations 等)」を総点検する Quiz 回。10問中 8問正解で実務レベル。</p>
+  <div class="card accent"><strong>カバー領域:</strong> Embeddings / RAG / Prompt caching / Extended thinking / Citations / Image input / PDF input / Files API。</div></section>
+
+  <section><h2>② 問題セット</h2>
+
+  <details><summary>Q1. Embeddings とは?</summary><p>A. テキストを <strong>高次元ベクトル</strong> に変換したもの。意味的に近いテキストは近い位置に配置される。Voyage AI <code>voyage-3-large</code> 等を使用。</p></details>
+
+  <details><summary>Q2. RAG の5ステップは?</summary><p>A. ① ドキュメントを embedding 化 → ② Vector DB に保存 → ③ query を embedding 化 → ④ 類似度検索で関連チャンク抽出 → ⑤ context に注入して Claude に質問。</p></details>
+
+  <details><summary>Q3. Prompt caching の効果は?</summary><p>A. 同じ前置きを再利用 → 入力トークン課金 <strong>最大 90% 削減</strong>・latency 大幅短縮。<code>cache_control: {type: "ephemeral"}</code> でブロックをマーク。</p></details>
+
+  <details><summary>Q4. Prompt caching のキャッシュ TTL は?</summary><p>A. デフォルト 5分。<code>extended</code> 設定で 1時間まで延長可能。</p></details>
+
+  <details><summary>Q5. Extended thinking はいつ有効化する?</summary><p>A. 複雑な推論・数学・計画立案が必要なとき。<code>thinking: {type:"enabled", budget_tokens: 16000}</code>。simple tasks では不要。</p></details>
+
+  <details><summary>Q6. Citations 機能は何を返す?</summary><p>A. Claude が参照した document の <strong>どの範囲を引用したか</strong>。出典明示が必要な業務 (法務・リサーチ) で必須。document ブロックに <code>citations: {enabled: true}</code> を設定。</p></details>
+
+  <details><summary>Q7. Image input のサポート形式は?</summary><p>A. JPEG / PNG / GIF / WebP。base64 エンコード or URL 指定。<code>{"type":"image","source":{"type":"base64","media_type":"image/png","data":"..."}}</code>。</p></details>
+
+  <details><summary>Q8. PDF input の制限は?</summary><p>A. 最大 <strong>100ページ / 32MB</strong>。それ以上は Files API で事前アップロード。</p></details>
+
+  <details><summary>Q9. Files API の用途は?</summary><p>A. 大きいファイル (PDF / 画像 / データ) を <strong>事前アップロード</strong>して file_id で参照。messages に毎回貼らなくて済む。</p></details>
+
+  <details><summary>Q10. Code execution tool は何ができる?</summary><p>A. Claude が <strong>Python コードを直接実行</strong>して結果を取得 (Anthropic 提供のサンドボックス)。データ分析・グラフ生成・計算で威力。</p></details>
+
+  </section>
+
+  <section><h2>③ 結果別の振り返り指針</h2>
+  <ul>
+    <li><strong>9問以上</strong>: 次の module (MCP) に進める</li>
+    <li><strong>6-8問</strong>: 弱領域を該当章 (#50〜#63) で復習</li>
+    <li><strong>5問以下</strong>: モジュール全体を1巡再受講推奨</li>
+  </ul></section>
+
+  <section><h2>④ 自分メモ</h2><div class="memo-area">間違えた問題・復習する章…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 64: Quiz on features of Claude</footer>
+</main></body></html>
