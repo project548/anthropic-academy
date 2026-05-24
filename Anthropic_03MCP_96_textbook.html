@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 96: Project setup | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}pre{background:#f4eedb;border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:"Consolas","Menlo",monospace;font-size:14px;line-height:1.7;margin:12px 0;border:1px solid var(--border)}code.inline{background:#f4eedb;padding:2px 6px;border-radius:4px;font-family:"Consolas","Menlo",monospace;font-size:.92em;color:#a85200}details{background:var(--paper-2);border-radius:var(--radius);padding:14px 22px;margin:10px 0;box-shadow:var(--shadow);border-left:4px solid var(--tag-bg)}details summary{cursor:pointer;font-weight:700;font-size:15px;outline:none}details[open]{border-left-color:var(--accent)}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 2 ・ Lecture 96 ・ ハンズオン</span>
+  <h1 class="lecture-title">Project setup<span class="ja-sub">— MCP サーバ開発のプロジェクト準備</span></h1>
+  <p class="subtitle">Anthropic Academy / コース03 Model Context Protocol</p>
+
+  <section><h2>① ゴール</h2>
+  <p>このコースで作る MCP サーバの開発環境を整える。Python + uv (パッケージマネージャ) + FastMCP を使う最小構成。</p>
+  <div class="card accent"><strong>到達点:</strong> <code class="inline">uv run server.py</code> でローカル MCP サーバが起動できる状態。</div></section>
+
+  <section><h2>② 必要なもの</h2>
+  <ul>
+    <li><strong>Python 3.10+</strong></li>
+    <li><strong>uv</strong> (高速パッケージマネージャ・公式推奨)</li>
+    <li><strong>MCP Python SDK</strong> (<code class="inline">mcp</code> パッケージ)</li>
+    <li><strong>Claude Desktop</strong> または <strong>MCP Inspector</strong> (動作確認用)</li>
+    <li>エディタ (VS Code / Cursor 等)</li>
+  </ul></section>
+
+  <section><h2>③ セットアップ手順</h2>
+<pre><code># 1. uv のインストール (Mac/Linux)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows (PowerShell)
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# 2. プロジェクト作成
+mkdir my-mcp-server && cd my-mcp-server
+uv init
+
+# 3. MCP SDK 追加
+uv add "mcp[cli]"
+
+# 4. サーバの雛形作成
+touch server.py
+
+# 5. MCP Inspector で起動確認
+uv run mcp dev server.py</code></pre></section>
+
+  <section><h2>④ 最小 server.py の例</h2>
+<pre><code>from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("my-first-server")
+
+@mcp.tool()
+def hello(name: str) -&gt; str:
+    """挨拶を返す"""
+    return f"Hello, {name}!"
+
+if __name__ == "__main__":
+    mcp.run()</code></pre>
+  <p>これだけで MCP server が完成。<code class="inline">uv run mcp dev server.py</code> で Inspector が立ち上がり、ブラウザで tool を試せる。</p></section>
+
+  <section><h2>⑤ Claude Desktop に登録</h2>
+<pre><code>// ~/Library/Application Support/Claude/claude_desktop_config.json (Mac)
+// %APPDATA%\Claude\claude_desktop_config.json (Windows)
+{
+  "mcpServers": {
+    "my-first-server": {
+      "command": "uv",
+      "args": ["--directory", "/path/to/my-mcp-server", "run", "server.py"]
+    }
+  }
+}</code></pre>
+  <p>保存 → Claude Desktop 再起動 → ハンマーアイコンに hello tool が表示される。</p></section>
+
+  <section><h2>⑥ よくあるトラブル</h2>
+  <div class="card mint">
+    <ul>
+      <li><strong>uv not found</strong>: PATH に追加されているか確認 (<code class="inline">~/.local/bin</code>)</li>
+      <li><strong>Server appears but tool missing</strong>: server.py の <code class="inline">@mcp.tool()</code> デコレータ確認</li>
+      <li><strong>Claude Desktop でログを見たい</strong>: <code class="inline">~/Library/Logs/Claude/</code> (Mac)</li>
+      <li><strong>Inspector が起動しない</strong>: Node.js 18+ が必要</li>
+    </ul>
+  </div></section>
+
+  <section><h2>⑦ 中学生向けに例えると</h2>
+  <p>新しい工作キットを開けて、説明書通りに道具を並べる作業。今回は「机の上に uv (パッケージマネージャ) と Python と MCP SDK と Claude Desktop を並べる」段階。次の章から実際の工作が始まる。</p></section>
+
+  <section><h2>⑧ 自分メモ</h2><div class="memo-area">セットアップで詰まったところ…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 96: Project setup</footer>
+</main></body></html>

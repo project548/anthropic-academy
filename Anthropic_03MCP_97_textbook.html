@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Lecture 97: Defining tools with MCP | Anthropic Academy 教科書</title>
+<style>:root{--paper:#faf6ef;--paper-2:#fff;--ink:#2b2b2b;--ink-sub:#5a5a5a;--accent:#d97757;--accent-light:#fdebde;--tag-bg:#ebe3d3;--tag-text:#6b5028;--soft-mint:#d8ecd6;--border:#dcd3c0;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.04)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP","Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.9;padding:40px 20px}.book{max-width:760px;margin:0 auto}.chapter-tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:8px 28px;border-radius:0 24px 24px 0;font-size:14px;letter-spacing:.1em;font-weight:700;margin-left:-20px;margin-bottom:14px}h1.lecture-title{font-size:30px;font-weight:800;line-height:1.35;margin-bottom:6px}h1.lecture-title .ja-sub{display:block;font-size:17px;font-weight:500;color:var(--ink-sub);margin-top:6px}.subtitle{color:var(--ink-sub);font-size:14px;margin-bottom:40px;padding-bottom:16px;border-bottom:1px solid var(--border)}section{margin-bottom:52px}h2{font-size:22px;font-weight:800;margin-bottom:18px;padding-left:18px;border-left:6px solid var(--accent)}p{margin-bottom:14px;font-size:16px}ol,ul{margin:12px 0 18px 28px}.card{background:var(--paper-2);border-radius:var(--radius);padding:18px 22px;box-shadow:var(--shadow);margin:16px 0}.card.accent{background:var(--accent-light);border-left:4px solid var(--accent)}.card.mint{background:var(--soft-mint);border-left:4px solid #67a061}pre{background:#f4eedb;border-radius:8px;padding:16px 18px;overflow-x:auto;font-family:"Consolas","Menlo",monospace;font-size:14px;line-height:1.7;margin:12px 0;border:1px solid var(--border)}code.inline{background:#f4eedb;padding:2px 6px;border-radius:4px;font-family:"Consolas","Menlo",monospace;font-size:.92em;color:#a85200}details{background:var(--paper-2);border-radius:var(--radius);padding:14px 22px;margin:10px 0;box-shadow:var(--shadow);border-left:4px solid var(--tag-bg)}details summary{cursor:pointer;font-weight:700;font-size:15px;outline:none}details[open]{border-left-color:var(--accent)}.memo-area{border:2px dashed var(--border);border-radius:var(--radius);padding:24px;min-height:120px;background:var(--paper-2);color:#b0a589;font-size:14px;font-style:italic}footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--ink-sub);text-align:center;line-height:1.7}footer a{color:var(--accent);text-decoration:none}</style></head><body><main class="book">
+  <span class="chapter-tag">Module 2 ・ Lecture 97 ・ 実装回</span>
+  <h1 class="lecture-title">Defining tools with MCP<span class="ja-sub">— MCP で tool を定義する基本パターン</span></h1>
+  <p class="subtitle">Anthropic Academy / コース03 Model Context Protocol</p>
+
+  <section><h2>① tool 定義の基本構造</h2>
+  <p>MCP の tool は FastMCP の <code class="inline">@mcp.tool()</code> デコレータを使うのが最もシンプル。Python の関数定義に1行追加するだけで MCP tool になる。</p>
+  <div class="card accent"><strong>必要3要素:</strong> ① 関数名 (tool 名) ② 型ヒント (input schema 自動生成) ③ docstring (説明文 → LLM が見る)</div></section>
+
+  <section><h2>② 最小サンプル</h2>
+<pre><code>from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("calculator")
+
+@mcp.tool()
+def add(a: int, b: int) -&gt; int:
+    """2つの整数を足し算する"""
+    return a + b
+
+@mcp.tool()
+def multiply(a: int, b: int) -&gt; int:
+    """2つの整数を掛け算する"""
+    return a * b
+
+if __name__ == "__main__":
+    mcp.run()</code></pre></section>
+
+  <section><h2>③ MCP が自動でやってくれること</h2>
+  <ol>
+    <li><strong>JSON Schema 生成</strong>: 型ヒント (<code class="inline">a: int</code>) から自動で <code class="inline">{"type":"integer"}</code> を作る</li>
+    <li><strong>tool 一覧公開</strong>: tools/list 要求に自動応答</li>
+    <li><strong>入力検証</strong>: Claude が間違った型を渡したら自動エラー</li>
+    <li><strong>結果シリアライズ</strong>: 戻り値を MCP プロトコル形式に変換</li>
+  </ol></section>
+
+  <section><h2>④ 複雑な型・ドキュメンテーション</h2>
+<pre><code>from typing import List, Optional
+from pydantic import Field
+
+@mcp.tool()
+def search_users(
+    query: str = Field(description="検索キーワード"),
+    limit: int = Field(default=10, description="最大件数 1-100"),
+    tags: Optional[List[str]] = Field(default=None, description="絞り込みタグ")
+) -&gt; List[dict]:
+    """ユーザーDBを検索して結果リストを返す"""
+    # 実装
+    return [...]</code></pre>
+  <p><code class="inline">pydantic.Field</code> で各パラメータに description を付けると LLM の理解度が劇的に上がる。</p></section>
+
+  <section><h2>⑤ tool 設計のベストプラクティス</h2>
+  <div class="card mint">
+    <ul>
+      <li><strong>関数名は動詞ベース</strong>: <code class="inline">get_weather</code>, <code class="inline">send_email</code></li>
+      <li><strong>docstring は LLM の指示書</strong>: いつ使うか・何を返すかを書く</li>
+      <li><strong>引数は最小限</strong>: 多すぎると LLM が混乱</li>
+      <li><strong>エラーは例外で投げる</strong>: <code class="inline">raise ValueError("...")</code> → MCP が結果に変換</li>
+      <li><strong>副作用がある操作は明示</strong>: docstring に「DB に書き込みます」など警告</li>
+    </ul>
+  </div></section>
+
+  <section><h2>⑥ 動作確認</h2>
+<pre><code># MCP Inspector で起動
+uv run mcp dev server.py
+
+# → ブラウザが開き、tools タブに add / multiply / search_users が表示
+# → 各 tool の入力フォームから手動テスト可能
+# → 動作OKなら Claude Desktop に登録</code></pre></section>
+
+  <section><h2>⑦ コース02 Tool use との違い</h2>
+  <ul>
+    <li><strong>コース02</strong>: <code class="inline">tools=[{"name":..., "input_schema":...}]</code> を手書き</li>
+    <li><strong>MCP</strong>: <code class="inline">@mcp.tool()</code> デコレータ + 型ヒント で自動生成</li>
+  </ul>
+  <p>同じ「tool 定義」だが、MCP の方が記述量が圧倒的に少ない。</p></section>
+
+  <section><h2>⑧ 中学生向けに例えると</h2>
+  <p>料理レシピで「材料・手順・出来上がり」を書くと、ロボットがそれを読んで実行してくれる。MCP では Python 関数 = レシピ・docstring = 「いつ作るか」のメモ・型ヒント = 材料リスト。</p></section>
+
+  <section><h2>⑨ 理解度チェック</h2>
+  <details><summary>Q1. <code class="inline">@mcp.tool()</code> が自動でやってくれることは?</summary><p>A. JSON Schema 生成 / tool 一覧公開 / 入力検証 / 結果シリアライズ。手書き不要。</p></details>
+  <details><summary>Q2. tool の docstring は誰が読む?</summary><p>A. LLM (Claude)。docstring を見て「この tool をいつ使うか」を判断する。</p></details>
+  <details><summary>Q3. パラメータに説明を付けるには?</summary><p>A. <code class="inline">pydantic.Field(description="...")</code> を使う。LLM の理解度が上がる。</p></details></section>
+
+  <section><h2>⑩ 自分メモ</h2><div class="memo-area">作ってみたい自分の MCP tool…</div></section>
+
+  <footer>Anthropic Academy 教科書版 ・ Lecture 97: Defining tools with MCP</footer>
+</main></body></html>
