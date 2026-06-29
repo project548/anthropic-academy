@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI経理講座 受講1ヶ月アンケート</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blue: #0096d6;
+    --blue-light: #e8f5fc;
+    --blue-dark: #005f8a;
+    --orange: #f07800;
+    --orange-light: #fff3e8;
+    --text: #1a1a1a;
+    --text-sub: #555;
+    --divider: #e0e8ef;
+  }
+  body {
+    font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif;
+    background: #f5f7fa;
+    color: var(--text);
+    line-height: 1.8;
+    font-size: 15px;
+  }
+  .header {
+    background: var(--blue-dark);
+    color: white;
+    padding: 36px 40px 30px;
+    border-bottom: 4px solid var(--orange);
+  }
+  .header-label {
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    opacity: 0.7;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+  .header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.4;
+    margin-bottom: 10px;
+  }
+  .header-sub {
+    font-size: 13px;
+    opacity: 0.75;
+  }
+  .content {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+  .intro-box {
+    background: white;
+    border-left: 4px solid var(--blue);
+    border-radius: 0 8px 8px 0;
+    padding: 16px 20px;
+    font-size: 14px;
+    color: var(--text-sub);
+    line-height: 1.8;
+    margin-bottom: 32px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .q-card {
+    background: white;
+    border-radius: 10px;
+    padding: 28px 28px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+  }
+  .q-card.conditional {
+    border: 2px dashed var(--orange);
+    background: var(--orange-light);
+  }
+  .q-card.conditional .q-num {
+    background: var(--orange);
+  }
+  .q-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .q-num {
+    min-width: 36px;
+    height: 36px;
+    background: var(--blue-dark);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .q-text {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.6;
+  }
+  .q-note {
+    font-size: 12px;
+    color: var(--orange);
+    font-weight: 600;
+    margin-top: 4px;
+  }
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-left: 50px;
+  }
+  .option-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    padding: 12px 16px;
+    border: 1.5px solid var(--divider);
+    border-radius: 8px;
+    background: #fafcfe;
+    transition: all 0.15s;
+    font-size: 15px;
+  }
+  .option-label:hover {
+    border-color: var(--blue);
+    background: var(--blue-light);
+  }
+  .option-label input[type="radio"] {
+    accent-color: var(--blue-dark);
+    width: 17px;
+    height: 17px;
+    flex-shrink: 0;
+  }
+  .option-label input[type="checkbox"] {
+    accent-color: var(--orange);
+    width: 17px;
+    height: 17px;
+    flex-shrink: 0;
+  }
+  .option-label.selected {
+    border-color: var(--blue-dark);
+    background: var(--blue-light);
+    font-weight: 600;
+  }
+  .other-input {
+    margin-top: 6px;
+    margin-left: 50px;
+    display: none;
+  }
+  .other-input input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid var(--divider);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--text);
+    outline: none;
+  }
+  .other-input input:focus {
+    border-color: var(--orange);
+    box-shadow: 0 0 0 3px rgba(240,120,0,0.1);
+  }
+  .textarea-wrap {
+    padding-left: 50px;
+  }
+  textarea.free-text {
+    width: 100%;
+    min-height: 140px;
+    padding: 14px 16px;
+    border: 1.5px solid var(--divider);
+    border-radius: 8px;
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--text);
+    line-height: 1.8;
+    resize: vertical;
+    outline: none;
+    background: #fafcfe;
+  }
+  textarea.free-text:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(0,150,214,0.1);
+  }
+  textarea.free-text::placeholder {
+    color: #bbb;
+  }
+  .submit-wrap {
+    text-align: center;
+    margin-top: 36px;
+  }
+  .submit-btn {
+    background: var(--blue-dark);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 16px 60px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+    letter-spacing: 0.05em;
+  }
+  .submit-btn:hover {
+    background: #004a6d;
+  }
+  .submit-btn:disabled {
+    background: #aaa;
+    cursor: not-allowed;
+  }
+  .thanks-msg {
+    display: none;
+    background: white;
+    border-radius: 10px;
+    padding: 40px 28px;
+    text-align: center;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+    margin-top: 20px;
+  }
+  .thanks-msg h2 {
+    font-size: 22px;
+    color: var(--blue-dark);
+    margin-bottom: 12px;
+  }
+  .thanks-msg p {
+    color: var(--text-sub);
+    font-size: 15px;
+    line-height: 1.8;
+  }
+  #q5sub-wrap {
+    display: none;
+    margin-bottom: 20px;
+  }
+  .conditional-indicator {
+    display: inline-block;
+    background: var(--orange);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    letter-spacing: 0.05em;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-label">受講1ヶ月記念 · AI経理講座</div>
+  <h1>受講アンケート</h1>
+  <div class="header-sub">回答時間の目安：約2〜3分</div>
+</div>
+
+<div class="content">
+
+  <div class="intro-box">
+    受講を開始してから1ヶ月が経ちました。現在の理解度や感想をお聞かせください。いただいた回答は今後の講座改善・次回ローンチに活かします。
+  </div>
+
+  <form id="survey-form">
+
+    <!-- Q1 -->
+    <div class="q-card">
+      <div class="q-header">
+        <div class="q-num">1</div>
+        <div>
+          <div class="q-text">講座全体の内容を、現在どの程度理解できていると感じますか？</div>
+        </div>
+      </div>
+      <div class="options">
+        <label class="option-label"><input type="radio" name="q1" value="a"> 全体的によく理解できている</label>
+        <label class="option-label"><input type="radio" name="q1" value="b"> だいたい理解できている</label>
+        <label class="option-label"><input type="radio" name="q1" value="c"> 半分くらいは理解できている</label>
+        <label class="option-label"><input type="radio" name="q1" value="d"> まだあまり理解できていない</label>
+      </div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="q-card">
+      <div class="q-header">
+        <div class="q-num">2</div>
+        <div>
+          <div class="q-text">講座全体の難易度はどのように感じましたか？</div>
+        </div>
+      </div>
+      <div class="options">
+        <label class="option-label"><input type="radio" name="q2" value="a"> 難しすぎる</label>
+        <label class="option-label"><input type="radio" name="q2" value="b"> やや難しい</label>
+        <label class="option-label"><input type="radio" name="q2" value="c"> ちょうどよい</label>
+        <label class="option-label"><input type="radio" name="q2" value="d"> やや簡単</label>
+      </div>
+    </div>
+
+    <!-- Q3 -->
+    <div class="q-card">
+      <div class="q-header">
+        <div class="q-num">3</div>
+        <div>
+          <div class="q-text">学んだ内容を、実際の業務に活かせていますか？</div>
+        </div>
+      </div>
+      <div class="options">
+        <label class="option-label"><input type="radio" name="q3" value="a"> すでに日常的に活用している</label>
+        <label class="option-label"><input type="radio" name="q3" value="b"> 一部の業務で使い始めた</label>
+        <label class="option-label"><input type="radio" name="q3" value="c"> 試したが、まだ定着していない</label>
+        <label class="option-label"><input type="radio" name="q3" value="d"> まだ活用できていない</label>
+      </div>
+    </div>
+
+    <!-- Q4 -->
+    <div class="q-card">
+      <div class="q-header">
+        <div class="q-num">4</div>
+        <div>
+          <div class="q-text">これまでの講義で、最も役立ったと感じたものはどれですか？</div>
+        </div>
+      </div>
+      <div class="options">
+        <label class="option-label"><input type="radio" name="q4" value="a"> オリエンテーション・freee初期設定</label>
+        <label class="option-label"><input type="radio" name="q4" value="b"> 【講義01】freee初期設定・基本操作</label>
+        <label class="option-label"><input type="radio" name="q4" value="c"> 【講義02】claude×freee連携・cowork構築</label>
+        <label class="option-label"><input type="radio" name="q4" value="d"> 【講義03】連携フォロー＋仕訳の基礎</label>
+      </div>
+    </div>
+
+    <!-- Q5 -->
+    <div class="q-card">
+      <div class="q-header">
+        <div class="q-num">5</div>
+        <div>
+          <div class="q-text">この講座を、同じような悩みを持つ人に勧めたいと思いますか？</div>
+        </div>
+      </div>
+      <div class="options">
+        <label class="option-label"><input type="radio" name="q5" value="yes1"> ぜひ勧めたい</label>
+        <label class="option-label"><input type="radio" name="q5" value="yes2"> 勧めたいと思う</label>
+        <label class="option-label"><input type="radio" name="q5" value="neutral"> どちらとも言えない</label>
+        <label class="option-label"><input type="radio" name="q5" value="no"> あまり勧めたくない</label>
+      </div>
+    </div>
+
+    <!-- Q5-1 (conditional) -->
+    <div id="q5sub-wrap">
+      <div class="conditional-indicator">Q5で「勧めたい」を選んだ方へ</div>
+      <div class="q-card conditional">
+        <div class="q-header">
+          <div class="q-num">5-1</div>
+          <div>
+            <div class="q-text">その理由はなんですか？当てはまるものをお選びください。</div>
+            <div class="q-note">複数選択可</div>
+          </div>
+        </div>
+        <div class="options">
+          <label class="option-label"><input type="checkbox" name="q5sub" value="a"> freeeとClaudeを使える自信がついた</label>
+          <label class="option-label"><input type="checkbox" name="q5sub" value="b"> 経理作業の時間が減った（または減りそうだと感じた）</label>
+          <label class="option-label"><input type="checkbox" name="q5sub" value="c"> AIを経理に活かすイメージが具体的になった</label>
+          <label class="option-label"><input type="checkbox" name="q5sub" value="d"> その他</label>
+        </div>
+        <div class="other-input" id="other-input-wrap">
+          <input type="text" id="other-text" placeholder="その他の理由をご記入ください">
+        </div>
+      </div>
+    </div>
+
+    <!-- Q6 -->
+    <div class="q-card">
+      <div class="q-header">
+        <div class="q-num">6</div>
+        <div>
+          <div class="q-text">講座への感想や、今後取り上げてほしいテーマ・改善してほしい点があれば自由にお書きください。</div>
+        </div>
+      </div>
+      <div class="textarea-wrap">
+        <textarea class="free-text" name="q6" placeholder="例：仕訳の自動化についてもっと詳しく知りたい、freeeの応用操作を追加してほしい　など…"></textarea>
+      </div>
+    </div>
+
+    <div class="submit-wrap">
+      <button type="submit" class="submit-btn">回答を送信する</button>
+    </div>
+
+  </form>
+
+  <div class="thanks-msg" id="thanks-msg">
+    <h2>ご回答ありがとうございました！</h2>
+    <p>いただいたフィードバックは、講座の改善と<br>次回ローンチに大切に活用させていただきます。</p>
+  </div>
+
+</div>
+
+<script>
+  // Q5選択でQ5-1を表示/非表示
+  document.querySelectorAll('input[name="q5"]').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+      var wrap = document.getElementById('q5sub-wrap');
+      wrap.style.display = (this.value === 'yes1' || this.value === 'yes2') ? 'block' : 'none';
+    });
+  });
+
+  // 「その他」チェックで入力欄を表示/非表示
+  document.querySelectorAll('input[name="q5sub"]').forEach(function(cb) {
+    cb.addEventListener('change', function() {
+      var otherCb = document.querySelector('input[name="q5sub"][value="d"]');
+      var otherWrap = document.getElementById('other-input-wrap');
+      otherWrap.style.display = otherCb.checked ? 'block' : 'none';
+    });
+  });
+
+  // 選択肢のビジュアルフィードバック
+  document.querySelectorAll('.option-label').forEach(function(label) {
+    var input = label.querySelector('input');
+    if (!input) return;
+    input.addEventListener('change', function() {
+      if (input.type === 'radio') {
+        var name = input.name;
+        document.querySelectorAll('input[name="' + name + '"]').forEach(function(r) {
+          r.closest('.option-label').classList.remove('selected');
+        });
+        label.classList.add('selected');
+      } else {
+        label.classList.toggle('selected', input.checked);
+      }
+    });
+  });
+
+  // 送信
+  document.getElementById('survey-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    this.style.display = 'none';
+    document.getElementById('thanks-msg').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+</script>
+
+</body>
+</html>
